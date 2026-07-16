@@ -64,7 +64,16 @@ async function request<T = any>(
       };
     }
 
-    return json;
+    // Normalize: backend returns integer HTTP status codes in JSON body
+    // (e.g. { status: 200, ... } or { status: 201, ... }) but our ApiResponse
+    // interface uses the string literals 'success' | 'error'. We override here
+    // so all callers can safely check `response.status === 'success'`.
+    return {
+      status: 'success',
+      message: json.message,
+      data: json.data,
+      errors: json.errors,
+    } as ApiResponse<T>;
   } catch (err: any) {
     console.error('API request network error:', err);
     return {
