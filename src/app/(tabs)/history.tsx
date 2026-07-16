@@ -50,7 +50,8 @@ export default function HistoryScreen() {
     try {
       const response = await api.wallet.getTransactions({ page: 1, per_page: 100 });
       if (response.status === 'success' && response.data) {
-        setTransactions(response.data);
+        const txArray = Array.isArray(response.data) ? response.data : (response.data.transactions || []);
+        setTransactions(txArray);
       } else {
         setError(response.message || 'Failed to fetch transactions');
       }
@@ -82,6 +83,7 @@ export default function HistoryScreen() {
 
   // Map API transaction item to UI structure
   const getMappedTransactions = () => {
+    if (!Array.isArray(transactions)) return [];
     return transactions.map((tx) => {
       let color: string = theme.success;
       let sign = '+';

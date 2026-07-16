@@ -98,7 +98,8 @@ export default function DashboardScreen() {
       }
 
       if (txRes.status === 'success' && txRes.data) {
-        setTransactions(txRes.data);
+        const txArray = Array.isArray(txRes.data) ? txRes.data : (txRes.data.transactions || []);
+        setTransactions(txArray);
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred while loading dashboard');
@@ -170,6 +171,7 @@ export default function DashboardScreen() {
 
   // Map API transactions to UI format
   const getUiTransactions = () => {
+    if (!Array.isArray(transactions)) return [];
     return transactions.map((tx) => {
       let color: string = theme.success;
       let sign = '+';
