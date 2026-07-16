@@ -20,6 +20,7 @@ export default function RootLayout() {
         <Stack.Screen name="transfer" />
         <Stack.Screen name="withdraw" />
         <Stack.Screen name="settings" />
+        <Stack.Screen name="2fa" />
       </Stack>
     </ThemeProvider>
   );

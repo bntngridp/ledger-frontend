@@ -76,7 +76,12 @@ export default function SettingsScreen() {
                 </View>
                 <Switch
                   value={tfaEnabled}
-                  onValueChange={setTfaEnabled}
+                  onValueChange={(val) => {
+                    setTfaEnabled(val);
+                    if (val) {
+                      router.push('/2fa');
+                    }
+                  }}
                   trackColor={{ false: theme.border, true: theme.primary }}
                   thumbColor="#ffffff"
                 />
