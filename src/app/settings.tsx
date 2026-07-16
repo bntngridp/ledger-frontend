@@ -18,6 +18,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/use-theme';
+import { useAppTheme } from '@/context/theme-context';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { storage } from '@/services/storage';
 import { api } from '@/services/api';
@@ -46,9 +47,11 @@ function decodeJwt(token: string): { email?: string; user_id?: string } | null {
 export default function SettingsScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { themePreference, setThemePreference } = useAppTheme();
 
   // Settings states
   const [tfaEnabled, setTfaEnabled] = useState(false);
+  const [showThemeModal, setShowThemeModal] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [userEmail, setUserEmail] = useState('user@ledger.io');
   const [username, setUsername] = useState('Ledger User');
@@ -218,6 +221,23 @@ export default function SettingsScreen() {
 
               <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />
 
+              <TouchableOpacity style={styles.settingsRow} onPress={() => setShowThemeModal(true)}>
+                <View style={styles.settingsLabelWrapper}>
+                  <Ionicons name="color-palette-outline" size={20} color={theme.text} />
+                  <ThemedText type="smallBold" style={styles.settingsLabel}>
+                    Theme Mode
+                  </ThemedText>
+                </View>
+                <View style={styles.rowRight}>
+                  <ThemedText type="small" style={{ color: theme.textSecondary, marginRight: 6 }}>
+                    {themePreference === 'system' ? 'System (Auto)' : themePreference === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                  </ThemedText>
+                  <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+                </View>
+              </TouchableOpacity>
+
+              <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />
+
               <TouchableOpacity style={styles.settingsRow}>
                 <View style={styles.settingsLabelWrapper}>
                   <Ionicons name="globe-outline" size={20} color={theme.text} />
@@ -314,6 +334,65 @@ export default function SettingsScreen() {
                   style={{ flex: 1 }}
                 />
               </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Theme Picker Modal */}
+        <Modal visible={showThemeModal} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
+              <ThemedText type="smallBold" style={{ marginBottom: Spacing.two, fontSize: 16 }}>
+                Select Theme Mode
+              </ThemedText>
+              <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.four }}>
+                Choose how Ledger appears on your device.
+              </ThemedText>
+
+              {([
+                { label: 'System Default (Auto)', value: 'system', icon: 'settings-outline' },
+                { label: 'Light Mode', value: 'light', icon: 'sunny-outline' },
+                { label: 'Dark Mode', value: 'dark', icon: 'moon-outline' },
+              ] as const).map((opt) => {
+                const isSelected = themePreference === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    onPress={async () => {
+                      await setThemePreference(opt.value);
+                      setShowThemeModal(false);
+                    }}
+                    style={[
+                      styles.themeOptionRow,
+                      { borderColor: isSelected ? theme.primary : theme.border },
+                      isSelected && { backgroundColor: theme.primary + '10' }
+                    ]}
+                  >
+                    <View style={styles.themeOptionLabel}>
+                      <Ionicons name={opt.icon} size={18} color={isSelected ? theme.primary : theme.textSecondary} />
+                      <ThemedText
+                        type="smallBold"
+                        style={{
+                          marginLeft: 12,
+                          color: isSelected ? theme.primary : theme.text,
+                        }}
+                      >
+                        {opt.label}
+                      </ThemedText>
+                    </View>
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={20} color={theme.primary} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+
+              <Button
+                title="Cancel"
+                variant="secondary"
+                onPress={() => setShowThemeModal(false)}
+                style={{ marginTop: Spacing.three, width: '100%' }}
+              />
             </View>
           </View>
         </Modal>
@@ -439,5 +518,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.two,
     marginTop: Spacing.four,
+  },
+  themeOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    marginBottom: 10,
+    width: '100%',
+  },
+  themeOptionLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

@@ -18,6 +18,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useTheme } from '@/hooks/use-theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAppTheme } from '@/context/theme-context';
 import { Spacing } from '@/constants/theme';
 import { Chart } from '@/components/chart';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,7 @@ interface TransactionItem {
 export default function DashboardScreen() {
   const theme = useTheme();
   const scheme = useColorScheme();
+  const { activeTheme, setThemePreference } = useAppTheme();
   const router = useRouter();
   const { width } = useWindowDimensions();
 
@@ -498,6 +500,18 @@ export default function DashboardScreen() {
 
           <TouchableOpacity onPress={loadData} style={[styles.iconButton, { backgroundColor: theme.backgroundElement }]}>
             <Ionicons name="refresh-outline" size={20} color={theme.text} />
+          </TouchableOpacity>
+
+          {/* Dynamic Theme Toggle for Web/Desktop */}
+          <TouchableOpacity 
+            onPress={() => setThemePreference(activeTheme === 'dark' ? 'light' : 'dark')} 
+            style={[styles.iconButton, { backgroundColor: theme.backgroundElement }]}
+          >
+            <Ionicons 
+              name={activeTheme === 'dark' ? 'sunny-outline' : 'moon-outline'} 
+              size={20} 
+              color={theme.text} 
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
