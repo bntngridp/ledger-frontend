@@ -3,22 +3,11 @@ import { View, StyleSheet } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
 
-interface TransactionItem {
-  transaction_id: string;
-  asset_symbol: string;
-  amount: number | string;
-  type: string;
-  status: string;
-  transaction_notes: string;
-  created_at: string;
-}
-
 interface ChartProps {
-  transactions?: TransactionItem[];
-  currentBalance?: number;
+  dataPoints?: number[];
 }
 
-export function Chart({ transactions = [], currentBalance = 0 }: ChartProps) {
+export function Chart({ dataPoints = [] }: ChartProps) {
   const theme = useTheme();
 
   return (

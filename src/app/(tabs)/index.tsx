@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   View,
@@ -64,6 +64,8 @@ export default function DashboardScreen() {
   // Real data states
   const [dashboard, setDashboard] = useState<DashboardResponseData | null>(null);
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [timeRange, setTimeRange] = useState<'1D' | '1W' | '1M' | 'ALL'>('ALL');
+  const [activeAssetFilter, setActiveAssetFilter] = useState<'All' | 'Crypto' | 'Fiat'>('All');
 
   const loadData = async () => {
     setLoading(true);
@@ -111,6 +113,72 @@ export default function DashboardScreen() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Filter and process transactions chronologically to build balance history
+  const chartData = useMemo(() => {
+    const currentBalance = dashboard ? parseFloat(String(dashboard.estimated_total_idr)) : 0;
+    
+    // 1. Filter out failed transactions
+    const successfulTx = transactions.filter(
+      (tx) => tx.status.toLowerCase() !== 'failed'
+    );
+
+    // 2. Sort from oldest to newest to build cumulative history
+    const sortedTx = [...successfulTx].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
+    // 3. Filter based on selected time range
+    const now = new Date();
+    const filteredTx = sortedTx.filter((tx) => {
+      const txDate = new Date(tx.created_at);
+      const diffTime = Math.abs(now.getTime() - txDate.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (timeRange === '1D') return diffDays <= 1;
+      if (timeRange === '1W') return diffDays <= 7;
+      if (timeRange === '1M') return diffDays <= 30;
+      return true; // 'ALL'
+    });
+
+    // 4. Calculate historical data points starting backward from current balance
+    let runningBalance = currentBalance;
+    const points: number[] = [runningBalance];
+
+    for (let i = filteredTx.length - 1; i >= 0; i--) {
+      const tx = filteredTx[i];
+      const amount = parseFloat(String(tx.amount)) || 0;
+
+      if (tx.type === 'topup' || tx.type === 'transfer_in') {
+        runningBalance -= amount;
+      } else if (tx.type === 'withdraw' || tx.type === 'transfer_out') {
+        runningBalance += amount;
+      } else if (tx.type === 'swap') {
+        runningBalance += amount * 0.005;
+      }
+      points.unshift(Math.max(0, runningBalance));
+    }
+
+    if (points.length < 2) {
+      return [currentBalance, currentBalance];
+    }
+
+    return points;
+  }, [transactions, dashboard, timeRange]);
+
+  // Calculate overall profit/loss percentage
+  const chartStats = useMemo(() => {
+    const start = chartData[0];
+    const end = chartData[chartData.length - 1];
+    const diff = end - start;
+    const percent = start === 0 ? 0 : (diff / start) * 100;
+
+    return {
+      diff,
+      percent,
+      isPositive: diff >= 0,
+    };
+  }, [chartData]);
 
   // Map API balances to UI assets format
   const getUiAssets = () => {
@@ -163,10 +231,20 @@ export default function DashboardScreen() {
         icon,
         iconColor,
       };
-    }).filter(asset => 
-      asset.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      asset.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    }).filter(asset => {
+      const matchesSearch = asset.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            asset.symbol.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      if (!matchesSearch) return false;
+      
+      if (activeAssetFilter === 'Crypto') {
+        return asset.symbol !== 'IDR';
+      }
+      if (activeAssetFilter === 'Fiat') {
+        return asset.symbol === 'IDR';
+      }
+      return true;
+    });
   };
 
   // Map API transactions to UI format
@@ -440,30 +518,107 @@ export default function DashboardScreen() {
           {/* Overview Portfolio & Chart */}
           <Card style={styles.overviewCard}>
             <View style={styles.overviewHeader}>
-              <View>
+              <View style={{ flex: 1 }}>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>ESTIMATED PORTFOLIO VALUE</ThemedText>
                 <View style={styles.balanceContainer}>
                   <ThemedText type="subtitle" style={styles.desktopBalanceText}>
                     {getEstimatedTotal()}
                   </ThemedText>
                 </View>
+                
+                {/* Profit/Loss percentage trend row */}
+                <View style={styles.trendRow}>
+                  <ThemedText
+                    type="smallBold"
+                    style={{
+                      color: chartStats.isPositive ? theme.success : theme.danger,
+                      fontSize: 12,
+                    }}
+                  >
+                    {chartStats.isPositive ? '▲' : '▼'} Profit/Loss
+                  </ThemedText>
+                  <ThemedText
+                    type="small"
+                    style={{ color: chartStats.isPositive ? theme.success : theme.danger, fontWeight: '600', fontSize: 12 }}
+                  >
+                    {chartStats.diff >= 0 ? '+' : ''}
+                    {chartStats.percent.toFixed(2)}% (All time)
+                  </ThemedText>
+                </View>
               </View>
 
-              {/* Segmented Filter */}
-              <View style={[styles.segmentedWrapper, { backgroundColor: theme.background }]}>
-                {['All', 'Crypto', 'Fiat'].map((tab) => (
-                  <TouchableOpacity key={tab} style={[styles.segmentBtn, tab === 'All' && { backgroundColor: theme.backgroundElement }]}>
-                    <ThemedText type="code" style={{ fontSize: 11 }}>{tab}</ThemedText>
-                  </TouchableOpacity>
-                ))}
+              {/* Sisi Kanan: Aset filter (atas) & Time range filter (bawah) */}
+              <View style={styles.filtersContainer}>
+                {/* Segmented Filter (Asset Type) dengan state & visual kontras tinggi */}
+                <View style={[styles.segmentedWrapper, { backgroundColor: theme.background }]}>
+                  {['All', 'Crypto', 'Fiat'].map((tab) => {
+                    const isActive = tab === activeAssetFilter;
+                    return (
+                      <TouchableOpacity
+                        key={tab}
+                        onPress={() => setActiveAssetFilter(tab as any)}
+                        style={[
+                          styles.segmentBtn,
+                          isActive && { 
+                            backgroundColor: theme.primary,
+                            shadowColor: theme.primary,
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.3,
+                            shadowRadius: 4,
+                            elevation: 2
+                          }
+                        ]}
+                      >
+                        <ThemedText
+                          type="code"
+                          style={{
+                            fontSize: 11,
+                            fontWeight: isActive ? '700' : '500',
+                            color: isActive ? '#FFFFFF' : theme.textSecondary,
+                          }}
+                        >
+                          {tab}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                {/* Time range selector (1D, 1W, 1M, ALL) */}
+                <View style={[styles.timeSelector, { backgroundColor: theme.background }]}>
+                  {(['1D', '1W', '1M', 'ALL'] as const).map((range) => {
+                    const isActive = range === timeRange;
+                    return (
+                      <TouchableOpacity
+                        key={range}
+                        onPress={() => setTimeRange(range)}
+                        style={[
+                          styles.timeBtn,
+                          isActive && { 
+                            backgroundColor: theme.backgroundElement,
+                            borderColor: theme.border,
+                            borderWidth: 1
+                          },
+                        ]}
+                      >
+                        <ThemedText
+                          type="smallBold"
+                          style={{
+                            fontSize: 10,
+                            color: isActive ? theme.primary : theme.textSecondary,
+                          }}
+                        >
+                          {range}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
             </View>
 
             {/* Line Chart */}
-            <Chart 
-              transactions={transactions} 
-              currentBalance={dashboard ? parseFloat(String(dashboard.estimated_total_idr)) : 0} 
-            />
+            <Chart dataPoints={chartData} />
           </Card>
 
           {/* Quick Actions Row */}
@@ -848,6 +1003,31 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filtersContainer: {
+    alignItems: 'flex-end',
+    gap: 10,
+  },
+  timeSelector: {
+    flexDirection: 'row',
+    borderRadius: 8,
+    padding: 3,
+    gap: 2,
+  },
+  timeBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
   },
   quickActionsRow: {
     flexDirection: 'row',
