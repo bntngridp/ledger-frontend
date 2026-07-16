@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ScrollView, Platform, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 
-import { api } from '@/services/api';
+import { api, API_BASE_URL } from '@/services/api';
 import { storage } from '@/services/storage';
 
 export default function RegisterScreen() {
@@ -57,24 +57,38 @@ export default function RegisterScreen() {
         email,
         password,
       });
+      setLoading(false);
 
       if (response.status === 'success') {
-        // Automatically login the user upon successful registration
-        const loginRes = await api.auth.login({ email, password });
-        setLoading(false);
-        if (loginRes.status === 'success' && loginRes.data?.token) {
-          await storage.setItem('auth_token', loginRes.data.token);
+        // Automatically log in after registration
+        const loginResponse = await api.auth.login({ email, password });
+        if (loginResponse.status === 'success' && loginResponse.data?.token) {
+          await storage.setItem('auth_token', loginResponse.data.token);
           router.replace('/(tabs)');
         } else {
           router.replace('/login');
         }
       } else {
-        setLoading(false);
         setErrors({ api: response.message });
       }
     } catch (err: any) {
       setLoading(false);
       setErrors({ api: err.message || 'An error occurred during registration' });
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    // Generate clean Google Auth URL to backend
+    // Remove /api/v1 suffix from base URL to get absolute server root
+    const serverRoot = API_BASE_URL.replace('/api/v1', '');
+    const googleAuthUrl = `${serverRoot}/api/v1/auth/google`;
+
+    if (Platform.OS === 'web') {
+      window.location.href = googleAuthUrl;
+    } else {
+      Linking.openURL(googleAuthUrl).catch(() => {
+        Alert.alert('Error', 'Failed to open browser redirections.');
+      });
     }
   };
 
@@ -93,12 +107,12 @@ export default function RegisterScreen() {
               Create Account
             </ThemedText>
             <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
-              Join the precision trading ecosystem
+              Join us to track and swap assets safely
             </ThemedText>
 
             <Input
               label="USERNAME"
-              placeholder="Enter a unique handle"
+              placeholder="E.g. bintangrp"
               value={username}
               onChangeText={setUsername}
               error={errors.username}
@@ -108,7 +122,7 @@ export default function RegisterScreen() {
 
             <Input
               label="EMAIL ADDRESS"
-              placeholder="alex@ledger.io"
+              placeholder="name@example.com"
               value={email}
               onChangeText={setEmail}
               error={errors.email}
@@ -118,7 +132,7 @@ export default function RegisterScreen() {
             />
 
             <Input
-              label="PASSWORD"
+              label="PASSWORD (MIN 6 CHARACTERS)"
               placeholder="••••••••"
               value={password}
               onChangeText={setPassword}
@@ -135,7 +149,7 @@ export default function RegisterScreen() {
             )}
 
             <Button
-              title="Create Account"
+              title="Sign Up"
               variant="primary"
               loading={loading}
               onPress={handleRegister}
@@ -153,7 +167,7 @@ export default function RegisterScreen() {
             <Button
               title="Continue with Google"
               variant="ghost"
-              onPress={() => router.replace('/(tabs)')}
+              onPress={handleGoogleLogin}
               style={[styles.googleBtn, { borderColor: theme.border, borderWidth: 1 }]}
             />
 
@@ -188,39 +202,36 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
+    paddingVertical: Spacing.two,
   },
   backButton: {
-    padding: 4,
+    alignSelf: 'flex-start',
+    padding: 8,
+    borderRadius: 12,
   },
   scrollContent: {
-    flexGrow: 1,
     paddingHorizontal: Spacing.four,
     paddingBottom: Spacing.five,
-    justifyContent: 'center',
   },
   formContainer: {
-    width: '100%',
+    marginTop: Spacing.three,
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
-    marginBottom: 6,
-    letterSpacing: -0.5,
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 15,
-    marginBottom: Spacing.four,
-    lineHeight: 20,
+    marginBottom: Spacing.five,
   },
   submitBtn: {
-    marginTop: Spacing.two,
+    marginTop: Spacing.four,
   },
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: Spacing.three,
-    width: '100%',
+    marginVertical: Spacing.four,
   },
   dividerLine: {
     flex: 1,
@@ -229,14 +240,12 @@ const styles = StyleSheet.create({
   dividerText: {
     marginHorizontal: Spacing.three,
     fontWeight: '600',
-    fontSize: 14,
   },
   googleBtn: {
-    marginVertical: 4,
+    marginBottom: Spacing.four,
   },
   footerLink: {
     alignItems: 'center',
-    marginTop: Spacing.four,
-    padding: 8,
+    marginTop: Spacing.two,
   },
 });

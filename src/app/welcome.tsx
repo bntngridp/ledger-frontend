@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View, Image, Platform } from 'react-native';
+import { StyleSheet, View, Image, Platform, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,15 +9,25 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
+import { API_BASE_URL } from '@/services/api';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const theme = useTheme();
 
   const handleGoogleLogin = () => {
-    // Simulasi login google
-    console.log('Google login initiated');
-    router.replace('/(tabs)');
+    // Generate clean Google Auth URL to backend
+    // Remove /api/v1 suffix from base URL to get absolute server root
+    const serverRoot = API_BASE_URL.replace('/api/v1', '');
+    const googleAuthUrl = `${serverRoot}/api/v1/auth/google`;
+
+    if (Platform.OS === 'web') {
+      window.location.href = googleAuthUrl;
+    } else {
+      Linking.openURL(googleAuthUrl).catch(() => {
+        Alert.alert('Error', 'Failed to open browser redirections.');
+      });
+    }
   };
 
   return (
@@ -119,17 +129,18 @@ const styles = StyleSheet.create({
   },
   actionContainer: {
     width: '100%',
-    gap: Spacing.two,
-    paddingBottom: Spacing.two,
+    gap: 12,
   },
   button: {
-    marginVertical: 4,
+    width: '100%',
+  },
+  googleButton: {
+    // Custom styles if needed
   },
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: Spacing.three,
-    width: '100%',
+    marginVertical: Spacing.two,
   },
   dividerLine: {
     flex: 1,
@@ -138,10 +149,5 @@ const styles = StyleSheet.create({
   dividerText: {
     marginHorizontal: Spacing.three,
     fontWeight: '600',
-    fontSize: 14,
-  },
-  googleButton: {
-    flexDirection: 'row',
-    gap: 8,
   },
 });
