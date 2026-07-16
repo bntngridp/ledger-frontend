@@ -38,6 +38,11 @@ yarn-error.*
 
 example
 
-# generated native folders
 /ios
 /android
+
+# AI / Agent configurations
+CLAUDE.md
+AGENTS.md
+.agents/
+.claude/
