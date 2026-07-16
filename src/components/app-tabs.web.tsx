@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   Tabs,
   TabList,
@@ -6,46 +7,67 @@ import {
   TabTriggerSlotProps,
   TabListProps,
 } from 'expo-router/ui';
-import { SymbolView } from 'expo-symbols';
-import { Pressable, useColorScheme, View, StyleSheet } from 'react-native';
+import { Pressable, useColorScheme, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
-import { ExternalLink } from './external-link';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
-
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 
 export default function AppTabs() {
   return (
-    <Tabs>
-      <TabSlot style={{ height: '100%' }} />
+    <Tabs style={styles.tabsContainer}>
       <TabList asChild>
         <CustomTabList>
           <TabTrigger name="home" href="/" asChild>
-            <TabButton>Home</TabButton>
+            <TabButton icon="home-outline">Home</TabButton>
           </TabTrigger>
           <TabTrigger name="history" href="/history" asChild>
-            <TabButton>History</TabButton>
+            <TabButton icon="time-outline">History</TabButton>
           </TabTrigger>
           <TabTrigger name="swap" href="/swap" asChild>
-            <TabButton>Swap</TabButton>
+            <TabButton icon="swap-horizontal-outline">Swap</TabButton>
           </TabTrigger>
           <TabTrigger name="crypto" href="/crypto" asChild>
-            <TabButton>Crypto</TabButton>
+            <TabButton icon="key-outline">Crypto</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>
+      <TabSlot style={styles.tabSlot} />
     </Tabs>
   );
 }
 
-export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
+interface TabButtonProps extends TabTriggerSlotProps {
+  icon: keyof typeof Ionicons.glyphMap;
+}
+
+export function TabButton({ children, isFocused, icon, ...props }: TabButtonProps) {
+  const theme = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+
   return (
-    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
+    <Pressable {...props} style={({ pressed }) => [
+      styles.tabPressable,
+      pressed && styles.pressed
+    ]}>
       <ThemedView
         type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.tabButtonView}>
-        <ThemedText type="small" themeColor={isFocused ? 'text' : 'textSecondary'}>
+        style={[
+          styles.tabButtonView,
+          isFocused && { borderColor: theme.primary, borderWidth: 1 }
+        ]}>
+        <Ionicons
+          name={icon}
+          size={18}
+          color={isFocused ? theme.primary : theme.textSecondary}
+          style={{ marginRight: 12 }}
+        />
+        <ThemedText
+          type="smallBold"
+          themeColor={isFocused ? 'text' : 'textSecondary'}
+          style={styles.buttonText}
+        >
           {children}
         </ThemedText>
       </ThemedView>
@@ -54,68 +76,129 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
 }
 
 export function CustomTabList(props: TabListProps) {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const router = useRouter();
+  const theme = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
 
   return (
-    <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Ledger
-        </ThemedText>
+    <View {...props} style={[styles.tabListContainer, { backgroundColor: theme.backgroundElement, borderRightColor: theme.border }]}>
+      <View style={styles.innerContainer}>
+        {/* Brand Header */}
+        <View style={styles.brandContainer}>
+          <View style={[styles.brandLogo, { backgroundColor: theme.primary + '15' }]}>
+            <Ionicons name="wallet-outline" size={22} color={theme.primary} />
+          </View>
+          <ThemedText type="subtitle" style={styles.brandText}>
+            Ledger
+          </ThemedText>
+        </View>
 
-        {props.children}
+        {/* Tab Items */}
+        <View style={styles.tabsWrapper}>
+          {props.children}
+        </View>
 
-        <ExternalLink href="https://docs.expo.dev" asChild>
-          <Pressable style={styles.externalPressable}>
-            <ThemedText type="link">Docs</ThemedText>
-            <SymbolView
-              tintColor={colors.text}
-              name={{ ios: 'arrow.up.right.square', web: 'link' }}
-              size={12}
-            />
-          </Pressable>
-        </ExternalLink>
-      </ThemedView>
+        {/* Profile Link at the Bottom */}
+        <TouchableOpacity
+          onPress={() => router.push('/settings')}
+          style={[styles.profileButton, { borderTopColor: theme.border }]}
+        >
+          <View style={[styles.profileAvatar, { backgroundColor: theme.primary }]}>
+            <ThemedText type="code" style={styles.avatarText}>
+              BR
+            </ThemedText>
+          </View>
+          <View style={styles.profileTextWrapper}>
+            <ThemedText type="smallBold">Bintang Ridwan</ThemedText>
+            <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
+              Profile & Settings
+            </ThemedText>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  tabListContainer: {
-    position: 'absolute',
-    width: '100%',
-    padding: Spacing.three,
-    justifyContent: 'center',
-    alignItems: 'center',
+  tabsContainer: {
     flexDirection: 'row',
+    height: '100%',
+    width: '100%',
+  },
+  tabSlot: {
+    flex: 1,
+    height: '100%',
+  },
+  tabListContainer: {
+    width: 260,
+    height: '100%',
+    padding: Spacing.four,
+    borderRightWidth: 1.5,
   },
   innerContainer: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
-    borderRadius: Spacing.five,
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  brandContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexGrow: 1,
+    marginBottom: Spacing.five,
     gap: Spacing.two,
-    maxWidth: MaxContentWidth,
   },
-  brandText: {
-    marginRight: 'auto',
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  tabButtonView: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
-  },
-  externalPressable: {
-    flexDirection: 'row',
+  brandLogo: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: Spacing.one,
-    marginLeft: Spacing.three,
+  },
+  brandText: {
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  tabsWrapper: {
+    flex: 1,
+    gap: 8,
+  },
+  tabPressable: {
+    width: '100%',
+  },
+  tabButtonView: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    width: '100%',
+  },
+  buttonText: {
+    fontSize: 14,
+  },
+  pressed: {
+    opacity: 0.8,
+  },
+  profileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: Spacing.three,
+    borderTopWidth: 1.5,
+    gap: 10,
+  },
+  profileAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    color: '#ffffff',
+    fontWeight: '800',
+    fontSize: 12,
+  },
+  profileTextWrapper: {
+    flex: 1,
   },
 });
