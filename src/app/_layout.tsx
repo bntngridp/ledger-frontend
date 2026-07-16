@@ -16,6 +16,10 @@ export default function RootLayout() {
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="topup" />
+        <Stack.Screen name="transfer" />
+        <Stack.Screen name="withdraw" />
+        <Stack.Screen name="settings" />
       </Stack>
     </ThemeProvider>
   );
