@@ -60,13 +60,14 @@ export default function RegisterScreen() {
       setLoading(false);
 
       if (response.status === 'success') {
-        // Automatically log in after registration
-        const loginResponse = await api.auth.login({ email, password });
-        if (loginResponse.status === 'success' && loginResponse.data?.token) {
-          await storage.setItem('auth_token', loginResponse.data.token);
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/login');
+        Alert.alert(
+          'Registration Success',
+          'Akun kamu berhasil dibuat! Silakan masuk menggunakan password baru.',
+          [{ text: 'OK', onPress: () => router.replace(`/login?email=${encodeURIComponent(email)}&registered=true`) }]
+        );
+        // Fallback for Web where Alert might not block navigation
+        if (Platform.OS === 'web') {
+          router.replace(`/login?email=${encodeURIComponent(email)}&registered=true`);
         }
       } else {
         setErrors({ api: response.message });

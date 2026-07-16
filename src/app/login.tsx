@@ -23,6 +23,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string; otp?: string; api?: string }>({});
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   // 2FA Flow states
@@ -30,27 +31,34 @@ export default function LoginScreen() {
   const [preAuthToken, setPreAuthToken] = useState('');
   const [otpCode, setOtpCode] = useState('');
 
-  // Handle URL redirect query parameters for Google OAuth
+  // Handle URL redirect query parameters for Google OAuth and registration redirect
   useEffect(() => {
-    const handleOAuthParams = async () => {
+    const handleQueryParams = async () => {
+      // 1. Google OAuth tokens
       if (params.token) {
-        // Successful Google login
         const token = Array.isArray(params.token) ? params.token[0] : params.token;
         await storage.setItem('auth_token', token);
         router.replace('/(tabs)');
       } else if (params.pre_auth_token && params.requires_2fa === 'true') {
-        // Google login requires 2FA validation
         const pat = Array.isArray(params.pre_auth_token) ? params.pre_auth_token[0] : params.pre_auth_token;
         setPreAuthToken(pat);
         setRequires2FA(true);
       } else if (params.error) {
-        // Google login failure
         const errMsg = Array.isArray(params.error) ? params.error[0] : params.error;
         setErrors({ api: decodeURIComponent(errMsg) });
       }
+
+      // 2. Pre-filled Email from Registration
+      if (params.email) {
+        const mailParam = Array.isArray(params.email) ? params.email[0] : params.email;
+        setEmail(decodeURIComponent(mailParam));
+      }
+      if (params.registered === 'true') {
+        setSuccessMessage('Registrasi berhasil! Silakan masuk dengan akun barumu.');
+      }
     };
 
-    handleOAuthParams();
+    handleQueryParams();
   }, [params]);
 
   const validateForm = () => {
@@ -71,6 +79,7 @@ export default function LoginScreen() {
     if (!validateForm()) return;
     setLoading(true);
     setErrors({});
+    setSuccessMessage('');
 
     try {
       const response = await api.auth.login({ email, password });
@@ -123,8 +132,6 @@ export default function LoginScreen() {
   };
 
   const handleGoogleLogin = () => {
-    // Generate clean Google Auth URL to backend
-    // Remove /api/v1 suffix from base URL to get absolute server root
     const serverRoot = API_BASE_URL.replace('/api/v1', '');
     const googleAuthUrl = `${serverRoot}/api/v1/auth/google`;
 
@@ -155,6 +162,15 @@ export default function LoginScreen() {
               <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
                 Access your secure financial dashboard
               </ThemedText>
+
+              {successMessage ? (
+                <View style={[styles.successBanner, { backgroundColor: theme.success + '15', borderColor: theme.success }]}>
+                  <Ionicons name="checkmark-circle-outline" size={20} color={theme.success} />
+                  <ThemedText style={{ color: theme.success, marginLeft: 8, fontWeight: '600', flex: 1, fontSize: 13 }}>
+                    {successMessage}
+                  </ThemedText>
+                </View>
+              ) : null}
 
               <Input
                 label="EMAIL ADDRESS"
@@ -301,6 +317,14 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 15,
     marginBottom: Spacing.five,
+  },
+  successBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginBottom: Spacing.four,
   },
   submitBtn: {
     marginTop: Spacing.four,
