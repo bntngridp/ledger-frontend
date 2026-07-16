@@ -71,7 +71,7 @@ export default function TopUpScreen() {
           <ThemedText type="smallBold" style={styles.headerTitle}>
             Top Up IDR
           </ThemedText>
-          <View style={{ width: 32 }} /> {/* balance layout spacer */}
+          <View style={{ width: 32 }} />
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -116,7 +116,7 @@ export default function TopUpScreen() {
                       fontWeight: '600',
                     }}
                   >
-                    Rp {parseInt(amt).toLocaleString('id-ID')}
+                    {`Rp ${parseInt(amt).toLocaleString('id-ID')}`}
                   </ThemedText>
                 </TouchableOpacity>
               ))}
@@ -164,7 +164,7 @@ export default function TopUpScreen() {
                 <View style={styles.summaryItem}>
                   <ThemedText type="small" style={{ color: theme.textSecondary }}>Total Amount</ThemedText>
                   <ThemedText type="smallBold">
-                    Rp {amount ? parseInt(amount).toLocaleString('id-ID') : '0'}
+                    {`Rp ${amount ? parseInt(amount).toLocaleString('id-ID') : '0'}`}
                   </ThemedText>
                 </View>
               </Card>

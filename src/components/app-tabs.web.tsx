@@ -7,7 +7,7 @@ import {
   TabTriggerSlotProps,
   TabListProps,
 } from 'expo-router/ui';
-import { Pressable, useColorScheme, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Pressable, useColorScheme, View, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -16,25 +16,54 @@ import { ThemedView } from './themed-view';
 import { Colors, Spacing } from '@/constants/theme';
 
 export default function AppTabs() {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
+
+  if (isDesktop) {
+    // Desktop: Vertical Sidebar layout
+    return (
+      <Tabs style={styles.tabsContainer}>
+        <TabList asChild>
+          <CustomTabList>
+            <TabTrigger name="home" href="/" asChild>
+              <TabButton icon="home-outline">Home</TabButton>
+            </TabTrigger>
+            <TabTrigger name="history" href="/history" asChild>
+              <TabButton icon="time-outline">History</TabButton>
+            </TabTrigger>
+            <TabTrigger name="swap" href="/swap" asChild>
+              <TabButton icon="swap-horizontal-outline">Swap</TabButton>
+            </TabTrigger>
+            <TabTrigger name="crypto" href="/crypto" asChild>
+              <TabButton icon="key-outline">Crypto</TabButton>
+            </TabTrigger>
+          </CustomTabList>
+        </TabList>
+        <TabSlot style={styles.tabSlot} />
+      </Tabs>
+    );
+  }
+
+  // Mobile web: Bottom tab bar layout
   return (
-    <Tabs style={styles.tabsContainer}>
+    <Tabs style={styles.mobileTabsContainer}>
+      <TabSlot style={styles.mobileTabSlot} />
       <TabList asChild>
-        <CustomTabList>
+        <MobileTabList>
           <TabTrigger name="home" href="/" asChild>
-            <TabButton icon="home-outline">Home</TabButton>
+            <MobileTabButton icon="home-outline">Home</MobileTabButton>
           </TabTrigger>
           <TabTrigger name="history" href="/history" asChild>
-            <TabButton icon="time-outline">History</TabButton>
+            <MobileTabButton icon="time-outline">History</MobileTabButton>
           </TabTrigger>
           <TabTrigger name="swap" href="/swap" asChild>
-            <TabButton icon="swap-horizontal-outline">Swap</TabButton>
+            <MobileTabButton icon="swap-horizontal-outline">Swap</MobileTabButton>
           </TabTrigger>
           <TabTrigger name="crypto" href="/crypto" asChild>
-            <TabButton icon="key-outline">Crypto</TabButton>
+            <MobileTabButton icon="key-outline">Crypto</MobileTabButton>
           </TabTrigger>
-        </CustomTabList>
+        </MobileTabList>
       </TabList>
-      <TabSlot style={styles.tabSlot} />
     </Tabs>
   );
 }
@@ -120,6 +149,38 @@ export function CustomTabList(props: TabListProps) {
   );
 }
 
+// Mobile bottom tab list container
+function MobileTabList(props: TabListProps) {
+  const theme = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  return (
+    <View {...props} style={[styles.mobileTabList, { backgroundColor: theme.backgroundElement, borderTopColor: theme.border }]}>
+      {props.children}
+    </View>
+  );
+}
+
+// Mobile bottom tab button
+function MobileTabButton({ children, isFocused, icon, ...props }: TabButtonProps) {
+  const theme = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  return (
+    <Pressable {...props} style={styles.mobileTabPressable}>
+      <View style={styles.mobileTabItem}>
+        <Ionicons
+          name={icon}
+          size={22}
+          color={isFocused ? theme.primary : theme.textSecondary}
+        />
+        <ThemedText
+          type="code"
+          style={[styles.mobileTabLabel, { color: isFocused ? theme.primary : theme.textSecondary }]}
+        >
+          {children}
+        </ThemedText>
+      </View>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   tabsContainer: {
     flexDirection: 'row',
@@ -129,6 +190,33 @@ const styles = StyleSheet.create({
   tabSlot: {
     flex: 1,
     height: '100%',
+  },
+  mobileTabsContainer: {
+    flexDirection: 'column',
+    height: '100%',
+    width: '100%',
+  },
+  mobileTabSlot: {
+    flex: 1,
+  },
+  mobileTabList: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    paddingBottom: 8,
+    paddingTop: 4,
+  },
+  mobileTabPressable: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  mobileTabItem: {
+    alignItems: 'center',
+    paddingVertical: 6,
+    gap: 3,
+  },
+  mobileTabLabel: {
+    fontSize: 10,
+    fontWeight: '600',
   },
   tabListContainer: {
     width: 260,

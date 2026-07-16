@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -87,6 +88,12 @@ export function Input({
           style={[
             styles.input,
             { color: theme.text },
+            // Web: remove browser default outline/box-shadow that causes the white box bug
+            Platform.OS === 'web' && {
+              outline: 'none',
+              boxShadow: 'none',
+              outlineWidth: 0,
+            } as any,
             style,
           ]}
           placeholderTextColor={theme.textSecondary}

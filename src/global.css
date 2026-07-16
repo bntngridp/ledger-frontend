@@ -7,3 +7,53 @@
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
 }
+
+/* ─── Reset Browser Default Input Styling ─────────────────────────────────── */
+/* Expo Web renders React Native TextInput as <input> or <textarea> elements.  */
+/* Browsers apply a white/blue outline, box-shadow and appearance by default   */
+/* which causes the "white box inside input" bug. This resets all of those.    */
+
+input,
+textarea,
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  outline: none !important;
+  box-shadow: none !important;
+  border: none;
+  background: transparent;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Expo Web wraps TextInput in a div with role="textbox" */
+[role="textbox"] {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove Firefox red shadow on invalid inputs */
+input:invalid,
+textarea:invalid {
+  box-shadow: none !important;
+}
+
+/* Remove IE/Edge clear button & reveal password button */
+input::-ms-clear,
+input::-ms-reveal {
+  display: none;
+}
+
+/* Remove Chrome autofill blue background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}

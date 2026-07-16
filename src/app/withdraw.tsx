@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
+  Text,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -125,14 +126,15 @@ export default function WithdrawScreen() {
             </TouchableOpacity>
           </View>
           <ThemedText type="small" style={[styles.balanceHint, { color: theme.textSecondary }]}>
-            Available Balance: Rp {availableBalance.toLocaleString('id-ID')}
+            {`Available Balance: Rp ${availableBalance.toLocaleString('id-ID')}`}
           </ThemedText>
 
           {/* Admin Fee Notice */}
           <View style={[styles.feeCard, { backgroundColor: theme.backgroundElement }]}>
             <Ionicons name="information-circle-outline" size={20} color={theme.primary} />
-            <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: 8 }}>
-              Setiap penarikan dana fiat dikenakan biaya administrasi tetap sebesar **Rp 6.500**.
+            <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: 8, flex: 1 }}>
+              Setiap penarikan dana fiat dikenakan biaya administrasi tetap sebesar{' '}
+              <Text style={{ color: theme.text, fontWeight: '700' }}>Rp 6.500</Text>.
             </ThemedText>
           </View>
 

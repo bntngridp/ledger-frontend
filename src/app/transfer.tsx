@@ -122,7 +122,7 @@ export default function TransferScreen() {
               ))}
             </View>
             <ThemedText type="small" style={[styles.balanceHint, { color: theme.textSecondary }]}>
-              Available Balance: {selectedAsset === 'IDR' ? `Rp ${balances.IDR.toLocaleString('id-ID')}` : `${balances[selectedAsset]} ${selectedAsset}`}
+              {selectedAsset === 'IDR' ? `Available Balance: Rp ${balances.IDR.toLocaleString('id-ID')}` : `Available Balance: ${balances[selectedAsset]} ${selectedAsset}`}
             </ThemedText>
           </View>
 

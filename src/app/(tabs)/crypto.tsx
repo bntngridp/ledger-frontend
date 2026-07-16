@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Clipboard,
+  Text,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -176,7 +177,7 @@ export default function CryptoScreen() {
               <Card style={[styles.warningCard, { backgroundColor: theme.warning + '10', borderColor: theme.warning }]} bordered>
                 <Ionicons name="warning-outline" size={20} color={theme.warning} />
                 <ThemedText type="small" style={{ color: theme.textSecondary, flex: 1, marginLeft: 8 }}>
-                  Kirim hanya <ThemedText type="smallBold">{selectedAsset}</ThemedText> menggunakan jaringan <ThemedText type="smallBold">Polygon</ThemedText>. Mengirim aset lain dapat menyebabkan kehilangan dana permanen.
+                  Kirim hanya <Text style={{ fontWeight: '700', color: theme.text }}>{selectedAsset}</Text> menggunakan jaringan <Text style={{ fontWeight: '700', color: theme.text }}>Polygon</Text>. Mengirim aset lain dapat menyebabkan kehilangan dana permanen.
                 </ThemedText>
               </Card>
             </View>
