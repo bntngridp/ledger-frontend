@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, TouchableOpacity, ScrollView, Platform, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ThemedText } from '@/components/themed-text';
@@ -11,12 +11,13 @@ import { Input } from '@/components/ui/input';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 
-import { api } from '@/services/api';
+import { api, API_BASE_URL } from '@/services/api';
 import { storage } from '@/services/storage';
 
 export default function LoginScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const params = useLocalSearchParams();
 
   // Form states
   const [email, setEmail] = useState('');
@@ -28,6 +29,29 @@ export default function LoginScreen() {
   const [requires2FA, setRequires2FA] = useState(false);
   const [preAuthToken, setPreAuthToken] = useState('');
   const [otpCode, setOtpCode] = useState('');
+
+  // Handle URL redirect query parameters for Google OAuth
+  useEffect(() => {
+    const handleOAuthParams = async () => {
+      if (params.token) {
+        // Successful Google login
+        const token = Array.isArray(params.token) ? params.token[0] : params.token;
+        await storage.setItem('auth_token', token);
+        router.replace('/(tabs)');
+      } else if (params.pre_auth_token && params.requires_2fa === 'true') {
+        // Google login requires 2FA validation
+        const pat = Array.isArray(params.pre_auth_token) ? params.pre_auth_token[0] : params.pre_auth_token;
+        setPreAuthToken(pat);
+        setRequires2FA(true);
+      } else if (params.error) {
+        // Google login failure
+        const errMsg = Array.isArray(params.error) ? params.error[0] : params.error;
+        setErrors({ api: decodeURIComponent(errMsg) });
+      }
+    };
+
+    handleOAuthParams();
+  }, [params]);
 
   const validateForm = () => {
     const tempErrors: typeof errors = {};
@@ -81,8 +105,8 @@ export default function LoginScreen() {
 
     try {
       const response = await api.auth.verify2FALogin({
-        email,
-        otp_code: otpCode,
+        pre_auth_token: preAuthToken,
+        code: otpCode,
       });
       setLoading(false);
 
@@ -95,6 +119,21 @@ export default function LoginScreen() {
     } catch (err: any) {
       setLoading(false);
       setErrors({ otp: err.message || 'Verification failed' });
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    // Generate clean Google Auth URL to backend
+    // Remove /api/v1 suffix from base URL to get absolute server root
+    const serverRoot = API_BASE_URL.replace('/api/v1', '');
+    const googleAuthUrl = `${serverRoot}/api/v1/auth/google`;
+
+    if (Platform.OS === 'web') {
+      window.location.href = googleAuthUrl;
+    } else {
+      Linking.openURL(googleAuthUrl).catch(() => {
+        Alert.alert('Error', 'Failed to open browser redirections.');
+      });
     }
   };
 
@@ -164,7 +203,7 @@ export default function LoginScreen() {
               <Button
                 title="Continue with Google"
                 variant="ghost"
-                onPress={() => router.replace('/(tabs)')}
+                onPress={handleGoogleLogin}
                 style={[styles.googleBtn, { borderColor: theme.border, borderWidth: 1 }]}
               />
 
@@ -190,19 +229,18 @@ export default function LoginScreen() {
               </ThemedText>
 
               <Input
-                label="AUTHENTICATION CODE"
-                placeholder="000 000"
+                label="OTP CODE"
+                placeholder="000000"
                 value={otpCode}
-                onChangeText={setOtpCode}
+                onChangeText={(text) => setOtpCode(text.replace(/[^0-9]/g, ''))}
                 error={errors.otp}
-                keyboardType="number-pad"
+                keyboardType="numeric"
                 maxLength={6}
-                iconLeft="shield-checkmark-outline"
-                style={styles.otpInput}
+                iconLeft="shield-outline"
               />
 
               <Button
-                title="Verify & Continue"
+                title="Verify Code"
                 variant="primary"
                 loading={loading}
                 onPress={handleVerify2FA}
@@ -210,10 +248,13 @@ export default function LoginScreen() {
               />
 
               <TouchableOpacity
-                onPress={() => setRequires2FA(false)}
+                onPress={() => {
+                  setRequires2FA(false);
+                  setOtpCode('');
+                }}
                 style={styles.footerLink}
               >
-                <ThemedText type="small" style={{ color: theme.primary, fontWeight: '600' }}>
+                <ThemedText type="smallBold" style={{ color: theme.primary }}>
                   Back to Log In
                 </ThemedText>
               </TouchableOpacity>
@@ -238,39 +279,36 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
+    paddingVertical: Spacing.two,
   },
   backButton: {
-    padding: 4,
+    alignSelf: 'flex-start',
+    padding: 8,
+    borderRadius: 12,
   },
   scrollContent: {
-    flexGrow: 1,
     paddingHorizontal: Spacing.four,
     paddingBottom: Spacing.five,
-    justifyContent: 'center',
   },
   formContainer: {
-    width: '100%',
+    marginTop: Spacing.three,
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
-    marginBottom: 6,
-    letterSpacing: -0.5,
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 15,
-    marginBottom: Spacing.four,
-    lineHeight: 20,
+    marginBottom: Spacing.five,
   },
   submitBtn: {
-    marginTop: Spacing.two,
+    marginTop: Spacing.four,
   },
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: Spacing.three,
-    width: '100%',
+    marginVertical: Spacing.four,
   },
   dividerLine: {
     flex: 1,
@@ -279,20 +317,12 @@ const styles = StyleSheet.create({
   dividerText: {
     marginHorizontal: Spacing.three,
     fontWeight: '600',
-    fontSize: 14,
   },
   googleBtn: {
-    marginVertical: 4,
+    marginBottom: Spacing.four,
   },
   footerLink: {
     alignItems: 'center',
-    marginTop: Spacing.four,
-    padding: 8,
-  },
-  otpInput: {
-    textAlign: 'center',
-    fontSize: 24,
-    letterSpacing: 8,
-    fontWeight: '700',
+    marginTop: Spacing.two,
   },
 });

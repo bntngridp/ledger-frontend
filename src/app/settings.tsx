@@ -107,7 +107,7 @@ export default function SettingsScreen() {
     setDisableError('');
 
     try {
-      const response = await api.auth.disable2FA({ otp_code: otpCode });
+      const response = await api.auth.disable2FA({ code: otpCode });
       setDisableLoading(false);
 
       if (response.status === 'success') {

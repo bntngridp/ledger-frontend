@@ -88,7 +88,7 @@ export const api = {
         body: JSON.stringify(payload),
       });
     },
-    async verify2FALogin(payload: { email: string; otp_code: string }) {
+    async verify2FALogin(payload: { pre_auth_token: string; code: string }) {
       return request('/auth/2fa/login', {
         method: 'POST',
         body: JSON.stringify(payload),
@@ -99,13 +99,13 @@ export const api = {
         method: 'POST',
       });
     },
-    async verify2FAActivation(payload: { otp_code: string }) {
+    async verify2FAActivation(payload: { code: string }) {
       return request('/auth/2fa/verify', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
     },
-    async disable2FA(payload: { otp_code: string }) {
+    async disable2FA(payload: { code: string }) {
       return request('/auth/2fa/disable', {
         method: 'POST',
         body: JSON.stringify(payload),

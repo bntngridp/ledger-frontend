@@ -94,7 +94,7 @@ export default function TwoFactorScreen() {
 
     try {
       const response = await api.auth.verify2FAActivation({
-        otp_code: fullCode,
+        code: fullCode,
       });
       setLoading(false);
 
