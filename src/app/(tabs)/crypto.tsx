@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -6,9 +6,12 @@ import {
   ScrollView,
   Clipboard,
   Text,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import QRCode from 'react-native-qrcode-svg';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -17,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
+import { api } from '@/services/api';
 
 export default function CryptoScreen() {
   const theme = useTheme();
@@ -26,8 +30,9 @@ export default function CryptoScreen() {
 
   // Receive state
   const [selectedAsset, setSelectedAsset] = useState<'USDT' | 'USDC'>('USDT');
-  const mockAddress = '0xda8f9f0da8f9f0da8f9f0da8f9f0da8f9f0da8f9f';
+  const [depositAddress, setDepositAddress] = useState('');
   const [copied, setCopied] = useState(false);
+  const [loadingAddress, setLoadingAddress] = useState(false);
 
   // Send state
   const [sendAsset, setSendAsset] = useState<'USDT' | 'USDC'>('USDT');
@@ -36,36 +41,109 @@ export default function CryptoScreen() {
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
 
-  const balances = {
-    USDT: 45.50,
-    USDC: 30.20,
+  // Available balances
+  const [balances, setBalances] = useState<{ USDT: number; USDC: number }>({
+    USDT: 0,
+    USDC: 0,
+  });
+
+  const loadBalances = async () => {
+    try {
+      const response = await api.wallet.getDashboard();
+      if (response.status === 'success' && response.data?.balances) {
+        const cryptoBalances = { USDT: 0, USDC: 0 };
+        response.data.balances.forEach((b: any) => {
+          if (b.asset_symbol === 'USDT') cryptoBalances.USDT = parseFloat(b.balance);
+          if (b.asset_symbol === 'USDC') cryptoBalances.USDC = parseFloat(b.balance);
+        });
+        setBalances(cryptoBalances);
+      }
+    } catch (err) {
+      console.error('Failed to load crypto balances:', err);
+    }
   };
 
+  const fetchDepositAddress = async (asset: 'USDT' | 'USDC') => {
+    setLoadingAddress(true);
+    setError('');
+    try {
+      const response = await api.wallet.getCryptoAddress(asset);
+      if (response.status === 'success' && response.data) {
+        setDepositAddress(response.data.address || '');
+      } else {
+        setError(response.message || 'Failed to fetch deposit address');
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred');
+    } finally {
+      setLoadingAddress(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBalances();
+  }, []);
+
+  useEffect(() => {
+    if (activeSubTab === 'receive') {
+      fetchDepositAddress(selectedAsset);
+    }
+  }, [activeSubTab, selectedAsset]);
+
   const handleCopyAddress = () => {
-    Clipboard.setString(mockAddress);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (depositAddress) {
+      Clipboard.setString(depositAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handlePasteAddress = async () => {
-    // Paste logic (mock)
-    setRecipientAddress('0x1234567890123456789012345678901234567890');
+    try {
+      const text = await Clipboard.getString();
+      if (text) {
+        setRecipientAddress(text.trim());
+      } else {
+        Alert.alert('Info', 'Clipboard is empty');
+      }
+    } catch {
+      Alert.alert('Error', 'Failed to paste address');
+    }
   };
 
-  const handleSendCrypto = () => {
-    if (!recipientAddress || !amount || parseFloat(amount) <= 0) return;
+  const handleSendCrypto = async () => {
+    const val = parseFloat(amount);
+    if (!recipientAddress || isNaN(val) || val <= 0) return;
+    
     setLoading(true);
-    setTimeout(() => {
+    setError('');
+
+    try {
+      const response = await api.wallet.withdrawCrypto({
+        asset: sendAsset,
+        recipient_address: recipientAddress,
+        amount: val,
+      });
       setLoading(false);
-      setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
-        setRecipientAddress('');
-        setAmount('');
-        setNotes('');
-      }, 2000);
-    }, 1500);
+
+      if (response.status === 'success') {
+        setSuccess(true);
+        await loadBalances(); // Refresh balances
+        setTimeout(() => {
+          setSuccess(false);
+          setRecipientAddress('');
+          setAmount('');
+          setNotes('');
+        }, 2000);
+      } else {
+        setError(response.message || 'Crypto withdrawal failed');
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setError(err.message || 'An error occurred');
+    }
   };
 
   const isAddressInvalid = recipientAddress && (recipientAddress.length !== 42 || !recipientAddress.startsWith('0x'));
@@ -156,18 +234,31 @@ export default function CryptoScreen() {
                   </ThemedText>
                 </View>
 
-                {/* Mock QR Code Visual */}
-                <View style={[styles.qrMock, { borderColor: theme.border }]}>
-                  <Ionicons name="qr-code-outline" size={180} color={theme.text} />
+                {/* QR Code Graphic */}
+                <View style={[styles.qrMock, { borderColor: theme.border, backgroundColor: '#ffffff' }]}>
+                  {loadingAddress ? (
+                    <ActivityIndicator size="large" color={theme.primary} />
+                  ) : depositAddress ? (
+                    <QRCode value={depositAddress} size={180} />
+                  ) : (
+                    <Ionicons name="qr-code-outline" size={180} color="#000000" />
+                  )}
                 </View>
 
-                <ThemedText type="code" style={styles.addressText}>
-                  {mockAddress.substring(0, 8)}...{mockAddress.substring(mockAddress.length - 8)}
-                </ThemedText>
+                {depositAddress ? (
+                  <ThemedText type="code" style={styles.addressText}>
+                    {depositAddress.substring(0, 10)}...{depositAddress.substring(depositAddress.length - 8)}
+                  </ThemedText>
+                ) : (
+                  <ThemedText style={{ color: theme.textSecondary, marginVertical: Spacing.two }}>
+                    Alamat deposit tidak tersedia
+                  </ThemedText>
+                )}
 
                 <Button
                   title={copied ? 'Copied!' : 'Copy Wallet Address'}
                   variant="secondary"
+                  disabled={!depositAddress || loadingAddress}
                   onPress={handleCopyAddress}
                   style={styles.copyBtn}
                 />
@@ -236,7 +327,7 @@ export default function CryptoScreen() {
                       label={`AMOUNT (${sendAsset})`}
                       placeholder="0.00"
                       value={amount}
-                      onChangeText={setAmount}
+                      onChangeText={(text) => setAmount(text.replace(/[^0-9.]/g, ''))}
                       error={isAmountInvalid ? 'Insufficient balance' : undefined}
                       keyboardType="numeric"
                       iconLeft="logo-usd"
@@ -249,30 +340,17 @@ export default function CryptoScreen() {
                     </TouchableOpacity>
                   </View>
                   <ThemedText type="small" style={[styles.balanceHint, { color: theme.textSecondary }]}>
-                    Available: {balances[sendAsset]} {sendAsset}
+                    Available Balance: {balances[sendAsset]?.toLocaleString('id-ID')} {sendAsset}
                   </ThemedText>
 
-                  {/* Notes */}
-                  <Input
-                    label="NOTES (OPTIONAL)"
-                    placeholder="E.g. crypto withdrawal test"
-                    value={notes}
-                    onChangeText={setNotes}
-                    iconLeft="document-text-outline"
-                  />
-
-                  {/* Estimated Fee */}
-                  <View style={styles.feeEstimate}>
-                    <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                      Estimated Network Fee
+                  {error ? (
+                    <ThemedText style={{ color: theme.danger, marginVertical: Spacing.two, fontWeight: '500', textAlign: 'center' }}>
+                      {error}
                     </ThemedText>
-                    <ThemedText type="code">
-                      0.01 MATIC
-                    </ThemedText>
-                  </View>
+                  ) : null}
 
                   <Button
-                    title="Send Crypto"
+                    title={`Send ${sendAsset}`}
                     variant="primary"
                     disabled={!canSend}
                     loading={loading}
@@ -283,13 +361,13 @@ export default function CryptoScreen() {
               ) : (
                 <View style={styles.successState}>
                   <View style={[styles.successIconContainer, { backgroundColor: theme.success + '20' }]}>
-                    <Ionicons name="paper-plane" size={56} color={theme.success} />
+                    <Ionicons name="checkmark-circle" size={56} color={theme.success} />
                   </View>
                   <ThemedText type="subtitle" style={{ marginTop: Spacing.three }}>
-                    Transaction Sent!
+                    Transaction Submitted!
                   </ThemedText>
                   <ThemedText style={{ color: theme.textSecondary, marginTop: Spacing.one }}>
-                    Permintaan withdraw crypto berhasil diproses.
+                    Penarikan crypto diproses (pending status).
                   </ThemedText>
                 </View>
               )}
@@ -313,50 +391,50 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
-    gap: Spacing.two,
+    paddingVertical: Spacing.three,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '800',
-    letterSpacing: -0.5,
   },
   subTabContainer: {
     flexDirection: 'row',
-    padding: 4,
     borderRadius: 12,
+    padding: 3,
+    width: 160,
   },
   subTab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 8,
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: 9,
   },
   scrollContent: {
     paddingHorizontal: Spacing.four,
     paddingBottom: Spacing.five,
-    paddingTop: Spacing.two,
   },
   tabContent: {
-    width: '100%',
-    gap: Spacing.three,
+    marginTop: Spacing.two,
   },
   selectorRow: {
     flexDirection: 'row',
-    gap: Spacing.one,
-    marginVertical: Spacing.one,
+    gap: 8,
+    marginBottom: Spacing.three,
   },
   selectorBadge: {
-    paddingVertical: 6,
+    paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 12,
+    borderWidth: 1.5,
   },
   qrCard: {
     alignItems: 'center',
     padding: Spacing.four,
-    borderRadius: 20,
+    borderRadius: 24,
   },
   networkBadge: {
     paddingVertical: 4,
@@ -365,14 +443,19 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.three,
   },
   qrMock: {
-    borderWidth: 2,
-    borderRadius: 16,
-    padding: 12,
+    width: 210,
+    height: 210,
+    borderWidth: 1.5,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: Spacing.three,
+    padding: 12,
   },
   addressText: {
-    fontSize: 16,
-    letterSpacing: 1,
+    fontSize: 14,
+    letterSpacing: 1.5,
+    fontWeight: '700',
     marginBottom: Spacing.three,
   },
   copyBtn: {
@@ -382,37 +465,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: Spacing.three,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 16,
+    marginTop: Spacing.three,
   },
   amountWrapper: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    width: '100%',
     position: 'relative',
+    justifyContent: 'center',
   },
   maxBtn: {
     position: 'absolute',
     right: 12,
-    bottom: 12,
-    height: 28,
+    top: 30, // Aligns max button inside the input element structure
+    paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   balanceHint: {
-    fontSize: 13,
-    marginTop: -8,
-    marginBottom: Spacing.one,
-  },
-  feeEstimate: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.one,
+    fontSize: 12,
+    marginTop: 6,
+    marginBottom: Spacing.two,
   },
   sendBtn: {
-    marginTop: Spacing.two,
+    marginTop: Spacing.three,
   },
   successState: {
     alignItems: 'center',

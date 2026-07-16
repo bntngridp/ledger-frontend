@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
   TouchableOpacity,
   ScrollView,
   Switch,
+  Alert,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +19,29 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
+import { storage } from '@/services/storage';
+import { api } from '@/services/api';
+
+// Simple JWT decoder helper to extract email
+function decodeJwt(token: string): { email?: string; user_id?: string } | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    
+    // Base64URL decode the payload (part 2)
+    let payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    // Pad with '=' if necessary
+    while (payload.length % 4) {
+      payload += '=';
+    }
+    
+    const jsonStr = atob(payload);
+    return JSON.parse(jsonStr);
+  } catch (err) {
+    console.error('Failed to decode JWT:', err);
+    return null;
+  }
+}
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -24,10 +50,83 @@ export default function SettingsScreen() {
   // Settings states
   const [tfaEnabled, setTfaEnabled] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [userEmail, setUserEmail] = useState('user@ledger.io');
+  const [username, setUsername] = useState('Ledger User');
 
-  const handleLogout = () => {
-    // Log out logic (mock)
+  // Disable 2FA Modal states
+  const [showDisableModal, setShowDisableModal] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [disableLoading, setDisableLoading] = useState(false);
+  const [disableError, setDisableError] = useState('');
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      const token = await storage.getItem('auth_token');
+      if (token) {
+        const decoded = decodeJwt(token);
+        if (decoded?.email) {
+          setUserEmail(decoded.email);
+          // Split email to generate a mock name
+          const namePart = decoded.email.split('@')[0];
+          setUsername(namePart.charAt(0).toUpperCase() + namePart.slice(1));
+        }
+      }
+
+      const tfa = await storage.getItem('two_factor_enabled');
+      setTfaEnabled(tfa === 'true');
+    };
+
+    loadSettings();
+  }, []);
+
+  const handleLogout = async () => {
+    await storage.removeItem('auth_token');
+    await storage.removeItem('two_factor_enabled');
     router.replace('/welcome');
+  };
+
+  const handleTfaToggle = async (val: boolean) => {
+    if (val) {
+      // Direct user to setup page to enable 2FA
+      router.push('/2fa');
+    } else {
+      // Require verification code to disable 2FA
+      setOtpCode('');
+      setDisableError('');
+      setShowDisableModal(true);
+    }
+  };
+
+  const confirmDisable2FA = async () => {
+    if (otpCode.length !== 6) {
+      setDisableError('OTP code must be 6 digits');
+      return;
+    }
+
+    setDisableLoading(true);
+    setDisableError('');
+
+    try {
+      const response = await api.auth.disable2FA({ otp_code: otpCode });
+      setDisableLoading(false);
+
+      if (response.status === 'success') {
+        await storage.setItem('two_factor_enabled', 'false');
+        setTfaEnabled(false);
+        setShowDisableModal(false);
+        Alert.alert('Success', 'Two-Factor Authentication has been disabled.');
+      } else {
+        setDisableError(response.message || 'Failed to disable 2FA');
+      }
+    } catch (err: any) {
+      setDisableLoading(false);
+      setDisableError(err.message || 'An error occurred');
+    }
+  };
+
+  // Get initials for profile avatar
+  const getInitials = (name: string) => {
+    return name.slice(0, 2).toUpperCase();
   };
 
   return (
@@ -48,15 +147,15 @@ export default function SettingsScreen() {
           <Card style={styles.profileCard} bordered>
             <View style={[styles.avatarCircle, { backgroundColor: theme.primary + '15' }]}>
               <ThemedText style={[styles.avatarText, { color: theme.primary }]}>
-                BR
+                {getInitials(username)}
               </ThemedText>
             </View>
             <View style={styles.profileInfo}>
               <ThemedText type="default" style={{ fontWeight: '700' }}>
-                Bintang Ridwan
+                {username}
               </ThemedText>
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                bintangridwan30@gmail.com
+                {userEmail}
               </ThemedText>
             </View>
           </Card>
@@ -76,12 +175,7 @@ export default function SettingsScreen() {
                 </View>
                 <Switch
                   value={tfaEnabled}
-                  onValueChange={(val) => {
-                    setTfaEnabled(val);
-                    if (val) {
-                      router.push('/2fa');
-                    }
-                  }}
+                  onValueChange={handleTfaToggle}
                   trackColor={{ false: theme.border, true: theme.primary }}
                   thumbColor="#ffffff"
                 />
@@ -169,6 +263,60 @@ export default function SettingsScreen() {
             style={styles.logoutBtn}
           />
         </ScrollView>
+
+        {/* Disable 2FA Modal */}
+        <Modal visible={showDisableModal} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
+              <ThemedText type="smallBold" style={{ marginBottom: Spacing.two }}>
+                Disable Two-Factor Authentication
+              </ThemedText>
+              <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.three }}>
+                Enter the 6-digit verification code from your authenticator app to disable 2FA protection.
+              </ThemedText>
+
+              <TextInput
+                style={[
+                  styles.modalInput,
+                  {
+                    backgroundColor: theme.background,
+                    color: theme.text,
+                    borderColor: theme.border,
+                  },
+                ]}
+                placeholder="000 000"
+                placeholderTextColor={theme.textSecondary}
+                value={otpCode}
+                onChangeText={(text) => setOtpCode(text.replace(/[^0-9]/g, ''))}
+                keyboardType="numeric"
+                maxLength={6}
+                textAlign="center"
+              />
+
+              {disableError ? (
+                <ThemedText style={{ color: theme.danger, marginTop: Spacing.two, fontWeight: '500' }}>
+                  {disableError}
+                </ThemedText>
+              ) : null}
+
+              <View style={styles.modalButtons}>
+                <Button
+                  title="Cancel"
+                  variant="ghost"
+                  onPress={() => setShowDisableModal(false)}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  title="Disable"
+                  variant="danger"
+                  loading={disableLoading}
+                  onPress={confirmDisable2FA}
+                  style={{ flex: 1 }}
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </ThemedView>
   );
@@ -263,5 +411,33 @@ const styles = StyleSheet.create({
   },
   logoutBtn: {
     marginTop: Spacing.five,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.four,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 20,
+    padding: Spacing.four,
+  },
+  modalInput: {
+    height: 52,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    fontSize: 24,
+    fontWeight: '700',
+    letterSpacing: 8,
+    marginTop: Spacing.two,
+    width: '100%',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    marginTop: Spacing.four,
   },
 });

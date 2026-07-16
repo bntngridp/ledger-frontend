@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
+import { api } from '@/services/api';
 
 export default function WithdrawScreen() {
   const router = useRouter();
@@ -30,35 +31,75 @@ export default function WithdrawScreen() {
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [balanceLoading, setBalanceLoading] = useState(true);
 
   // Modal Review states
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
+  const [error, setError] = useState('');
 
-  const availableBalance = 1200000;
+  // Real IDR balance loaded from API
+  const [availableBalance, setAvailableBalance] = useState(0);
   const adminFee = 6500;
+
+  const loadBalance = async () => {
+    try {
+      const response = await api.wallet.getDashboard();
+      if (response.status === 'success' && response.data?.balances) {
+        const idrBalance = response.data.balances.find((b: any) => b.asset_symbol === 'IDR');
+        if (idrBalance) {
+          setAvailableBalance(parseFloat(idrBalance.balance));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load balance for withdrawal:', err);
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBalance();
+  }, []);
 
   const handleReviewWithdraw = () => {
     if (!accountNumber || !accountName || !amount || parseFloat(amount) <= 0) return;
+    setError('');
     setShowReviewModal(true);
   };
 
-  const handleConfirmWithdraw = () => {
+  const handleConfirmWithdraw = async () => {
+    const val = parseFloat(amount);
     setLoading(true);
-    // Simulate API POST /api/v1/fiat/withdraw
-    setTimeout(() => {
+    setError('');
+
+    try {
+      const response = await api.wallet.initiateWithdraw({
+        bank_code: bankCode,
+        account_number: accountNumber,
+        amount: val,
+        notes: notes || undefined,
+      });
+
+      if (response.status === 'success') {
+        setWithdrawSuccess(true);
+        setTimeout(() => {
+          setWithdrawSuccess(false);
+          setShowReviewModal(false);
+          router.replace('/(tabs)');
+        }, 2000);
+      } else {
+        setLoading(false);
+        setError(response.message || 'Withdrawal failed');
+      }
+    } catch (err: any) {
       setLoading(false);
-      setWithdrawSuccess(true);
-      setTimeout(() => {
-        setWithdrawSuccess(false);
-        setShowReviewModal(false);
-        router.replace('/(tabs)');
-      }, 2000);
-    }, 1500);
+      setError(err.message || 'An error occurred during withdrawal');
+    }
   };
 
   const isAmountInvalid = parseFloat(amount) + adminFee > availableBalance;
-  const canWithdraw = accountNumber && accountName && amount && !isAmountInvalid;
+  const canWithdraw = accountNumber && accountName && amount && !isAmountInvalid && !balanceLoading;
 
   return (
     <ThemedView style={styles.container}>
@@ -93,7 +134,7 @@ export default function WithdrawScreen() {
             label="ACCOUNT NUMBER"
             placeholder="Enter destination account number"
             value={accountNumber}
-            onChangeText={setAccountNumber}
+            onChangeText={(text) => setAccountNumber(text.replace(/[^0-9]/g, ''))}
             keyboardType="numeric"
             iconLeft="card-outline"
           />
@@ -113,14 +154,17 @@ export default function WithdrawScreen() {
               label="WITHDRAWAL AMOUNT"
               placeholder="0"
               value={amount}
-              onChangeText={setAmount}
+              onChangeText={(text) => setAmount(text.replace(/[^0-9]/g, ''))}
               error={isAmountInvalid ? 'Insufficient balance including admin fee' : undefined}
               keyboardType="numeric"
               iconLeft="logo-usd"
             />
             <TouchableOpacity
               style={[styles.maxBtn, { backgroundColor: theme.backgroundSelected }]}
-              onPress={() => setAmount((availableBalance - adminFee).toString())}
+              onPress={() => {
+                const maxAmount = availableBalance - adminFee;
+                setAmount(maxAmount > 0 ? maxAmount.toString() : '0');
+              }}
             >
               <ThemedText type="code" style={{ fontWeight: '700' }}>MAX</ThemedText>
             </TouchableOpacity>
@@ -185,7 +229,7 @@ export default function WithdrawScreen() {
                     <View style={[styles.summaryDivider, { backgroundColor: theme.border }]} />
                     <View style={styles.summaryItem}>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>Jumlah Penarikan</ThemedText>
-                      <ThemedText type="small">Rp {parseInt(amount).toLocaleString('id-ID')}</ThemedText>
+                      <ThemedText type="small">Rp {parseInt(amount || '0').toLocaleString('id-ID')}</ThemedText>
                     </View>
                     <View style={styles.summaryItem}>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>Biaya Admin</ThemedText>
@@ -194,10 +238,16 @@ export default function WithdrawScreen() {
                     <View style={styles.summaryItem}>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>Total Potong Saldo</ThemedText>
                       <ThemedText type="smallBold" style={{ color: theme.danger }}>
-                        Rp {(parseInt(amount) + adminFee).toLocaleString('id-ID')}
+                        Rp {(parseInt(amount || '0') + adminFee).toLocaleString('id-ID')}
                       </ThemedText>
                     </View>
                   </Card>
+
+                  {error ? (
+                    <ThemedText style={{ color: theme.danger, marginBottom: Spacing.two, fontWeight: '500' }}>
+                      {error}
+                    </ThemedText>
+                  ) : null}
 
                   <View style={styles.modalButtons}>
                     <Button
@@ -266,41 +316,36 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.five,
   },
   bankPickerContainer: {
-    marginBottom: Spacing.three,
-    width: '100%',
+    marginVertical: Spacing.two,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 6,
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 8,
   },
   pickerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 52,
     borderRadius: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     borderWidth: 1.5,
   },
   amountWrapper: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    width: '100%',
     position: 'relative',
+    justifyContent: 'center',
   },
   maxBtn: {
     position: 'absolute',
     right: 12,
-    bottom: 12,
-    height: 28,
+    top: 30, // Aligns button vertically inside the input structure
+    paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   balanceHint: {
-    fontSize: 13,
-    marginTop: -8,
+    fontSize: 12,
+    marginTop: 6,
     marginBottom: Spacing.two,
   },
   feeCard: {
@@ -308,7 +353,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.three,
     borderRadius: 12,
-    marginBottom: Spacing.three,
+    marginVertical: Spacing.two,
   },
   submitBtn: {
     marginTop: Spacing.three,
@@ -325,13 +370,13 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.five,
   },
   modalTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
     marginBottom: 4,
   },
   modalDesc: {
     fontSize: 14,
-    marginBottom: Spacing.three,
+    marginBottom: Spacing.two,
   },
   summaryCard: {
     padding: Spacing.three,
@@ -344,7 +389,8 @@ const styles = StyleSheet.create({
   },
   summaryDivider: {
     height: 1,
-    marginVertical: 8,
+    width: '100%',
+    marginVertical: Spacing.one,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -353,7 +399,7 @@ const styles = StyleSheet.create({
   },
   successState: {
     alignItems: 'center',
-    paddingVertical: Spacing.four,
+    paddingVertical: Spacing.five,
   },
   successIconContainer: {
     width: 80,

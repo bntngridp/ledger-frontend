@@ -11,6 +11,9 @@ import { Input } from '@/components/ui/input';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 
+import { api } from '@/services/api';
+import { storage } from '@/services/storage';
+
 export default function LoginScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -18,11 +21,12 @@ export default function LoginScreen() {
   // Form states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<{ email?: string; password?: string; otp?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; otp?: string; api?: string }>({});
   const [loading, setLoading] = useState(false);
 
   // 2FA Flow states
   const [requires2FA, setRequires2FA] = useState(false);
+  const [preAuthToken, setPreAuthToken] = useState('');
   const [otpCode, setOtpCode] = useState('');
 
   const validateForm = () => {
@@ -42,33 +46,56 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     if (!validateForm()) return;
     setLoading(true);
+    setErrors({});
 
     try {
-      // Simulate API call
-      setTimeout(() => {
-        setLoading(false);
-        // Simulasi jika user budi/andi butuh 2FA
-        if (email.includes('2fa')) {
+      const response = await api.auth.login({ email, password });
+      setLoading(false);
+
+      if (response.status === 'success' && response.data) {
+        const { token, two_factor_required, pre_auth_token } = response.data;
+
+        if (two_factor_required) {
+          setPreAuthToken(pre_auth_token || '');
           setRequires2FA(true);
-        } else {
+        } else if (token) {
+          await storage.setItem('auth_token', token);
           router.replace('/(tabs)');
         }
-      }, 1500);
-    } catch (err) {
+      } else {
+        setErrors({ api: response.message });
+      }
+    } catch (err: any) {
       setLoading(false);
+      setErrors({ api: err.message || 'An error occurred during login' });
     }
   };
 
-  const handleVerify2FA = () => {
+  const handleVerify2FA = async () => {
     if (otpCode.length !== 6) {
       setErrors({ otp: 'Code must be 6 digits' });
       return;
     }
     setLoading(true);
-    setTimeout(() => {
+    setErrors({});
+
+    try {
+      const response = await api.auth.verify2FALogin({
+        email,
+        otp_code: otpCode,
+      });
       setLoading(false);
-      router.replace('/(tabs)');
-    }, 1500);
+
+      if (response.status === 'success' && response.data?.token) {
+        await storage.setItem('auth_token', response.data.token);
+        router.replace('/(tabs)');
+      } else {
+        setErrors({ otp: response.message });
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setErrors({ otp: err.message || 'Verification failed' });
+    }
   };
 
   return (
@@ -111,6 +138,12 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 iconLeft="lock-closed-outline"
               />
+
+              {errors.api && (
+                <ThemedText style={{ color: theme.danger, marginBottom: Spacing.two, fontWeight: '500' }}>
+                  {errors.api}
+                </ThemedText>
+              )}
 
               <Button
                 title="Log In"

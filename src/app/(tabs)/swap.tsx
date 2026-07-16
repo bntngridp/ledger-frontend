@@ -6,6 +6,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Modal,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
+import { api } from '@/services/api';
 
 export default function SwapScreen() {
   const theme = useTheme();
@@ -26,11 +28,17 @@ export default function SwapScreen() {
   const [toAsset, setToAsset] = useState('USDT');
   const [fromAmount, setFromAmount] = useState('');
   const [toAmount, setToAmount] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loadingRate, setLoadingRate] = useState(false);
+  const [rate, setRate] = useState(1);
+  const [error, setError] = useState('');
 
-  // Live rate config
-  const rateUSDT_IDR = 16420;
-  const rateUSDC_IDR = 16435;
+  // Available balances loaded from API
+  const [balances, setBalances] = useState<{ [key: string]: number }>({
+    IDR: 0,
+    USDT: 0,
+    USDC: 0,
+  });
+
   const swapFeePercentage = 0.005; // 0.5%
 
   // Modal Review Swap state
@@ -38,41 +46,68 @@ export default function SwapScreen() {
   const [isSwapping, setIsSwapping] = useState(false);
   const [swapSuccess, setSwapSuccess] = useState(false);
 
-  // Available balances
-  const balances: { [key: string]: number } = {
-    IDR: 1200000,
-    USDT: 45.50,
-    USDC: 30.20,
+  const loadBalances = async () => {
+    try {
+      const response = await api.wallet.getDashboard();
+      if (response.status === 'success' && response.data?.balances) {
+        const newBalances: { [key: string]: number } = { IDR: 0, USDT: 0, USDC: 0 };
+        response.data.balances.forEach((b: any) => {
+          newBalances[b.asset_symbol] = parseFloat(b.balance);
+        });
+        setBalances(newBalances);
+      }
+    } catch (err) {
+      console.error('Failed to load balances for swap:', err);
+    }
   };
+
+  const fetchRate = async () => {
+    if (fromAsset === toAsset) {
+      setRate(1);
+      return;
+    }
+
+    setLoadingRate(true);
+    setError('');
+
+    try {
+      const response = await api.wallet.getExchangeRate(fromAsset, toAsset);
+      if (response.status === 'success' && response.data) {
+        // Handle rate payload from backend
+        // In backend, exchange_rate response typically has rate in data.rate or data.exchange_rate
+        const liveRate = parseFloat(response.data.rate || response.data.exchange_rate || 1);
+        setRate(liveRate);
+      } else {
+        setError(response.message || 'Failed to fetch exchange rate');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error fetching rate');
+    } finally {
+      setLoadingRate(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBalances();
+  }, []);
+
+  useEffect(() => {
+    fetchRate();
+  }, [fromAsset, toAsset]);
 
   // Live calculation effect
   useEffect(() => {
     const val = parseFloat(fromAmount);
-    if (isNaN(val) || val <= 0) {
+    if (isNaN(val) || val <= 0 || loadingRate) {
       setToAmount('');
       return;
     }
 
-    let calculated = 0;
-    // Simple conversions
-    if (fromAsset === 'IDR' && toAsset === 'USDT') {
-      calculated = val / rateUSDT_IDR;
-    } else if (fromAsset === 'USDT' && toAsset === 'IDR') {
-      calculated = val * rateUSDT_IDR;
-    } else if (fromAsset === 'IDR' && toAsset === 'USDC') {
-      calculated = val / rateUSDC_IDR;
-    } else if (fromAsset === 'USDC' && toAsset === 'IDR') {
-      calculated = val * rateUSDC_IDR;
-    } else if (fromAsset === 'USDT' && toAsset === 'USDC') {
-      calculated = val * 0.998; // Close to 1:1 with slight variance
-    } else if (fromAsset === 'USDC' && toAsset === 'USDT') {
-      calculated = val * 1.002;
-    }
-
-    // Apply fee deduction
+    // Apply fee deduction on output amount
+    const calculated = val * rate;
     const netAmount = calculated * (1 - swapFeePercentage);
-    setToAmount(netAmount.toFixed(fromAsset === 'IDR' ? 6 : 2));
-  }, [fromAmount, fromAsset, toAsset]);
+    setToAmount(netAmount.toFixed(toAsset === 'IDR' ? 2 : 6));
+  }, [fromAmount, rate, loadingRate]);
 
   const handleFlip = () => {
     const temp = fromAsset;
@@ -84,26 +119,44 @@ export default function SwapScreen() {
 
   const handleInitiateSwap = () => {
     if (!fromAmount || parseFloat(fromAmount) <= 0) return;
+    setError('');
     setShowReviewModal(true);
   };
 
-  const handleConfirmSwap = () => {
+  const handleConfirmSwap = async () => {
+    const val = parseFloat(fromAmount);
     setIsSwapping(true);
-    setTimeout(() => {
+    setError('');
+
+    try {
+      const response = await api.wallet.swap({
+        from_asset: fromAsset,
+        to_asset: toAsset,
+        amount: val,
+      });
+
+      if (response.status === 'success') {
+        setSwapSuccess(true);
+        await loadBalances(); // Refresh balances
+        setTimeout(() => {
+          setSwapSuccess(false);
+          setShowReviewModal(false);
+          setFromAmount('');
+          setToAmount('');
+        }, 2000);
+      } else {
+        setIsSwapping(false);
+        setError(response.message || 'Swap transaction failed');
+      }
+    } catch (err: any) {
       setIsSwapping(false);
-      setSwapSuccess(true);
-      setTimeout(() => {
-        setSwapSuccess(false);
-        setShowReviewModal(false);
-        setFromAmount('');
-        setToAmount('');
-      }, 2000);
-    }, 1500);
+      setError(err.message || 'An error occurred during swap');
+    }
   };
 
   // Verification checks
   const isInsufficient = parseFloat(fromAmount) > balances[fromAsset];
-  const canSwap = fromAmount && parseFloat(fromAmount) > 0 && !isInsufficient;
+  const canSwap = fromAmount && parseFloat(fromAmount) > 0 && !isInsufficient && !loadingRate;
 
   return (
     <ThemedView style={styles.container}>
@@ -125,13 +178,10 @@ export default function SwapScreen() {
             </View>
             <View style={styles.rateGrid}>
               <View>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>1 USDT</ThemedText>
-                <ThemedText type="smallBold">Rp {rateUSDT_IDR.toLocaleString('id-ID')}</ThemedText>
-              </View>
-              <View style={[styles.rateDivider, { backgroundColor: theme.border }]} />
-              <View>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>1 USDC</ThemedText>
-                <ThemedText type="smallBold">Rp {rateUSDC_IDR.toLocaleString('id-ID')}</ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary }}>Current Asset Pairing</ThemedText>
+                <ThemedText type="smallBold">
+                  {loadingRate ? 'Loading rate...' : `1 ${fromAsset} = ${rate.toLocaleString('id-ID', { maximumFractionDigits: 6 })} ${toAsset}`}
+                </ThemedText>
               </View>
             </View>
           </Card>
@@ -145,14 +195,14 @@ export default function SwapScreen() {
                   PAY FROM
                 </ThemedText>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  Balance: {balances[fromAsset]} {fromAsset}
+                  Balance: {balances[fromAsset]?.toLocaleString('id-ID')} {fromAsset}
                 </ThemedText>
               </View>
               <View style={styles.inputRow}>
                 <Input
                   placeholder="0.00"
                   value={fromAmount}
-                  onChangeText={setFromAmount}
+                  onChangeText={(text) => setFromAmount(text.replace(/[^0-9.]/g, ''))}
                   keyboardType="numeric"
                   containerStyle={{ flex: 1, marginBottom: 0 }}
                   style={styles.amountInput}
@@ -180,7 +230,7 @@ export default function SwapScreen() {
                   RECEIVE TO
                 </ThemedText>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  Balance: {balances[toAsset]} {toAsset}
+                  Balance: {balances[toAsset]?.toLocaleString('id-ID')} {toAsset}
                 </ThemedText>
               </View>
               <View style={styles.inputRow}>
@@ -205,7 +255,7 @@ export default function SwapScreen() {
                     Swap Fee (0.5%)
                   </ThemedText>
                   <ThemedText type="code">
-                    {(parseFloat(fromAmount) * swapFeePercentage).toFixed(2)} {fromAsset}
+                    {(parseFloat(fromAmount) * swapFeePercentage).toFixed(4)} {fromAsset}
                   </ThemedText>
                 </View>
               </View>
@@ -216,6 +266,12 @@ export default function SwapScreen() {
                 Insufficient balance for this swap.
               </ThemedText>
             )}
+
+            {error ? (
+              <ThemedText style={[styles.errorText, { color: theme.danger }]}>
+                {error}
+              </ThemedText>
+            ) : null}
 
             <Button
               title="Exchange Now"
@@ -252,7 +308,19 @@ export default function SwapScreen() {
                         {toAmount} {toAsset}
                       </ThemedText>
                     </View>
+                    <View style={styles.summaryItem}>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>Exchange Rate</ThemedText>
+                      <ThemedText type="code">
+                        1 {fromAsset} = {rate.toLocaleString('id-ID', { maximumFractionDigits: 6 })} {toAsset}
+                      </ThemedText>
+                    </View>
                   </Card>
+
+                  {error ? (
+                    <ThemedText style={{ color: theme.danger, marginBottom: Spacing.two, fontWeight: '500' }}>
+                      {error}
+                    </ThemedText>
+                  ) : null}
 
                   <View style={styles.modalButtons}>
                     <Button
@@ -262,7 +330,7 @@ export default function SwapScreen() {
                       style={{ flex: 1 }}
                     />
                     <Button
-                      title={isSwapping ? 'Swapping...' : 'Confirm Exchange'}
+                      title="Confirm Swap"
                       variant="primary"
                       loading={isSwapping}
                       onPress={handleConfirmSwap}
@@ -276,10 +344,10 @@ export default function SwapScreen() {
                     <Ionicons name="checkmark-circle" size={56} color={theme.success} />
                   </View>
                   <ThemedText type="subtitle" style={{ marginTop: Spacing.three }}>
-                    Swap Successful!
+                    Exchange Successful!
                   </ThemedText>
                   <ThemedText style={{ color: theme.textSecondary, marginTop: Spacing.one }}>
-                    Aset kamu sudah berhasil dikonversi.
+                    Aset berhasil ditukar. Saldo kamu sudah ter-update.
                   </ThemedText>
                 </View>
               )}
@@ -307,9 +375,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '800',
-    letterSpacing: -0.5,
   },
   scrollContent: {
     paddingHorizontal: Spacing.four,
@@ -318,58 +385,56 @@ const styles = StyleSheet.create({
   rateCard: {
     padding: Spacing.three,
     borderRadius: 16,
-    marginBottom: Spacing.four,
+    marginBottom: Spacing.three,
   },
   rateHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.two,
+    marginBottom: 12,
   },
   rateGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'center',
-  },
-  rateDivider: {
-    width: 1,
-    height: 32,
+    justifyContent: 'space-between',
   },
   calculator: {
-    gap: Spacing.two,
+    gap: 8,
   },
   calcCard: {
     padding: Spacing.three,
+    borderRadius: 16,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: Spacing.one,
+    marginBottom: 8,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
+    gap: 12,
   },
   amountInput: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
   },
   assetSelector: {
-    height: 52,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
+    height: 48,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    minWidth: 80,
   },
   flipWrapper: {
     alignItems: 'center',
-    marginVertical: -Spacing.two,
+    marginVertical: -16,
     zIndex: 10,
   },
   flipBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     shadowOffset: { width: 0, height: 4 },
@@ -379,17 +444,17 @@ const styles = StyleSheet.create({
   },
   feeBreakdown: {
     paddingHorizontal: Spacing.one,
-    marginTop: Spacing.one,
+    marginTop: 8,
   },
   feeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   errorText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    marginTop: 8,
+    fontWeight: '500',
     textAlign: 'center',
-    marginTop: Spacing.one,
   },
   actionBtn: {
     marginTop: Spacing.three,
@@ -406,13 +471,13 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.five,
   },
   modalTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
     marginBottom: 4,
   },
   modalDesc: {
     fontSize: 14,
-    marginBottom: Spacing.three,
+    marginBottom: Spacing.two,
   },
   summaryCard: {
     padding: Spacing.three,
@@ -425,7 +490,8 @@ const styles = StyleSheet.create({
   },
   summaryDivider: {
     height: 1,
-    marginVertical: 8,
+    width: '100%',
+    marginVertical: Spacing.one,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -434,7 +500,7 @@ const styles = StyleSheet.create({
   },
   successState: {
     alignItems: 'center',
-    paddingVertical: Spacing.four,
+    paddingVertical: Spacing.five,
   },
   successIconContainer: {
     width: 80,

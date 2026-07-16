@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
   TouchableOpacity,
   ScrollView,
   Modal,
+  Clipboard,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
+import { api } from '@/services/api';
 
 export default function TransferScreen() {
   const router = useRouter();
@@ -28,44 +31,95 @@ export default function TransferScreen() {
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [balanceLoading, setBalanceLoading] = useState(true);
 
   // Modal Review states
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [transferSuccess, setTransferSuccess] = useState(false);
+  const [error, setError] = useState('');
 
-  const balances = {
-    IDR: 1200000,
-    USDT: 45.50,
-    USDC: 30.20,
+  const [balances, setBalances] = useState({
+    IDR: 0,
+    USDT: 0,
+    USDC: 0,
+  });
+
+  const loadBalances = async () => {
+    try {
+      const response = await api.wallet.getDashboard();
+      if (response.status === 'success' && response.data?.balances) {
+        const newBalances = { IDR: 0, USDT: 0, USDC: 0 };
+        response.data.balances.forEach((b: any) => {
+          if (b.asset_symbol === 'IDR') newBalances.IDR = parseFloat(b.balance);
+          if (b.asset_symbol === 'USDT') newBalances.USDT = parseFloat(b.balance);
+          if (b.asset_symbol === 'USDC') newBalances.USDC = parseFloat(b.balance);
+        });
+        setBalances(newBalances);
+      }
+    } catch (err) {
+      console.error('Failed to load wallet balances for transfer:', err);
+    } finally {
+      setBalanceLoading(false);
+    }
   };
 
-  const handlePasteId = () => {
-    // Paste logic (mock)
-    setRecipientId('da8f9f0d-eef9-4548-91d7-54bdfee8c567');
+  useEffect(() => {
+    loadBalances();
+  }, []);
+
+  const handlePasteId = async () => {
+    try {
+      const text = await Clipboard.getString();
+      if (text) {
+        setRecipientId(text.trim());
+      } else {
+        Alert.alert('Info', 'Clipboard is empty');
+      }
+    } catch {
+      Alert.alert('Error', 'Failed to read from clipboard');
+    }
   };
 
   const handleReviewTransfer = () => {
-    if (!recipientId || !amount || parseFloat(amount) <= 0) return;
+    const val = parseFloat(amount);
+    if (!recipientId || isNaN(val) || val <= 0) return;
+    setError('');
     setShowReviewModal(true);
   };
 
-  const handleConfirmTransfer = () => {
+  const handleConfirmTransfer = async () => {
+    const val = parseFloat(amount);
     setLoading(true);
-    // Simulate API POST /api/v1/transfer
-    setTimeout(() => {
+    setError('');
+
+    try {
+      const response = await api.wallet.initiateTransfer({
+        destination_user_id: recipientId,
+        asset_symbol: selectedAsset,
+        amount: val,
+        notes: notes || undefined,
+      });
+
+      if (response.status === 'success') {
+        setTransferSuccess(true);
+        setTimeout(() => {
+          setTransferSuccess(false);
+          setShowReviewModal(false);
+          router.replace('/(tabs)');
+        }, 2000);
+      } else {
+        setLoading(false);
+        setError(response.message || 'Transfer failed');
+      }
+    } catch (err: any) {
       setLoading(false);
-      setTransferSuccess(true);
-      setTimeout(() => {
-        setTransferSuccess(false);
-        setShowReviewModal(false);
-        router.replace('/(tabs)');
-      }, 2000);
-    }, 1500);
+      setError(err.message || 'An error occurred during transfer');
+    }
   };
 
   const isIdInvalid = recipientId && recipientId.length < 10;
   const isAmountInvalid = parseFloat(amount) > balances[selectedAsset];
-  const canSend = recipientId && amount && !isIdInvalid && !isAmountInvalid;
+  const canSend = recipientId && amount && !isIdInvalid && !isAmountInvalid && !balanceLoading;
 
   return (
     <ThemedView style={styles.container}>
@@ -100,11 +154,11 @@ export default function TransferScreen() {
               SELECT ASSET
             </ThemedText>
             <View style={[styles.selectorContainer, { backgroundColor: theme.backgroundElement }]}>
-              {['IDR', 'USDT', 'USDC'].map((asset) => (
+              {(['IDR', 'USDT', 'USDC'] as const).map((asset) => (
                 <TouchableOpacity
                   key={asset}
                   onPress={() => {
-                    setSelectedAsset(asset as any);
+                    setSelectedAsset(asset);
                     setAmount('');
                   }}
                   style={[
@@ -122,7 +176,9 @@ export default function TransferScreen() {
               ))}
             </View>
             <ThemedText type="small" style={[styles.balanceHint, { color: theme.textSecondary }]}>
-              {selectedAsset === 'IDR' ? `Available Balance: Rp ${balances.IDR.toLocaleString('id-ID')}` : `Available Balance: ${balances[selectedAsset]} ${selectedAsset}`}
+              {selectedAsset === 'IDR'
+                ? `Available Balance: Rp ${balances.IDR.toLocaleString('id-ID')}`
+                : `Available Balance: ${balances[selectedAsset]} ${selectedAsset}`}
             </ThemedText>
           </View>
 
@@ -131,7 +187,7 @@ export default function TransferScreen() {
             label="AMOUNT"
             placeholder="0"
             value={amount}
-            onChangeText={setAmount}
+            onChangeText={(text) => setAmount(text.replace(/[^0-9.]/g, ''))}
             error={isAmountInvalid ? 'Insufficient balance' : undefined}
             keyboardType="numeric"
             iconLeft="logo-usd"
@@ -178,7 +234,7 @@ export default function TransferScreen() {
                     <View style={styles.summaryItem}>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>Amount</ThemedText>
                       <ThemedText type="smallBold" style={{ color: theme.danger }}>
-                        {selectedAsset === 'IDR' ? `- Rp ${parseInt(amount).toLocaleString('id-ID')}` : `- ${amount} ${selectedAsset}`}
+                        {selectedAsset === 'IDR' ? `- Rp ${parseInt(amount || '0').toLocaleString('id-ID')}` : `- ${amount} ${selectedAsset}`}
                       </ThemedText>
                     </View>
                     {notes ? (
@@ -188,6 +244,12 @@ export default function TransferScreen() {
                       </View>
                     ) : null}
                   </Card>
+
+                  {error ? (
+                    <ThemedText style={{ color: theme.danger, marginBottom: Spacing.two, fontWeight: '500' }}>
+                      {error}
+                    </ThemedText>
+                  ) : null}
 
                   <View style={styles.modalButtons}>
                     <Button
@@ -255,32 +317,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingBottom: Spacing.five,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 6,
-  },
   assetSection: {
-    marginBottom: Spacing.three,
-    width: '100%',
+    marginVertical: Spacing.two,
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 8,
   },
   selectorContainer: {
     flexDirection: 'row',
-    padding: 4,
     borderRadius: 12,
+    padding: 4,
+    gap: 4,
   },
   selectorTab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
     borderRadius: 8,
   },
   balanceHint: {
-    fontSize: 13,
-    marginTop: 8,
+    fontSize: 12,
+    marginTop: 6,
   },
   submitBtn: {
-    marginTop: Spacing.three,
+    marginTop: Spacing.four,
   },
   modalOverlay: {
     flex: 1,
@@ -294,13 +356,13 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.five,
   },
   modalTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
     marginBottom: 4,
   },
   modalDesc: {
     fontSize: 14,
-    marginBottom: Spacing.three,
+    marginBottom: Spacing.two,
   },
   summaryCard: {
     padding: Spacing.three,
@@ -318,7 +380,7 @@ const styles = StyleSheet.create({
   },
   successState: {
     alignItems: 'center',
-    paddingVertical: Spacing.four,
+    paddingVertical: Spacing.five,
   },
   successIconContainer: {
     width: 80,

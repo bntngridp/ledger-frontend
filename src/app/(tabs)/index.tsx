@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Platform,
   useWindowDimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +20,30 @@ import { useTheme } from '@/hooks/use-theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Spacing } from '@/constants/theme';
 import { Chart } from '@/components/chart';
+import { Button } from '@/components/ui/button';
+import { api } from '@/services/api';
+import { storage } from '@/services/storage';
+
+interface BalanceItem {
+  asset_symbol: string;
+  balance: number | string;
+}
+
+interface DashboardResponseData {
+  wallet_id: string;
+  balances: BalanceItem[];
+  estimated_total_idr: number | string;
+}
+
+interface TransactionItem {
+  transaction_id: string;
+  asset_symbol: string;
+  amount: number | string;
+  type: string;
+  status: string;
+  transaction_notes: string;
+  created_at: string;
+}
 
 export default function DashboardScreen() {
   const theme = useTheme();
@@ -32,108 +57,173 @@ export default function DashboardScreen() {
   // Dashboard state
   const [showBalance, setShowBalance] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [username, setUsername] = useState('Ledger User');
 
-  // Mock data for assets (expanded for web view)
-  const assets = [
-    {
-      id: '1',
-      symbol: 'BTC',
-      name: 'Bitcoin',
-      balance: '2.45 BTC',
-      equivalent: '$195,350.00',
-      change: '+5.2%',
-      changeType: 'up',
-      icon: 'logo-bitcoin',
-      iconColor: '#F7931A',
-    },
-    {
-      id: '2',
-      symbol: 'ETH',
-      name: 'Ethereum',
-      balance: '14.2 ETH',
-      equivalent: '$18,460.00',
-      change: '-1.1%',
-      changeType: 'down',
-      icon: 'logo-octocat', // simplified representation
-      iconColor: '#627EEA',
-    },
-    {
-      id: '3',
-      symbol: 'USDT',
-      name: 'Tether',
-      balance: '782.80 USDT',
-      equivalent: '$782.80',
-      change: '0.0%',
-      changeType: 'flat',
-      icon: 'logo-usd',
-      iconColor: theme.success,
-    },
-  ];
+  // Real data states
+  const [dashboard, setDashboard] = useState<DashboardResponseData | null>(null);
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
 
-  // Mobile assets
-  const mobileAssets = [
-    {
-      id: '1',
-      symbol: 'IDR',
-      name: 'Rupiah Indonesia',
-      balance: 'Rp 1.200.000',
-      equivalent: 'Rp 1.200.000',
-      icon: 'cash-outline',
-      iconColor: theme.success,
-    },
-    {
-      id: '2',
-      symbol: 'USDT',
-      name: 'Tether USDT',
-      balance: '45.50 USDT',
-      equivalent: 'Rp 750.000',
-      icon: 'logo-usd',
-      iconColor: theme.primary,
-    },
-    {
-      id: '3',
-      symbol: 'USDC',
-      name: 'USD Coin',
-      balance: '30.20 USDC',
-      equivalent: 'Rp 500.000',
-      icon: 'shield-outline',
-      iconColor: '#2775CA',
-    },
-  ];
+  const loadData = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      // Load user profile details from token
+      const token = await storage.getItem('auth_token');
+      if (token) {
+        try {
+          const parts = token.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+            if (payload?.email) {
+              const namePart = payload.email.split('@')[0];
+              setUsername(namePart.charAt(0).toUpperCase() + namePart.slice(1));
+            }
+          }
+        } catch (e) {
+          console.error('Failed to parse user info from JWT:', e);
+        }
+      }
 
-  // Mock transactions (expanded for web table view)
-  const transactions = [
-    {
-      id: 'tx-1',
-      asset: 'BTC',
-      assetName: 'Bitcoin',
-      type: 'Received',
-      amount: '+0.045 BTC',
-      status: 'Completed',
-      time: 'Today, 10:45 AM',
-      color: theme.success,
-    },
-    {
-      id: 'tx-2',
-      asset: 'ETH',
-      assetName: 'Ethereum',
-      type: 'Swapped',
-      amount: '-1.20 ETH',
-      status: 'Pending',
-      time: 'Yesterday, 4:20 PM',
-      color: theme.warning,
-    },
-    {
-      id: 'tx-3',
-      asset: 'USD',
-      assetName: 'US Dollar',
-      type: 'Deposit',
-      amount: '+$5,800.00',
-      status: 'Completed',
-      time: '12 Jul, 1:15 PM',
-      color: theme.success,
-    },
-  ];
+      const [dashRes, txRes] = await Promise.all([
+        api.wallet.getDashboard(),
+        api.wallet.getTransactions({ per_page: 5 }),
+      ]);
+
+      if (dashRes.status === 'success' && dashRes.data) {
+        setDashboard(dashRes.data);
+      } else {
+        setError(dashRes.message || 'Failed to load wallet dashboard');
+      }
+
+      if (txRes.status === 'success' && txRes.data) {
+        setTransactions(txRes.data);
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred while loading dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // Map API balances to UI assets format
+  const getUiAssets = () => {
+    if (!dashboard) return [];
+
+    return dashboard.balances.map((item) => {
+      let name = 'Indonesian Rupiah';
+      let icon = 'cash-outline';
+      let iconColor: string = theme.success;
+      let equivalent = `Rp ${parseFloat(String(item.balance)).toLocaleString('id-ID')}`;
+
+      if (item.asset_symbol === 'USDT') {
+        name = 'Tether USDT';
+        icon = 'logo-usd';
+        iconColor = theme.primary;
+        equivalent = `${parseFloat(String(item.balance)).toLocaleString('id-ID')} USDT`;
+      } else if (item.asset_symbol === 'USDC') {
+        name = 'USD Coin';
+        icon = 'shield-outline';
+        iconColor = '#2775CA';
+        equivalent = `${parseFloat(String(item.balance)).toLocaleString('id-ID')} USDC`;
+      } else if (item.asset_symbol === 'BTC') {
+        name = 'Bitcoin';
+        icon = 'logo-bitcoin';
+        iconColor = '#F7931A';
+        equivalent = `${parseFloat(String(item.balance)).toLocaleString('id-ID')} BTC`;
+      } else if (item.asset_symbol === 'ETH') {
+        name = 'Ethereum';
+        icon = 'logo-octocat';
+        iconColor = '#627EEA';
+        equivalent = `${parseFloat(String(item.balance)).toLocaleString('id-ID')} ETH`;
+      }
+
+      // Format clean balances
+      let formattedBalance = String(item.balance);
+      if (item.asset_symbol === 'IDR') {
+        formattedBalance = `Rp ${parseFloat(String(item.balance)).toLocaleString('id-ID')}`;
+      } else {
+        formattedBalance = `${parseFloat(String(item.balance)).toLocaleString('id-ID')} ${item.asset_symbol}`;
+      }
+
+      return {
+        id: item.asset_symbol,
+        symbol: item.asset_symbol,
+        name,
+        balance: formattedBalance,
+        equivalent,
+        change: '0.0%',
+        changeType: 'flat',
+        icon,
+        iconColor,
+      };
+    }).filter(asset => 
+      asset.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      asset.symbol.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  };
+
+  // Map API transactions to UI format
+  const getUiTransactions = () => {
+    return transactions.map((tx) => {
+      let color: string = theme.success;
+      let sign = '+';
+      if (tx.type.toLowerCase() === 'withdraw' || tx.type.toLowerCase() === 'transfer_out') {
+        color = theme.danger;
+        sign = '-';
+      } else if (tx.status.toLowerCase() === 'pending') {
+        color = theme.warning;
+      }
+
+      // Clean format amount
+      let formattedAmount = '';
+      const numAmount = parseFloat(String(tx.amount));
+      if (tx.asset_symbol === 'IDR') {
+        formattedAmount = `${sign}Rp ${numAmount.toLocaleString('id-ID')}`;
+      } else {
+        formattedAmount = `${sign}${numAmount.toLocaleString('id-ID')} ${tx.asset_symbol}`;
+      }
+
+      // Nice display name for transaction type
+      let typeDisplay = tx.type;
+      if (tx.type === 'transfer_out') typeDisplay = 'Transfer Sent';
+      if (tx.type === 'transfer_in') typeDisplay = 'Transfer Received';
+      if (tx.type === 'topup') typeDisplay = 'Top Up';
+      if (tx.type === 'withdraw') typeDisplay = 'Withdrawal';
+      if (tx.type === 'swap') typeDisplay = 'Swapped';
+
+      // Nice format time
+      const date = new Date(tx.created_at);
+      const timeDisplay = isNaN(date.getTime())
+        ? tx.created_at
+        : date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ', ' + 
+          date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+      return {
+        id: tx.transaction_id,
+        asset: tx.asset_symbol,
+        assetName: tx.asset_symbol === 'IDR' ? 'Rupiah Indonesia' : tx.asset_symbol,
+        type: typeDisplay,
+        amount: formattedAmount,
+        status: tx.status.charAt(0).toUpperCase() + tx.status.slice(1),
+        time: timeDisplay,
+        color,
+      };
+    });
+  };
+
+  const uiAssets = getUiAssets();
+  const uiTransactions = getUiTransactions();
+
+  const getEstimatedTotal = () => {
+    if (!dashboard) return 'Rp 0';
+    return `Rp ${parseFloat(String(dashboard.estimated_total_idr)).toLocaleString('id-ID')}`;
+  };
 
   // Mobile layout
   const renderMobile = () => (
@@ -143,10 +233,13 @@ export default function DashboardScreen() {
         <View>
           <ThemedText style={{ color: theme.textSecondary }}>Welcome back,</ThemedText>
           <ThemedText type="smallBold" style={styles.username}>
-            Bintang Ridwan 👋
+            {username} 👋
           </ThemedText>
         </View>
         <View style={styles.headerActions}>
+          <TouchableOpacity onPress={loadData} style={[styles.iconButton, { backgroundColor: theme.backgroundElement, marginRight: 4 }]}>
+            <Ionicons name="refresh-outline" size={20} color={theme.text} />
+          </TouchableOpacity>
           <View style={[styles.themeBadge, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
             <Ionicons
               name={scheme === 'dark' ? 'moon-outline' : 'sunny-outline'}
@@ -157,9 +250,6 @@ export default function DashboardScreen() {
               {scheme === 'dark' ? 'DARK' : 'LIGHT'}
             </ThemedText>
           </View>
-          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.backgroundElement }]}>
-            <Ionicons name="notifications-outline" size={22} color={theme.text} />
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -178,12 +268,12 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
         <ThemedText type="title" style={styles.totalBalance}>
-          {showBalance ? 'Rp 2.450.000' : '••••••••'}
+          {showBalance ? getEstimatedTotal() : '••••••••'}
         </ThemedText>
         <View style={styles.portfolioFooter}>
           <Ionicons name="trending-up-outline" size={16} color={theme.success} />
           <ThemedText type="small" style={{ color: theme.success, marginLeft: 4 }}>
-            +12.4% this month
+            Active ledger wallet session
           </ThemedText>
         </View>
       </Card>
@@ -200,7 +290,7 @@ export default function DashboardScreen() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.assetScroll}
       >
-        {mobileAssets.map((asset) => (
+        {uiAssets.map((asset) => (
           <Card key={asset.id} style={styles.assetCard} bordered>
             <View style={styles.assetCardHeader}>
               <View style={[styles.assetIconContainer, { backgroundColor: asset.iconColor + '20' }]}>
@@ -215,11 +305,6 @@ export default function DashboardScreen() {
               <ThemedText type="default" style={styles.assetBalance}>
                 {showBalance ? asset.balance : '••••'}
               </ThemedText>
-              {asset.symbol !== 'IDR' && (
-                <ThemedText type="code" style={{ color: theme.textSecondary }}>
-                  {showBalance ? asset.equivalent : '••••'}
-                </ThemedText>
-              )}
             </View>
           </Card>
         ))}
@@ -269,34 +354,45 @@ export default function DashboardScreen() {
       </View>
 
       <View style={styles.transactionList}>
-        {transactions.map((tx) => (
-          <View key={tx.id} style={[styles.txRow, { borderBottomColor: theme.border }]}>
-            <View style={[styles.txIconContainer, { backgroundColor: tx.color + '15' }]}>
-              <Ionicons
-                name={tx.type === 'Received' ? 'arrow-down-outline' : tx.type === 'Swapped' ? 'swap-horizontal-outline' : 'cash-outline'}
-                size={20}
-                color={tx.color}
-              />
-            </View>
-            <View style={styles.txDetails}>
-              <ThemedText type="smallBold">{tx.type} {tx.asset}</ThemedText>
-              <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 13 }}>
-                {tx.type} {tx.assetName}
-              </ThemedText>
-              <ThemedText type="code" style={styles.txTime}>
-                {tx.time}
-              </ThemedText>
-            </View>
-            <View style={styles.txAmountContainer}>
-              <ThemedText
-                type="smallBold"
-                style={{ color: tx.amount.startsWith('+') ? theme.success : theme.text }}
-              >
-                {tx.amount}
-              </ThemedText>
-            </View>
+        {uiTransactions.length === 0 ? (
+          <View style={styles.emptyState}>
+            <ThemedText style={{ color: theme.textSecondary }}>Belum ada transaksi terkini.</ThemedText>
           </View>
-        ))}
+        ) : (
+          uiTransactions.map((tx) => (
+            <View key={tx.id} style={[styles.txRow, { borderBottomColor: theme.border }]}>
+              <View style={[styles.txIconContainer, { backgroundColor: tx.color + '15' }]}>
+                <Ionicons
+                  name={
+                    tx.type.includes('Received')
+                      ? 'arrow-down-outline'
+                      : tx.type.includes('Swapped')
+                      ? 'swap-horizontal-outline'
+                      : tx.type.includes('Withdrawal')
+                      ? 'cash-outline'
+                      : 'paper-plane-outline'
+                  }
+                  size={20}
+                  color={tx.color}
+                />
+              </View>
+              <View style={styles.txDetails}>
+                <ThemedText type="smallBold">{tx.type} {tx.asset}</ThemedText>
+                <ThemedText type="code" style={styles.txTime}>
+                  {tx.time}
+                </ThemedText>
+              </View>
+              <View style={styles.txAmountContainer}>
+                <ThemedText
+                  type="smallBold"
+                  style={{ color: tx.amount.startsWith('+') ? theme.success : theme.text }}
+                >
+                  {tx.amount}
+                </ThemedText>
+              </View>
+            </View>
+          ))
+        )}
       </View>
     </ScrollView>
   );
@@ -320,15 +416,17 @@ export default function DashboardScreen() {
             iconLeft="search-outline"
           />
 
-          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.backgroundElement }]}>
-            <Ionicons name="notifications-outline" size={20} color={theme.text} />
+          <TouchableOpacity onPress={loadData} style={[styles.iconButton, { backgroundColor: theme.backgroundElement }]}>
+            <Ionicons name="refresh-outline" size={20} color={theme.text} />
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => router.push('/settings')}
             style={[styles.profileAvatar, { backgroundColor: theme.primary }]}
           >
-            <ThemedText type="code" style={styles.avatarText}>BR</ThemedText>
+            <ThemedText type="code" style={styles.avatarText}>
+              {username.slice(0, 2).toUpperCase()}
+            </ThemedText>
           </TouchableOpacity>
         </View>
       </View>
@@ -341,16 +439,11 @@ export default function DashboardScreen() {
           <Card style={styles.overviewCard}>
             <View style={styles.overviewHeader}>
               <View>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>TOTAL BALANCE</ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary }}>ESTIMATED PORTFOLIO VALUE</ThemedText>
                 <View style={styles.balanceContainer}>
                   <ThemedText type="subtitle" style={styles.desktopBalanceText}>
-                    $124,592.80
+                    {getEstimatedTotal()}
                   </ThemedText>
-                  <View style={[styles.gainBadge, { backgroundColor: theme.success + '15' }]}>
-                    <ThemedText type="code" style={{ color: theme.success, fontWeight: '700' }}>
-                      +2.4%
-                    </ThemedText>
-                  </View>
                 </View>
               </View>
 
@@ -410,29 +503,35 @@ export default function DashboardScreen() {
             </View>
 
             {/* Table rows */}
-            {transactions.map((tx) => (
-              <View key={tx.id} style={[styles.tableRow, { borderBottomColor: theme.border }]}>
-                <View style={styles.assetCol}>
-                  <View style={[styles.smallIconCircle, { backgroundColor: tx.color + '15' }]}>
-                    <ThemedText type="code" style={{ color: tx.color, fontSize: 10 }}>{tx.asset[0]}</ThemedText>
-                  </View>
-                  <ThemedText type="smallBold">{tx.assetName}</ThemedText>
-                </View>
-                <ThemedText type="small" style={[styles.col, { color: theme.textSecondary }]}>
-                  {tx.type}
-                </ThemedText>
-                <ThemedText type="smallBold" style={[styles.col, { textAlign: 'right', color: tx.amount.startsWith('+') ? theme.success : theme.text }]}>
-                  {tx.amount}
-                </ThemedText>
-                <View style={styles.statusCol}>
-                  <View style={[styles.statusPill, { backgroundColor: (tx.status === 'Completed' ? theme.success : theme.warning) + '15' }]}>
-                    <ThemedText type="code" style={{ fontSize: 10, color: tx.status === 'Completed' ? theme.success : theme.warning, fontWeight: '700' }}>
-                      {tx.status}
-                    </ThemedText>
-                  </View>
-                </View>
+            {uiTransactions.length === 0 ? (
+              <View style={styles.emptyStateContainer}>
+                <ThemedText style={{ color: theme.textSecondary }}>Belum ada transaksi terkini.</ThemedText>
               </View>
-            ))}
+            ) : (
+              uiTransactions.map((tx) => (
+                <View key={tx.id} style={[styles.tableRow, { borderBottomColor: theme.border }]}>
+                  <View style={styles.assetCol}>
+                    <View style={[styles.smallIconCircle, { backgroundColor: tx.color + '15' }]}>
+                      <ThemedText type="code" style={{ color: tx.color, fontSize: 10 }}>{tx.asset[0]}</ThemedText>
+                    </View>
+                    <ThemedText type="smallBold">{tx.assetName}</ThemedText>
+                  </View>
+                  <ThemedText type="small" style={[styles.col, { color: theme.textSecondary }]}>
+                    {tx.type}
+                  </ThemedText>
+                  <ThemedText type="smallBold" style={[styles.col, { textAlign: 'right', color: tx.amount.startsWith('+') ? theme.success : theme.text }]}>
+                    {tx.amount}
+                  </ThemedText>
+                  <View style={styles.statusCol}>
+                    <View style={[styles.statusPill, { backgroundColor: (tx.color) + '15' }]}>
+                      <ThemedText type="code" style={{ fontSize: 10, color: tx.color, fontWeight: '700' }}>
+                        {tx.status}
+                      </ThemedText>
+                    </View>
+                  </View>
+                </View>
+              ))
+            )}
           </Card>
         </View>
 
@@ -441,13 +540,10 @@ export default function DashboardScreen() {
           <Card style={styles.assetsSidebar} bordered>
             <View style={styles.sidebarHeader}>
               <ThemedText type="smallBold">Your Assets</ThemedText>
-              <TouchableOpacity>
-                <Ionicons name="add" size={20} color={theme.text} />
-              </TouchableOpacity>
             </View>
 
             <View style={styles.assetsSidebarList}>
-              {assets.map((asset) => (
+              {uiAssets.map((asset) => (
                 <View key={asset.id} style={[styles.sidebarAssetRow, { borderBottomColor: theme.border }]}>
                   <View style={[styles.assetIconContainer, { backgroundColor: asset.iconColor + '15' }]}>
                     <Ionicons name={asset.icon as any} size={22} color={asset.iconColor} />
@@ -455,24 +551,15 @@ export default function DashboardScreen() {
                   <View style={styles.assetSidebarDetails}>
                     <ThemedText type="smallBold">{asset.name}</ThemedText>
                     <ThemedText type="code" style={{ color: theme.textSecondary, fontSize: 11 }}>
-                      {asset.balance}
+                      {asset.symbol}
                     </ThemedText>
                   </View>
                   <View style={styles.assetSidebarValues}>
-                    <ThemedText type="smallBold">{asset.equivalent}</ThemedText>
-                    <ThemedText type="code" style={{ color: asset.changeType === 'up' ? theme.success : theme.danger, fontSize: 11, fontWeight: '700' }}>
-                      {asset.change}
-                    </ThemedText>
+                    <ThemedText type="smallBold">{asset.balance}</ThemedText>
                   </View>
                 </View>
               ))}
             </View>
-
-            <TouchableOpacity style={styles.managePortfolioBtn}>
-              <ThemedText type="small" style={{ color: theme.textSecondary, fontWeight: '600' }}>
-                Manage Portfolio
-              </ThemedText>
-            </TouchableOpacity>
           </Card>
         </View>
       </View>
@@ -482,7 +569,22 @@ export default function DashboardScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        {isLargeScreen ? renderDesktop() : renderMobile()}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>Syncing ledger data...</ThemedText>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Ionicons name="cloud-offline-outline" size={48} color={theme.danger} />
+            <ThemedText style={{ color: theme.danger, marginTop: 12, fontWeight: '600' }}>{error}</ThemedText>
+            <Button title="Retry Sync" onPress={loadData} style={{ marginTop: 16 }} />
+          </View>
+        ) : isLargeScreen ? (
+          renderDesktop()
+        ) : (
+          renderMobile()
+        )}
       </SafeAreaView>
     </ThemedView>
   );
@@ -516,7 +618,6 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
   },
   themeBadge: {
     flexDirection: 'row',
@@ -602,23 +703,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   assetCardBody: {
-    gap: 2,
+    marginTop: Spacing.one,
   },
   assetBalance: {
-    fontSize: 18,
     fontWeight: '700',
     marginTop: 4,
   },
   actionGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     paddingVertical: Spacing.three,
+    paddingHorizontal: Spacing.two,
     borderRadius: 20,
-    marginTop: Spacing.four,
+    marginTop: Spacing.three,
   },
   actionItem: {
     alignItems: 'center',
-    gap: Spacing.one,
+    flex: 1,
   },
   actionIconWrapper: {
     width: 48,
@@ -626,23 +727,24 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 6,
   },
   actionLabel: {
     fontSize: 12,
     fontWeight: '600',
   },
   transactionList: {
-    marginTop: Spacing.one,
+    gap: Spacing.two,
   },
   txRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.three,
-    borderBottomWidth: 1,
+    paddingVertical: Spacing.two,
+    borderBottomWidth: 1.5,
   },
   txIconContainer: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -654,22 +756,22 @@ const styles = StyleSheet.create({
   },
   txTime: {
     fontSize: 11,
+    color: '#8A8C98',
   },
   txAmountContainer: {
     alignItems: 'flex-end',
   },
 
-  // Desktop responsive styles
+  // Desktop styles
   desktopContainer: {
     flex: 1,
-    height: '100%',
   },
   topNavbar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     borderBottomWidth: 1.5,
   },
   topNavbarTitle: {
@@ -679,64 +781,63 @@ const styles = StyleSheet.create({
   navbarRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
+    gap: 16,
   },
   searchBarContainer: {
     width: 240,
     marginBottom: 0,
   },
   profileAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   avatarText: {
     color: '#ffffff',
-    fontWeight: '800',
+    fontWeight: '700',
   },
   gridContent: {
-    flex: 1,
     flexDirection: 'row',
-    padding: Spacing.four,
-    gap: Spacing.four,
+    padding: 24,
+    gap: 24,
+    flex: 1,
   },
   leftColumn: {
-    flex: 2.5,
-    gap: Spacing.three,
-  },
-  rightColumn: {
-    flex: 1,
+    flex: 3,
+    gap: 24,
   },
   overviewCard: {
-    padding: Spacing.four,
-    borderRadius: 20,
+    padding: 24,
+    borderRadius: 24,
   },
   overviewHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   balanceContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
     marginTop: 4,
-    gap: 10,
   },
   desktopBalanceText: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: '800',
   },
   gainBadge: {
-    paddingVertical: 2,
+    paddingVertical: 4,
     paddingHorizontal: 8,
-    borderRadius: 6,
+    borderRadius: 8,
   },
   segmentedWrapper: {
     flexDirection: 'row',
-    padding: 3,
-    borderRadius: 10,
+    padding: 4,
+    borderRadius: 12,
+    gap: 4,
   },
   segmentBtn: {
     paddingVertical: 6,
@@ -745,36 +846,38 @@ const styles = StyleSheet.create({
   },
   quickActionsRow: {
     flexDirection: 'row',
-    gap: Spacing.two,
+    gap: 16,
   },
   actionCard: {
-    padding: Spacing.three,
+    alignItems: 'center',
+    padding: 16,
     borderRadius: 16,
-    alignItems: 'flex-start',
   },
   actionIconBg: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   tableCard: {
-    padding: Spacing.three,
-    flex: 1,
+    padding: 20,
+    borderRadius: 20,
   },
   tableHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.two,
+    marginBottom: 16,
   },
   tableColumns: {
     flexDirection: 'row',
-    paddingVertical: 8,
+    paddingBottom: 8,
     borderBottomWidth: 1.5,
+    marginBottom: 8,
   },
   col: {
+    color: '#8A8C98',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -788,12 +891,12 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   smallIconCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -806,19 +909,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 8,
   },
+  rightColumn: {
+    flex: 1,
+  },
   assetsSidebar: {
-    padding: Spacing.three,
-    height: '100%',
+    padding: 20,
+    borderRadius: 20,
   },
   sidebarHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.three,
+    marginBottom: 16,
   },
   assetsSidebarList: {
-    gap: Spacing.two,
-    flex: 1,
+    gap: 16,
   },
   sidebarAssetRow: {
     flexDirection: 'row',
@@ -833,15 +938,25 @@ const styles = StyleSheet.create({
   },
   assetSidebarValues: {
     alignItems: 'flex-end',
-    gap: 2,
   },
-  managePortfolioBtn: {
-    alignItems: 'center',
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    marginTop: Spacing.three,
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  emptyState: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  emptyStateContainer: {
+    padding: 32,
+    alignItems: 'center',
   },
 });

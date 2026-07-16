@@ -11,6 +11,9 @@ import { Input } from '@/components/ui/input';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 
+import { api } from '@/services/api';
+import { storage } from '@/services/storage';
+
 export default function RegisterScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -19,7 +22,7 @@ export default function RegisterScreen() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<{ username?: string; email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ username?: string; email?: string; password?: string; api?: string }>({});
   const [loading, setLoading] = useState(false);
 
   const validateForm = () => {
@@ -46,14 +49,32 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     if (!validateForm()) return;
     setLoading(true);
+    setErrors({});
 
     try {
-      setTimeout(() => {
+      const response = await api.auth.register({
+        username,
+        email,
+        password,
+      });
+
+      if (response.status === 'success') {
+        // Automatically login the user upon successful registration
+        const loginRes = await api.auth.login({ email, password });
         setLoading(false);
-        router.replace('/(tabs)');
-      }, 1500);
-    } catch (err) {
+        if (loginRes.status === 'success' && loginRes.data?.token) {
+          await storage.setItem('auth_token', loginRes.data.token);
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/login');
+        }
+      } else {
+        setLoading(false);
+        setErrors({ api: response.message });
+      }
+    } catch (err: any) {
       setLoading(false);
+      setErrors({ api: err.message || 'An error occurred during registration' });
     }
   };
 
@@ -106,6 +127,12 @@ export default function RegisterScreen() {
               autoCapitalize="none"
               iconLeft="lock-closed-outline"
             />
+
+            {errors.api && (
+              <ThemedText style={{ color: theme.danger, marginBottom: Spacing.two, fontWeight: '500' }}>
+                {errors.api}
+              </ThemedText>
+            )}
 
             <Button
               title="Create Account"

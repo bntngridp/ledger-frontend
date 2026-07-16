@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import QRCode from 'react-native-qrcode-svg';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -17,34 +18,62 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
+import { api } from '@/services/api';
 
 export default function TwoFactorScreen() {
   const router = useRouter();
   const theme = useTheme();
 
   // 2FA Setup states
-  const mockSecret = 'JBSWY3DPEHPK3PXP';
+  const [secret, setSecret] = useState('');
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
+  const [setupLoading, setSetupLoading] = useState(true);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
 
   // References for OTP inputs to support auto-focus / backspace-focus
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
+  useEffect(() => {
+    // Fetch 2FA details on mount
+    const load2FADetails = async () => {
+      try {
+        const response = await api.auth.enable2FA();
+        if (response.status === 'success' && response.data) {
+          setSecret(response.data.secret || '');
+          setQrCodeUrl(response.data.qr_code_url || '');
+        } else {
+          setError(response.message || 'Failed to initialize 2FA setup');
+        }
+      } catch (err: any) {
+        setError(err.message || 'An error occurred during 2FA setup');
+      } finally {
+        setSetupLoading(false);
+      }
+    };
+
+    load2FADetails();
+  }, []);
+
   const handleCopySecret = () => {
-    Clipboard.setString(mockSecret);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (secret) {
+      Clipboard.setString(secret);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleOtpChange = (text: string, index: number) => {
+    const cleaned = text.replace(/[^0-9]/g, '');
     const newOtp = [...otp];
-    newOtp[index] = text;
+    newOtp[index] = cleaned;
     setOtp(newOtp);
 
     // Auto-advance focus to next input box if typed
-    if (text && index < 5) {
+    if (cleaned && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -56,19 +85,32 @@ export default function TwoFactorScreen() {
     }
   };
 
-  const handleVerify2FA = () => {
+  const handleVerify2FA = async () => {
     const fullCode = otp.join('');
     if (fullCode.length !== 6) return;
     
     setLoading(true);
-    setTimeout(() => {
+    setError('');
+
+    try {
+      const response = await api.auth.verify2FAActivation({
+        otp_code: fullCode,
+      });
       setLoading(false);
-      setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
-        router.back(); // Return back to settings
-      }, 2000);
-    }, 1500);
+
+      if (response.status === 'success') {
+        setSuccess(true);
+        setTimeout(() => {
+          setSuccess(false);
+          router.back(); // Return back to settings
+        }, 2000);
+      } else {
+        setError(response.message || 'Verification failed');
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setError(err.message || 'Verification failed');
+    }
   };
 
   const isOtpComplete = otp.every((val) => val !== '');
@@ -87,15 +129,23 @@ export default function TwoFactorScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {!success ? (
+          {setupLoading ? (
+            <View style={styles.loadingState}>
+              <ThemedText style={{ color: theme.textSecondary }}>Initializing secure 2FA session...</ThemedText>
+            </View>
+          ) : !success ? (
             <View style={styles.body}>
               <ThemedText style={[styles.instruction, { color: theme.textSecondary }]}>
                 Scan the QR code with your authenticator app (like Google Authenticator or Authy).
               </ThemedText>
 
               {/* QR Code Container */}
-              <View style={[styles.qrContainer, { borderColor: theme.border }]}>
-                <Ionicons name="qr-code-outline" size={160} color={theme.text} />
+              <View style={[styles.qrContainer, { borderColor: theme.border, backgroundColor: '#ffffff' }]}>
+                {qrCodeUrl ? (
+                  <QRCode value={qrCodeUrl} size={160} />
+                ) : (
+                  <Ionicons name="qr-code-outline" size={160} color="#000000" />
+                )}
               </View>
 
               {/* Secret Key Box */}
@@ -105,7 +155,7 @@ export default function TwoFactorScreen() {
                 </ThemedText>
                 <View style={[styles.secretRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
                   <ThemedText type="code" style={styles.secretText}>
-                    {mockSecret}
+                    {secret}
                   </ThemedText>
                   <TouchableOpacity onPress={handleCopySecret} style={styles.copyBtn}>
                     <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={theme.primary} />
@@ -153,6 +203,12 @@ export default function TwoFactorScreen() {
                 </View>
               </View>
 
+              {error ? (
+                <ThemedText style={{ color: theme.danger, marginBottom: Spacing.two, fontWeight: '500' }}>
+                  {error}
+                </ThemedText>
+              ) : null}
+
               <Button
                 title="Verify & Activate 2FA"
                 variant="primary"
@@ -170,7 +226,7 @@ export default function TwoFactorScreen() {
               <ThemedText type="subtitle" style={{ marginTop: Spacing.three }}>
                 2FA Activated!
               </ThemedText>
-              <ThemedText style={{ color: theme.textSecondary, marginTop: Spacing.one }}>
+              <ThemedText style={{ color: theme.textSecondary, marginTop: Spacing.one, textAlign: 'center' }}>
                 Akun kamu sekarang dilindungi dengan Two-Factor Authentication.
               </ThemedText>
             </View>
@@ -304,5 +360,10 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.five * 2,
   },
 });

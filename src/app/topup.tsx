@@ -6,6 +6,7 @@ import {
   ScrollView,
   Modal,
   Linking,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
+import { api } from '@/services/api';
 
 export default function TopUpScreen() {
   const router = useRouter();
@@ -30,8 +32,10 @@ export default function TopUpScreen() {
 
   // Bottom sheet / Modal state
   const [showPayModal, setShowPayModal] = useState(false);
+  const [transactionId, setTransactionId] = useState('');
   const [snapToken, setSnapToken] = useState('');
   const [redirectUrl, setRedirectUrl] = useState('');
+  const [error, setError] = useState('');
 
   const quickAmounts = ['50000', '100000', '250000', '500000'];
 
@@ -39,23 +43,39 @@ export default function TopUpScreen() {
     setAmount(amt);
   };
 
-  const handleInitiateTopUp = () => {
+  const handleInitiateTopUp = async () => {
     const val = parseFloat(amount);
     if (isNaN(val) || val <= 0) return;
+    
     setLoading(true);
+    setError('');
 
-    // Simulate API call to POST /api/v1/topup
-    setTimeout(() => {
+    try {
+      const response = await api.wallet.initiateTopUp({
+        amount: val,
+        notes: notes || undefined,
+      });
       setLoading(false);
-      setSnapToken('88ac5cf6-9913-4a39-b669-91077448dcbb');
-      setRedirectUrl('https://app.sandbox.midtrans.com/snap/v4/redirection/88ac5cf6-9913-4a39-b669-91077448dcbb');
-      setShowPayModal(true);
-    }, 1500);
+
+      if (response.status === 'success' && response.data) {
+        setTransactionId(response.data.transaction_id || '');
+        setSnapToken(response.data.snap_token || '');
+        setRedirectUrl(response.data.redirect_url || '');
+        setShowPayModal(true);
+      } else {
+        setError(response.message || 'Failed to initiate Top Up transaction');
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setError(err.message || 'An error occurred');
+    }
   };
 
   const handleOpenPaymentPage = () => {
     if (redirectUrl) {
-      Linking.openURL(redirectUrl);
+      Linking.openURL(redirectUrl).catch(() => {
+        Alert.alert('Error', 'Failed to open payment gateway redirection URL.');
+      });
     }
   };
 
@@ -132,6 +152,12 @@ export default function TopUpScreen() {
             iconLeft="document-text-outline"
           />
 
+          {error ? (
+            <ThemedText style={{ color: theme.danger, marginVertical: Spacing.two, fontWeight: '500' }}>
+              {error}
+            </ThemedText>
+          ) : null}
+
           <Button
             title="Continue to Payment"
             variant="primary"
@@ -142,7 +168,7 @@ export default function TopUpScreen() {
           />
         </ScrollView>
 
-        {/* Midtrans Snap Bottom Sheet */}
+          {/* Midtrans Snap Bottom Sheet */}
         <Modal visible={showPayModal} transparent animationType="slide">
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
@@ -159,7 +185,7 @@ export default function TopUpScreen() {
               <Card style={[styles.summaryCard, { backgroundColor: theme.background }]} bordered>
                 <View style={styles.summaryItem}>
                   <ThemedText type="small" style={{ color: theme.textSecondary }}>Order ID</ThemedText>
-                  <ThemedText type="code">TOPUP-IDR-12345</ThemedText>
+                  <ThemedText type="code">{transactionId}</ThemedText>
                 </View>
                 <View style={styles.summaryItem}>
                   <ThemedText type="small" style={{ color: theme.textSecondary }}>Total Amount</ThemedText>
