@@ -25,6 +25,15 @@ export default function TopUpScreen() {
   const router = useRouter();
   const theme = useTheme();
 
+  // Safe back navigation
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
   // Input states
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
@@ -85,7 +94,7 @@ export default function TopUpScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
           <ThemedText type="smallBold" style={styles.headerTitle}>

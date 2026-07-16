@@ -49,6 +49,15 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const { themePreference, setThemePreference } = useAppTheme();
 
+  // Safe back navigation
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
   // Settings states
   const [tfaEnabled, setTfaEnabled] = useState(false);
   const [showThemeModal, setShowThemeModal] = useState(false);
@@ -136,7 +145,7 @@ export default function SettingsScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
           <ThemedText type="smallBold" style={styles.headerTitle}>
