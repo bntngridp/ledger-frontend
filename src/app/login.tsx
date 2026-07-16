@@ -17,6 +17,15 @@ import { storage } from '@/services/storage';
 export default function LoginScreen() {
   const router = useRouter();
   const theme = useTheme();
+
+  // Safe back navigation — if no history stack (e.g. direct URL access), go to /welcome
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/welcome');
+    }
+  };
   const params = useLocalSearchParams();
 
   // Form states
@@ -148,7 +157,7 @@ export default function LoginScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
         </View>

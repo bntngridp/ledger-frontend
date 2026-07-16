@@ -12,7 +12,6 @@ import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 
 import { api, API_BASE_URL } from '@/services/api';
-import { storage } from '@/services/storage';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -24,6 +23,15 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ username?: string; email?: string; password?: string; api?: string }>({});
   const [loading, setLoading] = useState(false);
+
+  // Safe back navigation — if no history, go to /welcome
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/welcome');
+    }
+  };
 
   const validateForm = () => {
     const tempErrors: typeof errors = {};
@@ -52,35 +60,26 @@ export default function RegisterScreen() {
     setErrors({});
 
     try {
-      const response = await api.auth.register({
-        username,
-        email,
-        password,
-      });
-      setLoading(false);
+      const response = await api.auth.register({ username, email, password });
 
       if (response.status === 'success') {
-        Alert.alert(
-          'Registration Success',
-          'Akun kamu berhasil dibuat! Silakan masuk menggunakan password baru.',
-          [{ text: 'OK', onPress: () => router.replace(`/login?email=${encodeURIComponent(email)}&registered=true`) }]
-        );
-        // Fallback for Web where Alert might not block navigation
-        if (Platform.OS === 'web') {
-          router.replace(`/login?email=${encodeURIComponent(email)}&registered=true`);
-        }
+        // Best practice: do NOT auto-login. Redirect to login with pre-filled
+        // email and a success flag so the login screen shows a success banner.
+        router.replace(`/login?email=${encodeURIComponent(email)}&registered=true`);
       } else {
         setErrors({ api: response.message });
       }
     } catch (err: any) {
-      setLoading(false);
       setErrors({ api: err.message || 'An error occurred during registration' });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleGoogleLogin = () => {
-    // Generate clean Google Auth URL to backend
-    // Remove /api/v1 suffix from base URL to get absolute server root
+  const handleGoogleSignUp = () => {
+    // Google OAuth handles both sign-up and sign-in in one unified flow.
+    // After consent, the backend will redirect to /login?token=JWT
+    // and the login screen will automatically navigate to the dashboard.
     const serverRoot = API_BASE_URL.replace('/api/v1', '');
     const googleAuthUrl = `${serverRoot}/api/v1/auth/google`;
 
@@ -88,7 +87,7 @@ export default function RegisterScreen() {
       window.location.href = googleAuthUrl;
     } else {
       Linking.openURL(googleAuthUrl).catch(() => {
-        Alert.alert('Error', 'Failed to open browser redirections.');
+        Alert.alert('Error', 'Failed to open Google sign-in.');
       });
     }
   };
@@ -96,8 +95,9 @@ export default function RegisterScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        {/* Header with safe back button */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
         </View>
@@ -108,7 +108,7 @@ export default function RegisterScreen() {
               Create Account
             </ThemedText>
             <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
-              Join us to track and swap assets safely
+              Join Ledger to manage your assets securely
             </ThemedText>
 
             <Input
@@ -144,9 +144,12 @@ export default function RegisterScreen() {
             />
 
             {errors.api && (
-              <ThemedText style={{ color: theme.danger, marginBottom: Spacing.two, fontWeight: '500' }}>
-                {errors.api}
-              </ThemedText>
+              <View style={[styles.errorBanner, { backgroundColor: theme.danger + '15', borderColor: theme.danger }]}>
+                <Ionicons name="alert-circle-outline" size={18} color={theme.danger} />
+                <ThemedText style={{ color: theme.danger, marginLeft: 8, fontSize: 13, flex: 1 }}>
+                  {errors.api}
+                </ThemedText>
+              </View>
             )}
 
             <Button
@@ -165,10 +168,11 @@ export default function RegisterScreen() {
               <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
             </View>
 
+            {/* Google — unified sign-up / sign-in via OAuth */}
             <Button
               title="Continue with Google"
               variant="ghost"
-              onPress={handleGoogleLogin}
+              onPress={handleGoogleSignUp}
               style={[styles.googleBtn, { borderColor: theme.border, borderWidth: 1 }]}
             />
 
@@ -225,6 +229,14 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 15,
     marginBottom: Spacing.five,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginBottom: Spacing.two,
   },
   submitBtn: {
     marginTop: Spacing.four,
