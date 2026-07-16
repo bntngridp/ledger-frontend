@@ -460,7 +460,10 @@ export default function DashboardScreen() {
             </View>
 
             {/* Line Chart */}
-            <Chart />
+            <Chart 
+              transactions={transactions} 
+              currentBalance={dashboard ? parseFloat(String(dashboard.estimated_total_idr)) : 0} 
+            />
           </Card>
 
           {/* Quick Actions Row */}

@@ -1,10 +1,24 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 
-import { ThemedText } from './themed-text';
 import { useTheme } from '@/hooks/use-theme';
 
-export function Chart() {
+interface TransactionItem {
+  transaction_id: string;
+  asset_symbol: string;
+  amount: number | string;
+  type: string;
+  status: string;
+  transaction_notes: string;
+  created_at: string;
+}
+
+interface ChartProps {
+  transactions?: TransactionItem[];
+  currentBalance?: number;
+}
+
+export function Chart({ transactions = [], currentBalance = 0 }: ChartProps) {
   const theme = useTheme();
 
   return (
