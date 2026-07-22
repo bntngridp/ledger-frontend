@@ -4,6 +4,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  View,
   type PressableProps,
   type StyleProp,
   type ViewStyle,
@@ -16,6 +17,7 @@ export interface ButtonProps extends PressableProps {
   size?: 'small' | 'medium' | 'large';
   loading?: boolean;
   title: string;
+  iconLeft?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -24,6 +26,7 @@ export function Button({
   size = 'medium',
   loading = false,
   title,
+  iconLeft,
   style,
   disabled,
   ...rest
@@ -82,15 +85,18 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={colors.text} size="small" />
       ) : (
-        <Text
-          style={[
-            styles.text,
-            styles[`text_${size}`],
-            { color: colors.text },
-          ]}
-        >
-          {title}
-        </Text>
+        <>
+          {iconLeft && <View style={styles.iconContainer}>{iconLeft}</View>}
+          <Text
+            style={[
+              styles.text,
+              styles[`text_${size}`],
+              { color: colors.text },
+            ]}
+          >
+            {title}
+          </Text>
+        </>
       )}
     </Pressable>
   );
@@ -102,6 +108,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+  },
+  iconContainer: {
+    marginRight: 10,
   },
   // Sizes
   small: {

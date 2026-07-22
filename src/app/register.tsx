@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, ScrollView, Platform, Linking, Alert } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ScrollView, Platform, Linking, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -173,6 +173,12 @@ export default function RegisterScreen() {
               title="Continue with Google"
               variant="ghost"
               onPress={handleGoogleSignUp}
+              iconLeft={
+                <Image
+                  source={require('@/assets/images/google.png')}
+                  style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                />
+              }
               style={[styles.googleBtn, { borderColor: theme.border, borderWidth: 1 }]}
             />
 

@@ -5,9 +5,9 @@ import { storage } from './storage';
 const getBaseUrl = (): string => {
   if (Platform.OS === 'android') {
     // Android emulator routes 10.0.2.2 to the host machine's localhost
-    return 'http://10.0.2.2:8080/api/v1';
+    return 'http://10.0.2.2:7070/api/v1';
   }
-  return 'http://localhost:8080/api/v1';
+  return 'http://localhost:7070/api/v1';
 };
 
 export const API_BASE_URL = getBaseUrl();
