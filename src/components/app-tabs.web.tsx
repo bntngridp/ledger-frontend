@@ -134,11 +134,11 @@ export function CustomTabList(props: TabListProps) {
         >
           <View style={[styles.profileAvatar, { backgroundColor: theme.primary }]}>
             <ThemedText type="code" style={styles.avatarText}>
-              BR
+              JD
             </ThemedText>
           </View>
           <View style={styles.profileTextWrapper}>
-            <ThemedText type="smallBold">Bintang Ridwan</ThemedText>
+            <ThemedText type="smallBold">John Doe</ThemedText>
             <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
               Profile & Settings
             </ThemedText>

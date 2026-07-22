@@ -88,19 +88,16 @@ export function Input({
           style={[
             styles.input,
             { color: theme.text },
-            // Web: remove browser default outline/box-shadow and fix autofill color overrides
+            // Web: remove browser default outline/box-shadow
             Platform.OS === 'web' && {
               outline: 'none',
               boxShadow: 'none',
               outlineWidth: 0,
-              // Override browser autofill background and text colors
-              WebkitTextFillColor: theme.text,
-              WebkitBoxShadow: `0 0 0px 1000px ${theme.backgroundElement} inset`,
               caretColor: theme.text,
             } as any,
             style,
           ]}
-          placeholderTextColor={theme.textSecondary}
+          placeholderTextColor={theme.placeholder}
           secureTextEntry={shouldSecure}
           onFocus={handleFocus}
           onBlur={handleBlur}

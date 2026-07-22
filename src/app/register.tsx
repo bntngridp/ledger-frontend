@@ -113,7 +113,7 @@ export default function RegisterScreen() {
 
             <Input
               label="USERNAME"
-              placeholder="E.g. bintangrp"
+              placeholder="E.g. johndoe"
               value={username}
               onChangeText={setUsername}
               error={errors.username}
