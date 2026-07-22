@@ -74,6 +74,12 @@ export default function WelcomeScreen() {
             title="Continue with Google"
             variant="ghost"
             onPress={handleGoogleLogin}
+            iconLeft={
+              <Image
+                source={require('@/assets/images/google.png')}
+                style={{ width: 20, height: 20, resizeMode: 'contain' }}
+              />
+            }
             style={[styles.button, styles.googleButton, { borderColor: theme.border, borderWidth: 1 }]}
           />
         </View>
