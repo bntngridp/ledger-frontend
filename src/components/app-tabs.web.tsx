@@ -117,7 +117,7 @@ export function CustomTabList(props: TabListProps) {
           <View style={[styles.brandLogo, { backgroundColor: 'transparent' }]}>
             <Image
               source={require('@/assets/images/logo-leder.png')}
-              style={{ width: 28, height: 28, borderRadius: 6, resizeMode: 'contain' }}
+              style={{ width: 36, height: 36, borderRadius: 8, resizeMode: 'contain' }}
             />
           </View>
           <ThemedText type="subtitle" style={styles.brandText}>

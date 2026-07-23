@@ -48,7 +48,7 @@ export default function WelcomeScreen() {
             <View style={styles.brandLogoBg}>
               <Image
                 source={require('@/assets/images/logo-leder.png')}
-                style={{ width: 36, height: 36, resizeMode: 'contain' }}
+                style={{ width: 56, height: 56, resizeMode: 'contain' }}
               />
             </View>
             <ThemedText style={styles.brandNameText}>Ledger</ThemedText>
@@ -188,18 +188,24 @@ const styles = StyleSheet.create({
   brandHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 16,
   },
   brandLogoBg: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    width: 68,
+    height: 68,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
   },
   brandNameText: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: -0.5,
