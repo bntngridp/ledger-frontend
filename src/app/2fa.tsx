@@ -6,6 +6,7 @@ import {
   ScrollView,
   TextInput,
   Clipboard,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -387,12 +388,18 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   otpBox: {
-    width: 46,
-    height: 52,
-    borderRadius: 10,
+    width: 48,
+    height: 54,
+    borderRadius: 12,
     borderWidth: 1.5,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    padding: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    lineHeight: Platform.OS === 'web' ? 52 : undefined,
   },
   submitBtn: {
     width: '100%',
