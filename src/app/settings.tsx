@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -78,25 +78,26 @@ export default function SettingsScreen() {
   const [disableLoading, setDisableLoading] = useState(false);
   const [disableError, setDisableError] = useState('');
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      const token = await storage.getItem('auth_token');
-      if (token) {
-        const decoded = decodeJwt(token);
-        if (decoded?.email) {
-          setUserEmail(decoded.email);
-          // Split email to generate a mock name
-          const namePart = decoded.email.split('@')[0];
-          setUsername(namePart.charAt(0).toUpperCase() + namePart.slice(1));
+  useFocusEffect(
+    useCallback(() => {
+      const loadSettings = async () => {
+        const token = await storage.getItem('auth_token');
+        if (token) {
+          const decoded = decodeJwt(token);
+          if (decoded?.email) {
+            setUserEmail(decoded.email);
+            const namePart = decoded.email.split('@')[0];
+            setUsername(namePart.charAt(0).toUpperCase() + namePart.slice(1));
+          }
         }
-      }
 
-      const tfa = await storage.getItem('two_factor_enabled');
-      setTfaEnabled(tfa === 'true');
-    };
+        const tfa = await storage.getItem('two_factor_enabled');
+        setTfaEnabled(tfa === 'true');
+      };
 
-    loadSettings();
-  }, []);
+      loadSettings();
+    }, [])
+  );
 
   const handleLogout = async () => {
     await storage.removeItem('auth_token');
