@@ -7,7 +7,7 @@ import {
   TabTriggerSlotProps,
   TabListProps,
 } from 'expo-router/ui';
-import { Pressable, View, StyleSheet, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { Pressable, View, StyleSheet, TouchableOpacity, useWindowDimensions, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -114,8 +114,11 @@ export function CustomTabList(props: TabListProps) {
       <View style={styles.innerContainer}>
         {/* Brand Header */}
         <View style={styles.brandContainer}>
-          <View style={[styles.brandLogo, { backgroundColor: theme.primary + '15' }]}>
-            <Ionicons name="wallet-outline" size={22} color={theme.primary} />
+          <View style={[styles.brandLogo, { backgroundColor: 'transparent' }]}>
+            <Image
+              source={require('@/assets/images/logo-leder.png')}
+              style={{ width: 28, height: 28, borderRadius: 6, resizeMode: 'contain' }}
+            />
           </View>
           <ThemedText type="subtitle" style={styles.brandText}>
             Ledger

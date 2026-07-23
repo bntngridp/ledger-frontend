@@ -34,9 +34,12 @@ export default function WelcomeScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.heroSection}>
-          {/* Logo Placeholder / Animated Icon */}
+          {/* Brand Logo Icon */}
           <View style={[styles.logoContainer, { backgroundColor: theme.backgroundElement }]}>
-            <Ionicons name="wallet-outline" size={48} color={theme.primary} />
+            <Image
+              source={require('@/assets/images/logo-leder.png')}
+              style={{ width: 64, height: 64, borderRadius: 16, resizeMode: 'contain' }}
+            />
           </View>
           
           <ThemedText type="title" style={styles.appName}>
