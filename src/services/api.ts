@@ -114,15 +114,10 @@ export const api = {
         body: JSON.stringify(payload),
       });
     },
-    async disable2FA(payload: { code?: string; recovery_code?: string; email_otp?: string }) {
+    async disable2FA(payload: { code?: string; recovery_code?: string }) {
       return request('/auth/2fa/disable', {
         method: 'POST',
         body: JSON.stringify(payload),
-      });
-    },
-    async send2FAEmailOTP() {
-      return request('/auth/2fa/email-otp/send', {
-        method: 'POST',
       });
     },
   },

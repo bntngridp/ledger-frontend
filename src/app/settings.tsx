@@ -70,11 +70,9 @@ export default function SettingsScreen() {
 
   // Disable 2FA Modal states
   const [showDisableModal, setShowDisableModal] = useState(false);
-  const [disableMode, setDisableMode] = useState<'totp' | 'recovery' | 'email'>('totp');
+  const [disableMode, setDisableMode] = useState<'totp' | 'recovery'>('totp');
   const [otpCode, setOtpCode] = useState('');
   const [recoveryCodeInput, setRecoveryCodeInput] = useState('');
-  const [emailOtpSent, setEmailOtpSent] = useState(false);
-  const [emailOtpLoading, setEmailOtpLoading] = useState(false);
   const [disableLoading, setDisableLoading] = useState(false);
   const [disableError, setDisableError] = useState('');
 
@@ -113,27 +111,9 @@ export default function SettingsScreen() {
       // Require verification code to disable 2FA
       setOtpCode('');
       setRecoveryCodeInput('');
-      setEmailOtpSent(false);
       setDisableMode('totp');
       setDisableError('');
       setShowDisableModal(true);
-    }
-  };
-
-  const handleSendEmailOTP = async () => {
-    setEmailOtpLoading(true);
-    setDisableError('');
-    try {
-      const response = await api.auth.send2FAEmailOTP();
-      setEmailOtpLoading(false);
-      if (response.status === 'success') {
-        setEmailOtpSent(true);
-      } else {
-        setDisableError(response.message || 'Failed to send OTP email');
-      }
-    } catch (err: any) {
-      setEmailOtpLoading(false);
-      setDisableError(err.message || 'Failed to send OTP email');
     }
   };
 
@@ -142,7 +122,7 @@ export default function SettingsScreen() {
     setDisableError('');
 
     try {
-      let payload: { code?: string; recovery_code?: string; email_otp?: string } = {};
+      let payload: { code?: string; recovery_code?: string } = {};
 
       if (disableMode === 'totp') {
         if (otpCode.length !== 6) {
@@ -158,13 +138,6 @@ export default function SettingsScreen() {
           return;
         }
         payload.recovery_code = recoveryCodeInput.trim();
-      } else if (disableMode === 'email') {
-        if (otpCode.length !== 6) {
-          setDisableError('Email OTP code must be 6 digits');
-          setDisableLoading(false);
-          return;
-        }
-        payload.email_otp = otpCode;
       }
 
       const response = await api.auth.disable2FA(payload);
@@ -361,13 +334,13 @@ export default function SettingsScreen() {
                 {t('auth.disable2FASubtitle')}
               </ThemedText>
 
-              {/* 3 Verification Mode Tabs */}
+              {/* 2 Verification Mode Tabs */}
               <View style={[styles.tabSelector, { backgroundColor: theme.background, borderColor: theme.border }]}>
                 <TouchableOpacity
                   onPress={() => { setDisableMode('totp'); setDisableError(''); }}
                   style={[styles.tabBtn, disableMode === 'totp' && { backgroundColor: theme.primary }]}
                 >
-                  <ThemedText type="smallBold" style={{ color: disableMode === 'totp' ? '#ffffff' : theme.textSecondary, fontSize: 11 }}>
+                  <ThemedText type="smallBold" style={{ color: disableMode === 'totp' ? '#ffffff' : theme.textSecondary, fontSize: 12 }}>
                     {t('auth.tabTOTP')}
                   </ThemedText>
                 </TouchableOpacity>
@@ -376,17 +349,8 @@ export default function SettingsScreen() {
                   onPress={() => { setDisableMode('recovery'); setDisableError(''); }}
                   style={[styles.tabBtn, disableMode === 'recovery' && { backgroundColor: theme.primary }]}
                 >
-                  <ThemedText type="smallBold" style={{ color: disableMode === 'recovery' ? '#ffffff' : theme.textSecondary, fontSize: 11 }}>
+                  <ThemedText type="smallBold" style={{ color: disableMode === 'recovery' ? '#ffffff' : theme.textSecondary, fontSize: 12 }}>
                     {t('auth.tabRecovery')}
-                  </ThemedText>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => { setDisableMode('email'); setDisableError(''); }}
-                  style={[styles.tabBtn, disableMode === 'email' && { backgroundColor: theme.primary }]}
-                >
-                  <ThemedText type="smallBold" style={{ color: disableMode === 'email' ? '#ffffff' : theme.textSecondary, fontSize: 11 }}>
-                    {t('auth.tabEmail')}
                   </ThemedText>
                 </TouchableOpacity>
               </View>
@@ -423,51 +387,13 @@ export default function SettingsScreen() {
                       borderColor: theme.border,
                     },
                   ]}
-                  placeholder={t('auth.recoveryCodePlaceholder')}
+                  placeholder="e.g. 77dec-fdc31"
                   placeholderTextColor={theme.textSecondary}
                   value={recoveryCodeInput}
                   onChangeText={setRecoveryCodeInput}
-                  autoCapitalize="characters"
+                  autoCapitalize="none"
                   textAlign="center"
                 />
-              )}
-
-              {/* Tab 3: Email OTP */}
-              {disableMode === 'email' && (
-                <View style={{ width: '100%', alignItems: 'center' }}>
-                  {!emailOtpSent ? (
-                    <Button
-                      title={t('auth.sendEmailOTP')}
-                      variant="primary"
-                      loading={emailOtpLoading}
-                      onPress={handleSendEmailOTP}
-                      style={{ width: '100%', marginVertical: Spacing.two }}
-                    />
-                  ) : (
-                    <>
-                      <ThemedText type="small" style={{ color: theme.success, marginBottom: 8, fontWeight: '600' }}>
-                        {t('auth.otpSentToEmail')}
-                      </ThemedText>
-                      <TextInput
-                        style={[
-                          styles.modalInput,
-                          {
-                            backgroundColor: theme.background,
-                            color: theme.text,
-                            borderColor: theme.border,
-                          },
-                        ]}
-                        placeholder="000000"
-                        placeholderTextColor={theme.textSecondary}
-                        value={otpCode}
-                        onChangeText={(text) => setOtpCode(text.replace(/[^0-9]/g, ''))}
-                        keyboardType="numeric"
-                        maxLength={6}
-                        textAlign="center"
-                      />
-                    </>
-                  )}
-                </View>
               )}
 
               {disableError ? (

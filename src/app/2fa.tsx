@@ -113,6 +113,26 @@ export default function TwoFactorScreen() {
     }
   };
 
+  const handleDownloadCodes = () => {
+    const textContent = `LEDGER 2FA RECOVERY CODES\nGenerated on: ${new Date().toLocaleString()}\n\n` +
+      recoveryCodes.map((c, i) => `${i + 1}. ${c}`).join('\n') +
+      `\n\nKeep these recovery codes in a safe place. Each code can only be used once.`;
+
+    if (Platform.OS === 'web') {
+      const blob = new Blob([textContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'ledger-recovery-codes.txt';
+      link.click();
+      URL.revokeObjectURL(url);
+    } else {
+      Clipboard.setString(textContent);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   const handleOtpChange = (text: string, index: number) => {
     const cleaned = text.replace(/[^0-9]/g, '');
 
@@ -203,7 +223,7 @@ export default function TwoFactorScreen() {
                 {t('auth.recoveryCodesSubtitle')}
               </ThemedText>
 
-              {/* 8 Recovery Codes Grid */}
+              {/* 16 Recovery Codes Grid */}
               <View style={styles.recoveryGrid}>
                 {recoveryCodes.map((code, idx) => (
                   <View key={idx} style={[styles.recoveryBadge, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
@@ -214,25 +234,37 @@ export default function TwoFactorScreen() {
                 ))}
               </View>
 
-              <TouchableOpacity
-                onPress={() => {
-                  Clipboard.setString(recoveryCodes.join('\n'));
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                }}
-                style={[styles.copyAllBtn, { borderColor: theme.primary }]}
-              >
-                <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={theme.primary} />
-                <ThemedText type="smallBold" style={{ color: theme.primary, marginLeft: 8 }}>
-                  {copied ? t('auth.codesCopied') : t('auth.copyAllCodes')}
-                </ThemedText>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 10, width: '100%', marginVertical: Spacing.two }}>
+                <TouchableOpacity
+                  onPress={handleDownloadCodes}
+                  style={[styles.actionBtnHalf, { borderColor: theme.primary, backgroundColor: theme.primary + '10' }]}
+                >
+                  <Ionicons name="download-outline" size={18} color={theme.primary} />
+                  <ThemedText type="smallBold" style={{ color: theme.primary, marginLeft: 6 }}>
+                    Download .txt
+                  </ThemedText>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    Clipboard.setString(recoveryCodes.join('\n'));
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  style={[styles.actionBtnHalf, { borderColor: theme.primary }]}
+                >
+                  <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={theme.primary} />
+                  <ThemedText type="smallBold" style={{ color: theme.primary, marginLeft: 6 }}>
+                    {copied ? t('auth.codesCopied') : t('auth.copyAllCodes')}
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
 
               <Button
                 title="Saya Sudah Menyimpan Kode Ini"
                 variant="primary"
                 onPress={handleBack}
-                style={{ width: '100%', marginTop: Spacing.three }}
+                style={{ width: '100%', marginTop: Spacing.two }}
               />
             </View>
           ) : success ? (
@@ -496,9 +528,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   recoveryText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
+  },
+  actionBtnHalf: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
   },
   copyAllBtn: {
     flexDirection: 'row',
