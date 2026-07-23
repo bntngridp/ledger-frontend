@@ -19,6 +19,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/use-theme';
 import { useAppTheme } from '@/context/theme-context';
+import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { storage } from '@/services/storage';
 import { api } from '@/services/api';
@@ -48,6 +49,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { themePreference, setThemePreference } = useAppTheme();
+  const { t, language, setLanguage } = useTranslation();
 
   // Safe back navigation
   const handleBack = () => {
@@ -247,16 +249,19 @@ export default function SettingsScreen() {
 
               <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />
 
-              <TouchableOpacity style={styles.settingsRow}>
+              <TouchableOpacity
+                style={styles.settingsRow}
+                onPress={() => setLanguage(language === 'en' ? 'id' : 'en')}
+              >
                 <View style={styles.settingsLabelWrapper}>
                   <Ionicons name="globe-outline" size={20} color={theme.text} />
                   <ThemedText type="smallBold" style={styles.settingsLabel}>
-                    Language
+                    {t('settings.languagePreference', 'Language Preference')}
                   </ThemedText>
                 </View>
                 <View style={styles.rowRight}>
-                  <ThemedText type="small" style={{ color: theme.textSecondary, marginRight: 6 }}>
-                    Bahasa Indonesia
+                  <ThemedText type="small" style={{ color: theme.primary, fontWeight: '700', marginRight: 6 }}>
+                    {language === 'en' ? '🇺🇸 English' : '🇮🇩 Bahasa Indonesia'}
                   </ThemedText>
                   <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
                 </View>

@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 import '@/global.css';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { ThemeProvider as AppThemeProvider, useAppTheme } from '@/context/theme-context';
+import { LanguageProvider } from '@/context/language-context';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -33,7 +34,9 @@ function LayoutContent() {
 export default function RootLayout() {
   return (
     <AppThemeProvider>
-      <LayoutContent />
+      <LanguageProvider>
+        <LayoutContent />
+      </LanguageProvider>
     </AppThemeProvider>
   );
 }

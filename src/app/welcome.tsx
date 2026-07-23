@@ -16,12 +16,14 @@ import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/hooks/use-translation';
 import { API_BASE_URL } from '@/services/api';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { width } = useWindowDimensions();
+  const { t, language, setLanguage } = useTranslation();
 
   const isDesktop = width >= 768;
 
@@ -43,36 +45,47 @@ export default function WelcomeScreen() {
       <View style={[styles.contentContainer, isDesktop ? styles.desktopLayout : styles.mobileLayout]}>
         {/* ================= LEFT PANEL (BRAND & HERO) ================= */}
         <View style={[styles.leftPanel, isDesktop ? styles.leftPanelDesktop : styles.leftPanelMobile]}>
-          {/* Header Brand Logo */}
+          {/* Header Brand Logo & Language Switcher */}
           <View style={styles.brandHeader}>
-            <View style={styles.brandLogoBg}>
-              <Image
-                source={require('@/assets/images/logo-leder.png')}
-                style={{ width: 56, height: 56, resizeMode: 'contain' }}
-              />
+            <View style={styles.brandLeftGroup}>
+              <View style={styles.brandLogoBg}>
+                <Image
+                  source={require('@/assets/images/logo-leder.png')}
+                  style={{ width: 56, height: 56, resizeMode: 'contain' }}
+                />
+              </View>
+              <ThemedText style={styles.brandNameText}>Ledger</ThemedText>
             </View>
-            <ThemedText style={styles.brandNameText}>Ledger</ThemedText>
+
+            <TouchableOpacity
+              onPress={() => setLanguage(language === 'en' ? 'id' : 'en')}
+              style={styles.langToggleBadge}
+            >
+              <ThemedText style={styles.langToggleText}>
+                {language === 'en' ? '🇮🇩 ID' : '🇺🇸 EN'}
+              </ThemedText>
+            </TouchableOpacity>
           </View>
 
           {/* Hero Headline & Subtitle */}
           <View style={styles.heroContent}>
             <ThemedText style={styles.heroHeadline}>
-              Your money,{"\n"}all in one place.
+              {t('welcome.headline')}
             </ThemedText>
             <ThemedText style={styles.heroTagline}>
-              Manage Rupiah, USDT & USDC with ease.
+              {t('welcome.tagline')}
             </ThemedText>
 
             {/* Feature Badges / Chips */}
             <View style={styles.badgesRow}>
               <View style={styles.featureBadge}>
-                <ThemedText style={styles.badgeText}>💸  Instant Transfer</ThemedText>
+                <ThemedText style={styles.badgeText}>{t('welcome.badgeTransfer')}</ThemedText>
               </View>
               <View style={styles.featureBadge}>
-                <ThemedText style={styles.badgeText}>🔒  2FA Protected</ThemedText>
+                <ThemedText style={styles.badgeText}>{t('welcome.badgeSecurity')}</ThemedText>
               </View>
               <View style={styles.featureBadge}>
-                <ThemedText style={styles.badgeText}>🔄  Crypto Swap</ThemedText>
+                <ThemedText style={styles.badgeText}>{t('welcome.badgeSwap')}</ThemedText>
               </View>
             </View>
           </View>
@@ -95,23 +108,23 @@ export default function WelcomeScreen() {
             >
               <View style={styles.formHeader}>
                 <ThemedText type="subtitle" style={[styles.formTitle, { color: theme.text }]}>
-                  Get Started
+                  {t('welcome.getStarted')}
                 </ThemedText>
                 <ThemedText style={[styles.formSubtitle, { color: theme.textSecondary }]}>
-                  Join thousands managing their wallet securely.
+                  {t('welcome.getStartedSubtitle')}
                 </ThemedText>
               </View>
 
               <View style={styles.actionsGroup}>
                 <Button
-                  title="Create Account"
+                  title={t('welcome.createAccount')}
                   variant="primary"
                   onPress={() => router.push('/register')}
                   style={styles.primaryBtn}
                 />
 
                 <Button
-                  title="Log In"
+                  title={t('welcome.logIn')}
                   variant="secondary"
                   onPress={() => router.push('/login')}
                   style={styles.secondaryBtn}
@@ -120,13 +133,13 @@ export default function WelcomeScreen() {
                 <View style={styles.dividerContainer}>
                   <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
                   <ThemedText type="small" style={[styles.dividerText, { color: theme.textSecondary }]}>
-                    OR
+                    {t('common.or')}
                   </ThemedText>
                   <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
                 </View>
 
                 <Button
-                  title="Continue with Google"
+                  title={t('welcome.continueWithGoogle')}
                   variant="ghost"
                   onPress={handleGoogleLogin}
                   iconLeft={
@@ -139,8 +152,8 @@ export default function WelcomeScreen() {
                 />
               </View>
 
-              <ThemedText style={[styles.legalText, { color: theme.placeholder || theme.textSecondary }]}>
-                By continuing, you agree to our Terms & Privacy Policy.
+              <ThemedText style={[styles.legalText, { color: theme.textSecondary }]}>
+                {t('welcome.legalDisclaimer')}
               </ThemedText>
             </ScrollView>
           </SafeAreaView>
@@ -188,7 +201,26 @@ const styles = StyleSheet.create({
   brandHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  brandLeftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 16,
+  },
+  langToggleBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  langToggleText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 13,
   },
   brandLogoBg: {
     width: 68,
