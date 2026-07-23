@@ -53,8 +53,8 @@ async function request<T = any>(
     }
 
     if (!response.ok) {
-      // Auto-logout if unauthorized (401)
-      if (response.status === 401) {
+      // Auto-logout if unauthorized (401) except for 2FA verification endpoints
+      if (response.status === 401 && !endpoint.includes('/2fa/verify') && !endpoint.includes('/2fa/disable')) {
         await storage.removeItem('auth_token');
       }
       return {
