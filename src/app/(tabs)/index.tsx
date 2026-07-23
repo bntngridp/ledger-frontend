@@ -24,6 +24,7 @@ import { Chart } from '@/components/chart';
 import { Button } from '@/components/ui/button';
 import { api } from '@/services/api';
 import { storage } from '@/services/storage';
+import { AssetIcon } from '@/components/ui/asset-icon';
 
 interface BalanceItem {
   asset_symbol: string;
@@ -685,9 +686,7 @@ export default function DashboardScreen() {
               uiTransactions.map((tx) => (
                 <View key={tx.id} style={[styles.tableRow, { borderBottomColor: theme.border }]}>
                   <View style={styles.assetCol}>
-                    <View style={[styles.smallIconCircle, { backgroundColor: tx.color + '15' }]}>
-                      <ThemedText type="code" style={{ color: tx.color, fontSize: 10 }}>{tx.asset[0]}</ThemedText>
-                    </View>
+                    <AssetIcon symbol={tx.asset} size={28} containerStyle={{ marginRight: 10 }} />
                     <ThemedText type="smallBold">{tx.assetName}</ThemedText>
                   </View>
                   <ThemedText type="small" style={[styles.col, { color: theme.textSecondary }]}>
@@ -719,9 +718,7 @@ export default function DashboardScreen() {
             <View style={styles.assetsSidebarList}>
               {uiAssets.map((asset) => (
                 <View key={asset.id} style={[styles.sidebarAssetRow, { borderBottomColor: theme.border }]}>
-                  <View style={[styles.assetIconContainer, { backgroundColor: asset.iconColor + '15' }]}>
-                    <Ionicons name={asset.icon as any} size={22} color={asset.iconColor} />
-                  </View>
+                  <AssetIcon symbol={asset.symbol} size={36} containerStyle={{ marginRight: 12 }} />
                   <View style={styles.assetSidebarDetails}>
                     <ThemedText type="smallBold">{asset.name}</ThemedText>
                     <ThemedText type="code" style={{ color: theme.textSecondary, fontSize: 11 }}>

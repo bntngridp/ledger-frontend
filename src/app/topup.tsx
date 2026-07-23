@@ -17,6 +17,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { AssetIcon } from '@/components/ui/asset-icon';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
@@ -97,9 +98,12 @@ export default function TopUpScreen() {
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
-          <ThemedText type="smallBold" style={styles.headerTitle}>
-            Top Up IDR
-          </ThemedText>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <AssetIcon symbol="IDR" size={24} containerStyle={{ marginRight: 8 }} />
+            <ThemedText type="smallBold" style={styles.headerTitle}>
+              Top Up IDR
+            </ThemedText>
+          </View>
           <View style={{ width: 32 }} />
         </View>
 

@@ -18,6 +18,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { AssetIcon } from '@/components/ui/asset-icon';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
@@ -203,9 +204,12 @@ export default function CryptoScreen() {
                     {
                       backgroundColor: selectedAsset === 'USDT' ? theme.primary : theme.backgroundElement,
                       borderColor: theme.border,
+                      flexDirection: 'row',
+                      alignItems: 'center',
                     },
                   ]}
                 >
+                  <AssetIcon symbol="USDT" size={18} containerStyle={{ marginRight: 6 }} />
                   <ThemedText style={{ color: selectedAsset === 'USDT' ? '#ffffff' : theme.textSecondary }}>
                     USDT
                   </ThemedText>
@@ -217,9 +221,12 @@ export default function CryptoScreen() {
                     {
                       backgroundColor: selectedAsset === 'USDC' ? theme.primary : theme.backgroundElement,
                       borderColor: theme.border,
+                      flexDirection: 'row',
+                      alignItems: 'center',
                     },
                   ]}
                 >
+                  <AssetIcon symbol="USDC" size={18} containerStyle={{ marginRight: 6 }} />
                   <ThemedText style={{ color: selectedAsset === 'USDC' ? '#ffffff' : theme.textSecondary }}>
                     USDC
                   </ThemedText>
@@ -228,7 +235,8 @@ export default function CryptoScreen() {
 
               {/* QR Code Container */}
               <Card style={styles.qrCard} bordered>
-                <View style={[styles.networkBadge, { backgroundColor: theme.warning + '15' }]}>
+                <View style={[styles.networkBadge, { backgroundColor: theme.warning + '15', flexDirection: 'row', alignItems: 'center' }]}>
+                  <AssetIcon symbol="Polygon" size={16} containerStyle={{ marginRight: 6 }} />
                   <ThemedText type="code" style={{ color: theme.warning, fontWeight: '700' }}>
                     POLYGON AMOY TESTNET
                   </ThemedText>

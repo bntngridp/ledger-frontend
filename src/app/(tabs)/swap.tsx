@@ -16,6 +16,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { AssetIcon } from '@/components/ui/asset-icon';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
@@ -208,6 +209,7 @@ export default function SwapScreen() {
                   style={styles.amountInput}
                 />
                 <View style={[styles.assetSelector, { backgroundColor: theme.backgroundSelected }]}>
+                  <AssetIcon symbol={fromAsset} size={22} containerStyle={{ marginRight: 6 }} />
                   <ThemedText type="smallBold">{fromAsset}</ThemedText>
                 </View>
               </View>
@@ -242,6 +244,7 @@ export default function SwapScreen() {
                   style={styles.amountInput}
                 />
                 <View style={[styles.assetSelector, { backgroundColor: theme.backgroundSelected }]}>
+                  <AssetIcon symbol={toAsset} size={22} containerStyle={{ marginRight: 6 }} />
                   <ThemedText type="smallBold">{toAsset}</ThemedText>
                 </View>
               </View>
