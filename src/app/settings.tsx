@@ -70,7 +70,11 @@ export default function SettingsScreen() {
 
   // Disable 2FA Modal states
   const [showDisableModal, setShowDisableModal] = useState(false);
+  const [disableMode, setDisableMode] = useState<'totp' | 'recovery' | 'email'>('totp');
   const [otpCode, setOtpCode] = useState('');
+  const [recoveryCodeInput, setRecoveryCodeInput] = useState('');
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailOtpLoading, setEmailOtpLoading] = useState(false);
   const [disableLoading, setDisableLoading] = useState(false);
   const [disableError, setDisableError] = useState('');
 
@@ -107,29 +111,69 @@ export default function SettingsScreen() {
     } else {
       // Require verification code to disable 2FA
       setOtpCode('');
+      setRecoveryCodeInput('');
+      setEmailOtpSent(false);
+      setDisableMode('totp');
       setDisableError('');
       setShowDisableModal(true);
     }
   };
 
-  const confirmDisable2FA = async () => {
-    if (otpCode.length !== 6) {
-      setDisableError('OTP code must be 6 digits');
-      return;
+  const handleSendEmailOTP = async () => {
+    setEmailOtpLoading(true);
+    setDisableError('');
+    try {
+      const response = await api.auth.send2FAEmailOTP();
+      setEmailOtpLoading(false);
+      if (response.status === 'success') {
+        setEmailOtpSent(true);
+      } else {
+        setDisableError(response.message || 'Failed to send OTP email');
+      }
+    } catch (err: any) {
+      setEmailOtpLoading(false);
+      setDisableError(err.message || 'Failed to send OTP email');
     }
+  };
 
+  const confirmDisable2FA = async () => {
     setDisableLoading(true);
     setDisableError('');
 
     try {
-      const response = await api.auth.disable2FA({ code: otpCode });
+      let payload: { code?: string; recovery_code?: string; email_otp?: string } = {};
+
+      if (disableMode === 'totp') {
+        if (otpCode.length !== 6) {
+          setDisableError('OTP code must be 6 digits');
+          setDisableLoading(false);
+          return;
+        }
+        payload.code = otpCode;
+      } else if (disableMode === 'recovery') {
+        if (!recoveryCodeInput.trim()) {
+          setDisableError('Please enter a valid recovery code');
+          setDisableLoading(false);
+          return;
+        }
+        payload.recovery_code = recoveryCodeInput.trim();
+      } else if (disableMode === 'email') {
+        if (otpCode.length !== 6) {
+          setDisableError('Email OTP code must be 6 digits');
+          setDisableLoading(false);
+          return;
+        }
+        payload.email_otp = otpCode;
+      }
+
+      const response = await api.auth.disable2FA(payload);
       setDisableLoading(false);
 
       if (response.status === 'success') {
         await storage.setItem('two_factor_enabled', 'false');
         setTfaEnabled(false);
         setShowDisableModal(false);
-        Alert.alert('Success', 'Two-Factor Authentication has been disabled.');
+        Alert.alert('Success', t('auth.disableSuccess'));
       } else {
         setDisableError(response.message || 'Failed to disable 2FA');
       }
@@ -308,31 +352,122 @@ export default function SettingsScreen() {
         {/* Disable 2FA Modal */}
         <Modal visible={showDisableModal} transparent animationType="fade">
           <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
-              <ThemedText type="smallBold" style={{ marginBottom: Spacing.two }}>
-                {t('settings.disable2FATitle')}
+            <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement, maxWidth: 440 }]}>
+              <ThemedText type="smallBold" style={{ marginBottom: 4, fontSize: 16 }}>
+                {t('auth.disable2FATitle')}
               </ThemedText>
               <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.three }}>
-                {t('settings.disable2FADesc')}
+                {t('auth.disable2FASubtitle')}
               </ThemedText>
 
-              <TextInput
-                style={[
-                  styles.modalInput,
-                  {
-                    backgroundColor: theme.background,
-                    color: theme.text,
-                    borderColor: theme.border,
-                  },
-                ]}
-                placeholder="000 000"
-                placeholderTextColor={theme.textSecondary}
-                value={otpCode}
-                onChangeText={(text) => setOtpCode(text.replace(/[^0-9]/g, ''))}
-                keyboardType="numeric"
-                maxLength={6}
-                textAlign="center"
-              />
+              {/* 3 Verification Mode Tabs */}
+              <View style={[styles.tabSelector, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                <TouchableOpacity
+                  onPress={() => { setDisableMode('totp'); setDisableError(''); }}
+                  style={[styles.tabBtn, disableMode === 'totp' && { backgroundColor: theme.primary }]}
+                >
+                  <ThemedText type="smallBold" style={{ color: disableMode === 'totp' ? '#ffffff' : theme.textSecondary, fontSize: 11 }}>
+                    {t('auth.tabTOTP')}
+                  </ThemedText>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => { setDisableMode('recovery'); setDisableError(''); }}
+                  style={[styles.tabBtn, disableMode === 'recovery' && { backgroundColor: theme.primary }]}
+                >
+                  <ThemedText type="smallBold" style={{ color: disableMode === 'recovery' ? '#ffffff' : theme.textSecondary, fontSize: 11 }}>
+                    {t('auth.tabRecovery')}
+                  </ThemedText>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => { setDisableMode('email'); setDisableError(''); }}
+                  style={[styles.tabBtn, disableMode === 'email' && { backgroundColor: theme.primary }]}
+                >
+                  <ThemedText type="smallBold" style={{ color: disableMode === 'email' ? '#ffffff' : theme.textSecondary, fontSize: 11 }}>
+                    {t('auth.tabEmail')}
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
+
+              {/* Tab 1: TOTP Code */}
+              {disableMode === 'totp' && (
+                <TextInput
+                  style={[
+                    styles.modalInput,
+                    {
+                      backgroundColor: theme.background,
+                      color: theme.text,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                  placeholder="000000"
+                  placeholderTextColor={theme.textSecondary}
+                  value={otpCode}
+                  onChangeText={(text) => setOtpCode(text.replace(/[^0-9]/g, ''))}
+                  keyboardType="numeric"
+                  maxLength={6}
+                  textAlign="center"
+                />
+              )}
+
+              {/* Tab 2: Recovery Code */}
+              {disableMode === 'recovery' && (
+                <TextInput
+                  style={[
+                    styles.modalInput,
+                    {
+                      backgroundColor: theme.background,
+                      color: theme.text,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                  placeholder={t('auth.recoveryCodePlaceholder')}
+                  placeholderTextColor={theme.textSecondary}
+                  value={recoveryCodeInput}
+                  onChangeText={setRecoveryCodeInput}
+                  autoCapitalize="characters"
+                  textAlign="center"
+                />
+              )}
+
+              {/* Tab 3: Email OTP */}
+              {disableMode === 'email' && (
+                <View style={{ width: '100%', alignItems: 'center' }}>
+                  {!emailOtpSent ? (
+                    <Button
+                      title={t('auth.sendEmailOTP')}
+                      variant="primary"
+                      loading={emailOtpLoading}
+                      onPress={handleSendEmailOTP}
+                      style={{ width: '100%', marginVertical: Spacing.two }}
+                    />
+                  ) : (
+                    <>
+                      <ThemedText type="small" style={{ color: theme.success, marginBottom: 8, fontWeight: '600' }}>
+                        {t('auth.otpSentToEmail')}
+                      </ThemedText>
+                      <TextInput
+                        style={[
+                          styles.modalInput,
+                          {
+                            backgroundColor: theme.background,
+                            color: theme.text,
+                            borderColor: theme.border,
+                          },
+                        ]}
+                        placeholder="000000"
+                        placeholderTextColor={theme.textSecondary}
+                        value={otpCode}
+                        onChangeText={(text) => setOtpCode(text.replace(/[^0-9]/g, ''))}
+                        keyboardType="numeric"
+                        maxLength={6}
+                        textAlign="center"
+                      />
+                    </>
+                  )}
+                </View>
+              )}
 
               {disableError ? (
                 <ThemedText style={{ color: theme.danger, marginTop: Spacing.two, fontWeight: '500' }}>
@@ -586,14 +721,29 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
   },
   modalInput: {
-    height: 52,
+    height: 48,
     borderRadius: 12,
     borderWidth: 1.5,
-    fontSize: 24,
+    paddingHorizontal: 16,
+    fontSize: 18,
     fontWeight: '700',
-    letterSpacing: 8,
-    marginTop: Spacing.two,
+    marginVertical: Spacing.two,
     width: '100%',
+  },
+  tabSelector: {
+    flexDirection: 'row',
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 3,
+    marginBottom: Spacing.three,
+    width: '100%',
+  },
+  tabBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
   },
   modalButtons: {
     flexDirection: 'row',

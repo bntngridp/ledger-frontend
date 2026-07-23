@@ -41,6 +41,7 @@ export default function TwoFactorScreen() {
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [setupLoading, setSetupLoading] = useState(true);
   const [success, setSuccess] = useState(false);
@@ -91,11 +92,16 @@ export default function TwoFactorScreen() {
       setLoading(false);
 
       if (response.status === 'success') {
-        setSuccess(true);
-        setTimeout(() => {
-          setSuccess(false);
-          handleBack(); // Return back to settings
-        }, 2000);
+        const codes = response.data?.recovery_codes || [];
+        if (codes.length > 0) {
+          setRecoveryCodes(codes);
+        } else {
+          setSuccess(true);
+          setTimeout(() => {
+            setSuccess(false);
+            handleBack();
+          }, 2000);
+        }
       } else {
         setError(response.message || 'Verification failed');
       }
@@ -267,6 +273,51 @@ export default function TwoFactorScreen() {
                 style={styles.submitBtn}
               />
             </View>
+          ) : recoveryCodes.length > 0 ? (
+            <View style={styles.recoveryContainer}>
+              <View style={[styles.successIconContainer, { backgroundColor: theme.primary + '20', marginBottom: Spacing.three }]}>
+                <Ionicons name="shield-checkmark" size={48} color={theme.primary} />
+              </View>
+
+              <ThemedText type="subtitle" style={{ textAlign: 'center', marginBottom: 6 }}>
+                {t('auth.recoveryCodesTitle')}
+              </ThemedText>
+              <ThemedText style={{ color: theme.textSecondary, textAlign: 'center', fontSize: 13, marginBottom: Spacing.four, lineHeight: 18 }}>
+                {t('auth.recoveryCodesSubtitle')}
+              </ThemedText>
+
+              {/* 8 Recovery Codes Grid */}
+              <View style={styles.recoveryGrid}>
+                {recoveryCodes.map((code, idx) => (
+                  <View key={idx} style={[styles.recoveryBadge, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+                    <ThemedText type="code" style={styles.recoveryText}>
+                      {code}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+
+              <TouchableOpacity
+                onPress={() => {
+                  Clipboard.setString(recoveryCodes.join('\n'));
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                style={[styles.copyAllBtn, { borderColor: theme.primary }]}
+              >
+                <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={theme.primary} />
+                <ThemedText type="smallBold" style={{ color: theme.primary, marginLeft: 8 }}>
+                  {copied ? t('auth.codesCopied') : t('auth.copyAllCodes')}
+                </ThemedText>
+              </TouchableOpacity>
+
+              <Button
+                title="Saya Sudah Menyimpan Kode Ini"
+                variant="primary"
+                onPress={handleBack}
+                style={{ width: '100%', marginTop: Spacing.three }}
+              />
+            </View>
           ) : (
             <View style={styles.successState}>
               <View style={[styles.successIconContainer, { backgroundColor: theme.success + '20' }]}>
@@ -420,5 +471,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: Spacing.five * 2,
+  },
+  recoveryContainer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  recoveryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'center',
+    marginVertical: Spacing.three,
+    width: '100%',
+  },
+  recoveryBadge: {
+    width: '45%',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recoveryText: {
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  copyAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginVertical: Spacing.two,
+    width: '100%',
   },
 });
