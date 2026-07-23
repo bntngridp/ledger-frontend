@@ -18,12 +18,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
 
 export default function TransferScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useTranslation();
 
   // Safe back navigation
   const handleBack = () => {
@@ -138,7 +140,7 @@ export default function TransferScreen() {
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
           <ThemedText type="smallBold" style={styles.headerTitle}>
-            Send Money
+            {t('transfer.sendTitle')}
           </ThemedText>
           <View style={{ width: 32 }} />
         </View>
@@ -146,8 +148,8 @@ export default function TransferScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* Recipient User ID */}
           <Input
-            label="RECIPIENT USER ID (UUID)"
-            placeholder="Enter destination user ID"
+            label={t('transfer.recipientIdLabel')}
+            placeholder={t('transfer.recipientPlaceholder')}
             value={recipientId}
             onChangeText={setRecipientId}
             error={isIdInvalid ? 'Enter a valid User ID' : undefined}
@@ -160,7 +162,7 @@ export default function TransferScreen() {
           {/* Asset Selector */}
           <View style={styles.assetSection}>
             <ThemedText type="small" style={[styles.label, { color: theme.textSecondary }]}>
-              SELECT ASSET
+              {t('transfer.selectAsset')}
             </ThemedText>
             <View style={[styles.selectorContainer, { backgroundColor: theme.backgroundElement }]}>
               {(['IDR', 'USDT', 'USDC'] as const).map((asset) => (
@@ -186,14 +188,14 @@ export default function TransferScreen() {
             </View>
             <ThemedText type="small" style={[styles.balanceHint, { color: theme.textSecondary }]}>
               {selectedAsset === 'IDR'
-                ? `Available Balance: Rp ${balances.IDR.toLocaleString('id-ID')}`
-                : `Available Balance: ${balances[selectedAsset]} ${selectedAsset}`}
+                ? `${t('transfer.availableBalance')}: Rp ${balances.IDR.toLocaleString('id-ID')}`
+                : `${t('transfer.availableBalance')}: ${balances[selectedAsset]} ${selectedAsset}`}
             </ThemedText>
           </View>
 
           {/* Amount Input */}
           <Input
-            label="AMOUNT"
+            label={t('transfer.amountLabel')}
             placeholder="0"
             value={amount}
             onChangeText={(text) => setAmount(text.replace(/[^0-9.]/g, ''))}
@@ -204,15 +206,15 @@ export default function TransferScreen() {
 
           {/* Notes */}
           <Input
-            label="NOTES (OPTIONAL)"
-            placeholder="Add note for recipient"
+            label={t('transfer.notesLabel')}
+            placeholder={t('transfer.notesPlaceholder')}
             value={notes}
             onChangeText={setNotes}
             iconLeft="document-text-outline"
           />
 
           <Button
-            title="Review Transfer"
+            title={t('transfer.reviewTransfer')}
             variant="primary"
             disabled={!canSend}
             onPress={handleReviewTransfer}
@@ -227,28 +229,28 @@ export default function TransferScreen() {
               {!transferSuccess ? (
                 <>
                   <ThemedText type="subtitle" style={styles.modalTitle}>
-                    Confirm Transfer
+                    {t('transfer.confirmTransfer')}
                   </ThemedText>
                   <ThemedText style={[styles.modalDesc, { color: theme.textSecondary }]}>
-                    Ensure recipient ID and amount are correct.
+                    {t('transfer.ensureDetails')}
                   </ThemedText>
 
                   <Card style={[styles.summaryCard, { backgroundColor: theme.background }]} bordered>
                     <View style={styles.summaryItem}>
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>Recipient ID</ThemedText>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('transfer.recipientId')}</ThemedText>
                       <ThemedText type="code" style={{ fontSize: 13 }}>
                         {recipientId.substring(0, 10)}...{recipientId.substring(recipientId.length - 8)}
                       </ThemedText>
                     </View>
                     <View style={styles.summaryItem}>
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>Amount</ThemedText>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('transfer.amount')}</ThemedText>
                       <ThemedText type="smallBold" style={{ color: theme.danger }}>
                         {selectedAsset === 'IDR' ? `- Rp ${parseInt(amount || '0').toLocaleString('id-ID')}` : `- ${amount} ${selectedAsset}`}
                       </ThemedText>
                     </View>
                     {notes ? (
                       <View style={styles.summaryItem}>
-                        <ThemedText type="small" style={{ color: theme.textSecondary }}>Notes</ThemedText>
+                        <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('transfer.notes')}</ThemedText>
                         <ThemedText type="small">{notes}</ThemedText>
                       </View>
                     ) : null}
@@ -262,13 +264,13 @@ export default function TransferScreen() {
 
                   <View style={styles.modalButtons}>
                     <Button
-                      title="Cancel"
+                      title={t('common.cancel')}
                       variant="ghost"
                       onPress={() => setShowReviewModal(false)}
                       style={{ flex: 1 }}
                     />
                     <Button
-                      title="Confirm Send"
+                      title={t('transfer.confirmSend')}
                       variant="primary"
                       loading={loading}
                       onPress={handleConfirmTransfer}
@@ -282,10 +284,10 @@ export default function TransferScreen() {
                     <Ionicons name="checkmark-circle" size={56} color={theme.success} />
                   </View>
                   <ThemedText type="subtitle" style={{ marginTop: Spacing.three }}>
-                    Transfer Successful!
+                    {t('transfer.transferSuccess')}
                   </ThemedText>
                   <ThemedText style={{ color: theme.textSecondary, marginTop: Spacing.one }}>
-                    Dana berhasil terkirim ke penerima.
+                    {t('transfer.transferSuccessDesc')}
                   </ThemedText>
                 </View>
               )}

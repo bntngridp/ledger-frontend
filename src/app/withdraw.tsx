@@ -17,12 +17,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
 
 export default function WithdrawScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useTranslation();
 
   // Safe back navigation
   const handleBack = () => {
@@ -118,7 +120,7 @@ export default function WithdrawScreen() {
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
           <ThemedText type="smallBold" style={styles.headerTitle}>
-            Withdraw to Bank
+            {t('withdraw.withdrawTitle')}
           </ThemedText>
           <View style={{ width: 32 }} />
         </View>
@@ -127,7 +129,7 @@ export default function WithdrawScreen() {
           {/* Bank Picker Dropdown (Simulated) */}
           <View style={styles.bankPickerContainer}>
             <ThemedText type="small" style={[styles.label, { color: theme.textSecondary }]}>
-              BENEFICIARY BANK
+              {t('withdraw.beneficiaryBank')}
             </ThemedText>
             <View style={[styles.pickerRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
               <Ionicons name="business-outline" size={20} color={theme.textSecondary} style={{ marginRight: 10 }} />
@@ -140,8 +142,8 @@ export default function WithdrawScreen() {
 
           {/* Account Number */}
           <Input
-            label="ACCOUNT NUMBER"
-            placeholder="Enter destination account number"
+            label={t('withdraw.accountNumber')}
+            placeholder={t('withdraw.accountNumberPlaceholder')}
             value={accountNumber}
             onChangeText={(text) => setAccountNumber(text.replace(/[^0-9]/g, ''))}
             keyboardType="numeric"
@@ -150,8 +152,8 @@ export default function WithdrawScreen() {
 
           {/* Account Name */}
           <Input
-            label="ACCOUNT HOLDER NAME"
-            placeholder="E.g. Budi Purwanto"
+            label={t('withdraw.accountHolder')}
+            placeholder={t('withdraw.accountHolderPlaceholder')}
             value={accountName}
             onChangeText={setAccountName}
             iconLeft="person-outline"
@@ -160,7 +162,7 @@ export default function WithdrawScreen() {
           {/* Amount */}
           <View style={styles.amountWrapper}>
             <Input
-              label="WITHDRAWAL AMOUNT"
+              label={t('withdraw.amountLabel')}
               placeholder="0"
               value={amount}
               onChangeText={(text) => setAmount(text.replace(/[^0-9]/g, ''))}
@@ -179,7 +181,7 @@ export default function WithdrawScreen() {
             </TouchableOpacity>
           </View>
           <ThemedText type="small" style={[styles.balanceHint, { color: theme.textSecondary }]}>
-            {`Available Balance: Rp ${availableBalance.toLocaleString('id-ID')}`}
+            {`${t('withdraw.availableBalance')}: Rp ${availableBalance.toLocaleString('id-ID')}`}
           </ThemedText>
 
           {/* Admin Fee Notice */}
@@ -193,15 +195,15 @@ export default function WithdrawScreen() {
 
           {/* Notes */}
           <Input
-            label="NOTES (OPTIONAL)"
-            placeholder="Add withdrawal note"
+            label={t('withdraw.notesLabel')}
+            placeholder={t('withdraw.notesPlaceholder')}
             value={notes}
             onChangeText={setNotes}
             iconLeft="document-text-outline"
           />
 
           <Button
-            title="Withdraw"
+            title={t('withdraw.submitWithdrawal')}
             variant="primary"
             disabled={!canWithdraw}
             onPress={handleReviewWithdraw}
@@ -216,36 +218,36 @@ export default function WithdrawScreen() {
               {!withdrawSuccess ? (
                 <>
                   <ThemedText type="subtitle" style={styles.modalTitle}>
-                    Confirm Withdrawal
+                    {t('withdraw.confirmWithdraw')}
                   </ThemedText>
                   <ThemedText style={[styles.modalDesc, { color: theme.textSecondary }]}>
-                    Rincian transaksi penarikan dana rekening tujuan.
+                    {t('withdraw.reviewDetails')}
                   </ThemedText>
 
                   <Card style={[styles.summaryCard, { backgroundColor: theme.background }]} bordered>
                     <View style={styles.summaryItem}>
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>Bank tujuan</ThemedText>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('withdraw.bankTarget')}</ThemedText>
                       <ThemedText type="smallBold">{bankCode.toUpperCase()}</ThemedText>
                     </View>
                     <View style={styles.summaryItem}>
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>No. Rekening</ThemedText>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('withdraw.accountNo')}</ThemedText>
                       <ThemedText type="code">{accountNumber}</ThemedText>
                     </View>
                     <View style={styles.summaryItem}>
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>Nama Rekening</ThemedText>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('withdraw.accountName')}</ThemedText>
                       <ThemedText type="smallBold">{accountName}</ThemedText>
                     </View>
                     <View style={[styles.summaryDivider, { backgroundColor: theme.border }]} />
                     <View style={styles.summaryItem}>
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>Jumlah Penarikan</ThemedText>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('withdraw.amountLabel')}</ThemedText>
                       <ThemedText type="small">Rp {parseInt(amount || '0').toLocaleString('id-ID')}</ThemedText>
                     </View>
                     <View style={styles.summaryItem}>
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>Biaya Admin</ThemedText>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('withdraw.adminFee')}</ThemedText>
                       <ThemedText type="small">Rp {adminFee.toLocaleString('id-ID')}</ThemedText>
                     </View>
                     <View style={styles.summaryItem}>
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>Total Potong Saldo</ThemedText>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('withdraw.totalDeducted')}</ThemedText>
                       <ThemedText type="smallBold" style={{ color: theme.danger }}>
                         Rp {(parseInt(amount || '0') + adminFee).toLocaleString('id-ID')}
                       </ThemedText>
@@ -260,13 +262,13 @@ export default function WithdrawScreen() {
 
                   <View style={styles.modalButtons}>
                     <Button
-                      title="Cancel"
+                      title={t('common.cancel')}
                       variant="ghost"
                       onPress={() => setShowReviewModal(false)}
                       style={{ flex: 1 }}
                     />
                     <Button
-                      title="Confirm Withdraw"
+                      title={t('withdraw.confirmWithdraw')}
                       variant="primary"
                       loading={loading}
                       onPress={handleConfirmWithdraw}
@@ -280,10 +282,10 @@ export default function WithdrawScreen() {
                     <Ionicons name="checkmark-circle" size={56} color={theme.success} />
                   </View>
                   <ThemedText type="subtitle" style={{ marginTop: Spacing.three }}>
-                    Withdrawal Requested!
+                    {t('withdraw.withdrawSuccess')}
                   </ThemedText>
                   <ThemedText style={{ color: theme.textSecondary, marginTop: Spacing.one }}>
-                    Penarikan bank diproses (pending status).
+                    {t('withdraw.withdrawSuccessDesc')}
                   </ThemedText>
                 </View>
               )}

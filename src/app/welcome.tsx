@@ -58,11 +58,14 @@ export default function WelcomeScreen() {
             </View>
 
             <TouchableOpacity
-              onPress={() => setLanguage(language === 'en' ? 'id' : 'en')}
+              onPress={() => {
+                const nextLang = language === 'en' ? 'id' : language === 'id' ? 'ar' : language === 'ar' ? 'es' : 'en';
+                setLanguage(nextLang);
+              }}
               style={styles.langToggleBadge}
             >
               <ThemedText style={styles.langToggleText}>
-                {language === 'en' ? '🇮🇩 ID' : '🇺🇸 EN'}
+                {language.toUpperCase()}
               </ThemedText>
             </TouchableOpacity>
           </View>

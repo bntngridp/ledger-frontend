@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { useTheme } from '@/hooks/use-theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAppTheme } from '@/context/theme-context';
+import { useTranslation } from '@/hooks/use-translation';
 import { Spacing } from '@/constants/theme';
 import { Chart } from '@/components/chart';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,7 @@ export default function DashboardScreen() {
   const { activeTheme, setThemePreference } = useAppTheme();
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const { t } = useTranslation();
 
   // Responsive state
   const isLargeScreen = Platform.OS === 'web' && width > 1024;
@@ -314,7 +316,7 @@ export default function DashboardScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <ThemedText style={{ color: theme.textSecondary }}>Welcome back,</ThemedText>
+          <ThemedText style={{ color: theme.textSecondary }}>{t('dashboard.welcomeBack')}</ThemedText>
           <ThemedText type="smallBold" style={styles.username}>
             {username} 👋
           </ThemedText>
@@ -340,7 +342,7 @@ export default function DashboardScreen() {
       <Card style={[styles.portfolioCard, { backgroundColor: theme.backgroundElement }]}>
         <View style={styles.portfolioHeader}>
           <ThemedText style={[styles.portfolioLabel, { color: theme.textSecondary }]}>
-            ESTIMATED TOTAL BALANCE
+            {t('dashboard.estimatedBalance')}
           </ThemedText>
           <TouchableOpacity onPress={() => setShowBalance(!showBalance)}>
             <Ionicons
@@ -356,7 +358,7 @@ export default function DashboardScreen() {
         <View style={styles.portfolioFooter}>
           <Ionicons name="trending-up-outline" size={16} color={theme.success} />
           <ThemedText type="small" style={{ color: theme.success, marginLeft: 4 }}>
-            Active ledger wallet session
+            {t('dashboard.activeSession')}
           </ThemedText>
         </View>
       </Card>
@@ -364,7 +366,7 @@ export default function DashboardScreen() {
       {/* Asset List Section */}
       <View style={styles.sectionHeader}>
         <ThemedText type="smallBold" style={styles.sectionTitle}>
-          Your Assets
+          {t('dashboard.yourAssets')}
         </ThemedText>
       </View>
 
@@ -399,39 +401,39 @@ export default function DashboardScreen() {
           <View style={[styles.actionIconWrapper, { backgroundColor: theme.primary + '15' }]}>
             <Ionicons name="add-circle-outline" size={24} color={theme.primary} />
           </View>
-          <ThemedText type="small" style={styles.actionLabel}>Top Up</ThemedText>
+          <ThemedText type="small" style={styles.actionLabel}>{t('dashboard.quickTopUp')}</ThemedText>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/transfer')}>
           <View style={[styles.actionIconWrapper, { backgroundColor: theme.success + '15' }]}>
             <Ionicons name="paper-plane-outline" size={24} color={theme.success} />
           </View>
-          <ThemedText type="small" style={styles.actionLabel}>Transfer</ThemedText>
+          <ThemedText type="small" style={styles.actionLabel}>{t('dashboard.quickTransfer')}</ThemedText>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/swap')}>
           <View style={[styles.actionIconWrapper, { backgroundColor: theme.warning + '15' }]}>
             <Ionicons name="swap-horizontal-outline" size={24} color={theme.warning} />
           </View>
-          <ThemedText type="small" style={styles.actionLabel}>Swap</ThemedText>
+          <ThemedText type="small" style={styles.actionLabel}>{t('dashboard.quickSwap')}</ThemedText>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/withdraw')}>
           <View style={[styles.actionIconWrapper, { backgroundColor: theme.danger + '15' }]}>
             <Ionicons name="cash-outline" size={24} color={theme.danger} />
           </View>
-          <ThemedText type="small" style={styles.actionLabel}>Withdraw</ThemedText>
+          <ThemedText type="small" style={styles.actionLabel}>{t('dashboard.quickWithdraw')}</ThemedText>
         </TouchableOpacity>
       </View>
 
       {/* Recent Transactions */}
       <View style={styles.sectionHeader}>
         <ThemedText type="smallBold" style={styles.sectionTitle}>
-          Recent Transactions
+          {t('dashboard.recentTransactions')}
         </ThemedText>
         <TouchableOpacity onPress={() => router.push('/(tabs)/history')}>
           <ThemedText type="small" style={{ color: theme.primary, fontWeight: '600' }}>
-            See All
+            {t('dashboard.viewAll')}
           </ThemedText>
         </TouchableOpacity>
       </View>
@@ -439,7 +441,7 @@ export default function DashboardScreen() {
       <View style={styles.transactionList}>
         {uiTransactions.length === 0 ? (
           <View style={styles.emptyState}>
-            <ThemedText style={{ color: theme.textSecondary }}>Belum ada transaksi terkini.</ThemedText>
+            <ThemedText style={{ color: theme.textSecondary }}>{t('dashboard.noTransactions')}</ThemedText>
           </View>
         ) : (
           uiTransactions.map((tx) => (
@@ -486,13 +488,13 @@ export default function DashboardScreen() {
       {/* Top Navbar */}
       <View style={[styles.topNavbar, { borderBottomColor: theme.border }]}>
         <ThemedText type="subtitle" style={styles.topNavbarTitle}>
-          Overview
+          {t('dashboard.overview')}
         </ThemedText>
         
         <View style={styles.navbarRight}>
           {/* Search Assets */}
           <Input
-            placeholder="Search assets..."
+            placeholder={t('dashboard.searchAssets')}
             value={searchQuery}
             onChangeText={setSearchQuery}
             containerStyle={styles.searchBarContainer}
@@ -534,7 +536,7 @@ export default function DashboardScreen() {
           <Card style={styles.overviewCard}>
             <View style={styles.overviewHeader}>
               <View style={{ flex: 1 }}>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>ESTIMATED PORTFOLIO VALUE</ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('dashboard.estimatedPortfolio')}</ThemedText>
                 <View style={styles.balanceContainer}>
                   <ThemedText type="subtitle" style={styles.desktopBalanceText}>
                     {getEstimatedTotal()}
@@ -639,10 +641,10 @@ export default function DashboardScreen() {
           {/* Quick Actions Row */}
           <View style={styles.quickActionsRow}>
             {[
-              { title: 'Send', desc: 'Transfer assets P2P', icon: 'paper-plane-outline', route: '/transfer', color: theme.primary },
-              { title: 'Receive', desc: 'Show wallet address', icon: 'qr-code-outline', route: '/(tabs)/crypto', color: theme.success },
-              { title: 'Swap', desc: 'Exchange currencies', icon: 'swap-horizontal-outline', route: '/(tabs)/swap', color: theme.warning },
-              { title: 'Buy', desc: 'Top up Rupiah', icon: 'add-circle-outline', route: '/topup', color: theme.danger },
+              { title: t('dashboard.send'), desc: t('dashboard.transferDesc'), icon: 'paper-plane-outline', route: '/transfer', color: theme.primary },
+              { title: t('dashboard.receive'), desc: t('dashboard.receiveDesc'), icon: 'qr-code-outline', route: '/(tabs)/crypto', color: theme.success },
+              { title: t('dashboard.quickSwap'), desc: t('dashboard.swapDesc'), icon: 'swap-horizontal-outline', route: '/(tabs)/swap', color: theme.warning },
+              { title: t('dashboard.buy'), desc: t('dashboard.buyDesc'), icon: 'add-circle-outline', route: '/topup', color: theme.danger },
             ].map((action) => (
               <TouchableOpacity
                 key={action.title}
@@ -680,7 +682,7 @@ export default function DashboardScreen() {
             {/* Table rows */}
             {uiTransactions.length === 0 ? (
               <View style={styles.emptyStateContainer}>
-                <ThemedText style={{ color: theme.textSecondary }}>Belum ada transaksi terkini.</ThemedText>
+                <ThemedText style={{ color: theme.textSecondary }}>{t('dashboard.noTransactions')}</ThemedText>
               </View>
             ) : (
               uiTransactions.map((tx) => (
@@ -712,7 +714,7 @@ export default function DashboardScreen() {
         <View style={styles.rightColumn}>
           <Card style={styles.assetsSidebar} bordered>
             <View style={styles.sidebarHeader}>
-              <ThemedText type="smallBold">Your Assets</ThemedText>
+              <ThemedText type="smallBold">{t('dashboard.yourAssets')}</ThemedText>
             </View>
 
             <View style={styles.assetsSidebarList}>
@@ -743,13 +745,13 @@ export default function DashboardScreen() {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={theme.primary} />
-            <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>Syncing ledger data...</ThemedText>
+            <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>{t('dashboard.syncingData')}</ThemedText>
           </View>
         ) : error ? (
           <View style={styles.errorContainer}>
             <Ionicons name="cloud-offline-outline" size={48} color={theme.danger} />
             <ThemedText style={{ color: theme.danger, marginTop: 12, fontWeight: '600' }}>{error}</ThemedText>
-            <Button title="Retry Sync" onPress={loadData} style={{ marginTop: 16 }} />
+            <Button title={t('dashboard.retrySync')} onPress={loadData} style={{ marginTop: 16 }} />
           </View>
         ) : isLargeScreen ? (
           renderDesktop()

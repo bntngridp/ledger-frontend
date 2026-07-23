@@ -9,6 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 
 import { api, API_BASE_URL } from '@/services/api';
@@ -16,6 +17,7 @@ import { api, API_BASE_URL } from '@/services/api';
 export default function RegisterScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useTranslation();
 
   // Form states
   const [username, setUsername] = useState('');
@@ -105,15 +107,15 @@ export default function RegisterScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.formContainer}>
             <ThemedText type="subtitle" style={styles.title}>
-              Create Account
+              {t('auth.createAccountTitle')}
             </ThemedText>
             <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
-              Join Ledger to manage your assets securely
+              {t('auth.registerSubtitle')}
             </ThemedText>
 
             <Input
-              label="USERNAME"
-              placeholder="E.g. johndoe"
+              label={t('auth.usernameLabel')}
+              placeholder={t('auth.usernamePlaceholder')}
               value={username}
               onChangeText={setUsername}
               error={errors.username}
@@ -122,8 +124,8 @@ export default function RegisterScreen() {
             />
 
             <Input
-              label="EMAIL ADDRESS"
-              placeholder="name@example.com"
+              label={t('auth.emailLabel')}
+              placeholder={t('auth.emailPlaceholder')}
               value={email}
               onChangeText={setEmail}
               error={errors.email}
@@ -133,8 +135,8 @@ export default function RegisterScreen() {
             />
 
             <Input
-              label="PASSWORD (MIN 6 CHARACTERS)"
-              placeholder="••••••••"
+              label={t('auth.passwordLabel')}
+              placeholder={t('auth.passwordPlaceholder')}
               value={password}
               onChangeText={setPassword}
               error={errors.password}
@@ -153,7 +155,7 @@ export default function RegisterScreen() {
             )}
 
             <Button
-              title="Sign Up"
+              title={t('auth.signUp')}
               variant="primary"
               loading={loading}
               onPress={handleRegister}
@@ -163,14 +165,14 @@ export default function RegisterScreen() {
             <View style={styles.dividerContainer}>
               <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
               <ThemedText type="small" style={[styles.dividerText, { color: theme.textSecondary }]}>
-                or
+                {t('common.or')}
               </ThemedText>
               <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
             </View>
 
             {/* Google — unified sign-up / sign-in via OAuth */}
             <Button
-              title="Continue with Google"
+              title={t('auth.continueWithGoogle')}
               variant="ghost"
               onPress={handleGoogleSignUp}
               iconLeft={
@@ -187,9 +189,9 @@ export default function RegisterScreen() {
               style={styles.footerLink}
             >
               <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                Already have an account?{' '}
+                {t('auth.alreadyHaveAccount')}{' '}
                 <ThemedText type="smallBold" style={{ color: theme.primary }}>
-                  Log In
+                  {t('auth.logIn')}
                 </ThemedText>
               </ThemedText>
             </TouchableOpacity>

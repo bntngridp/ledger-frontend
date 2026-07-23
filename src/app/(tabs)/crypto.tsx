@@ -20,11 +20,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AssetIcon } from '@/components/ui/asset-icon';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
 
 export default function CryptoScreen() {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   // Tab state
   const [activeSubTab, setActiveSubTab] = useState<'receive' | 'send'>('receive');
@@ -156,7 +158,7 @@ export default function CryptoScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <ThemedText type="subtitle" style={styles.title}>
-            Crypto Wallet
+            {t('crypto.cryptoTitle')}
           </ThemedText>
 
           {/* Sub tabs */}
@@ -172,7 +174,7 @@ export default function CryptoScreen() {
                 type="smallBold"
                 style={{ color: activeSubTab === 'receive' ? theme.text : theme.textSecondary }}
               >
-                Receive
+                {t('crypto.depositTab')}
               </ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
@@ -186,7 +188,7 @@ export default function CryptoScreen() {
                 type="smallBold"
                 style={{ color: activeSubTab === 'send' ? theme.text : theme.textSecondary }}
               >
-                Send
+                {t('crypto.withdrawTab')}
               </ThemedText>
             </TouchableOpacity>
           </View>
@@ -259,12 +261,12 @@ export default function CryptoScreen() {
                   </ThemedText>
                 ) : (
                   <ThemedText style={{ color: theme.textSecondary, marginVertical: Spacing.two }}>
-                    Alamat deposit tidak tersedia
+                    {t('crypto.noAddress')}
                   </ThemedText>
                 )}
 
                 <Button
-                  title={copied ? 'Copied!' : 'Copy Wallet Address'}
+                  title={copied ? t('common.copied') : t('crypto.copyAddress')}
                   variant="secondary"
                   disabled={!depositAddress || loadingAddress}
                   onPress={handleCopyAddress}
@@ -318,8 +320,8 @@ export default function CryptoScreen() {
 
                   {/* Recipient Address */}
                   <Input
-                    label="RECIPIENT WALLET ADDRESS"
-                    placeholder="0x..."
+                    label={t('crypto.recipientAddress')}
+                    placeholder={t('crypto.recipientPlaceholder')}
                     value={recipientAddress}
                     onChangeText={setRecipientAddress}
                     error={isAddressInvalid ? 'Must be a valid 42-character EVM address' : undefined}
@@ -348,7 +350,7 @@ export default function CryptoScreen() {
                     </TouchableOpacity>
                   </View>
                   <ThemedText type="small" style={[styles.balanceHint, { color: theme.textSecondary }]}>
-                    Available Balance: {balances[sendAsset]?.toLocaleString('id-ID')} {sendAsset}
+                    {t('crypto.availableBalance')}: {balances[sendAsset]?.toLocaleString('id-ID')} {sendAsset}
                   </ThemedText>
 
                   {error ? (
@@ -358,7 +360,7 @@ export default function CryptoScreen() {
                   ) : null}
 
                   <Button
-                    title={`Send ${sendAsset}`}
+                    title={t('crypto.submitWithdrawal')}
                     variant="primary"
                     disabled={!canSend}
                     loading={loading}
@@ -372,10 +374,10 @@ export default function CryptoScreen() {
                     <Ionicons name="checkmark-circle" size={56} color={theme.success} />
                   </View>
                   <ThemedText type="subtitle" style={{ marginTop: Spacing.three }}>
-                    Transaction Submitted!
+                    {t('withdraw.withdrawSuccess')}
                   </ThemedText>
                   <ThemedText style={{ color: theme.textSecondary, marginTop: Spacing.one }}>
-                    Penarikan crypto diproses (pending status).
+                    {t('withdraw.withdrawSuccessDesc')}
                   </ThemedText>
                 </View>
               )}

@@ -18,11 +18,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AssetIcon } from '@/components/ui/asset-icon';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
 
 export default function SwapScreen() {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   // Swap states
   const [fromAsset, setFromAsset] = useState('IDR');
@@ -164,7 +166,7 @@ export default function SwapScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <ThemedText type="subtitle" style={styles.title}>
-            Exchange
+            {t('swap.swapTitle')}
           </ThemedText>
         </View>
 
@@ -174,14 +176,14 @@ export default function SwapScreen() {
             <View style={styles.rateHeader}>
               <Ionicons name="stats-chart" size={16} color={theme.primary} />
               <ThemedText type="smallBold" style={{ marginLeft: 6 }}>
-                Live Exchange Rates
+                {t('swap.liveRates')}
               </ThemedText>
             </View>
             <View style={styles.rateGrid}>
               <View>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>Current Asset Pairing</ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('swap.currentRate')}</ThemedText>
                 <ThemedText type="smallBold">
-                  {loadingRate ? 'Loading rate...' : `1 ${fromAsset} = ${rate.toLocaleString('id-ID', { maximumFractionDigits: 6 })} ${toAsset}`}
+                  {loadingRate ? t('swap.loadingRate') : `1 ${fromAsset} = ${rate.toLocaleString('id-ID', { maximumFractionDigits: 6 })} ${toAsset}`}
                 </ThemedText>
               </View>
             </View>
@@ -193,10 +195,10 @@ export default function SwapScreen() {
             <Card style={styles.calcCard} bordered>
               <View style={styles.cardHeader}>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  PAY FROM
+                  {t('swap.payFrom')}
                 </ThemedText>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  Balance: {balances[fromAsset]?.toLocaleString('id-ID')} {fromAsset}
+                  {t('swap.balance')}: {balances[fromAsset]?.toLocaleString('id-ID')} {fromAsset}
                 </ThemedText>
               </View>
               <View style={styles.inputRow}>
@@ -229,10 +231,10 @@ export default function SwapScreen() {
             <Card style={styles.calcCard} bordered>
               <View style={styles.cardHeader}>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  RECEIVE TO
+                  {t('swap.receiveTo')}
                 </ThemedText>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  Balance: {balances[toAsset]?.toLocaleString('id-ID')} {toAsset}
+                  {t('swap.balance')}: {balances[toAsset]?.toLocaleString('id-ID')} {toAsset}
                 </ThemedText>
               </View>
               <View style={styles.inputRow}>
@@ -255,7 +257,7 @@ export default function SwapScreen() {
               <View style={styles.feeBreakdown}>
                 <View style={styles.feeRow}>
                   <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                    Swap Fee (0.5%)
+                    {t('swap.swapFee')}
                   </ThemedText>
                   <ThemedText type="code">
                     {(parseFloat(fromAmount) * swapFeePercentage).toFixed(4)} {fromAsset}
@@ -266,7 +268,7 @@ export default function SwapScreen() {
 
             {isInsufficient && (
               <ThemedText style={[styles.errorText, { color: theme.danger }]}>
-                Insufficient balance for this swap.
+                {t('swap.insufficientBalance')}
               </ThemedText>
             )}
 
@@ -277,7 +279,7 @@ export default function SwapScreen() {
             ) : null}
 
             <Button
-              title="Exchange Now"
+              title={t('swap.performSwap')}
               variant="primary"
               disabled={!canSwap}
               onPress={handleInitiateSwap}
@@ -293,26 +295,26 @@ export default function SwapScreen() {
               {!swapSuccess ? (
                 <>
                   <ThemedText type="subtitle" style={styles.modalTitle}>
-                    Confirm Swap
+                    {t('swap.confirmSwap')}
                   </ThemedText>
                   <ThemedText style={[styles.modalDesc, { color: theme.textSecondary }]}>
-                    Review your exchange details before proceeding.
+                    {t('swap.reviewDetails')}
                   </ThemedText>
 
                   <Card style={[styles.summaryCard, { backgroundColor: theme.background }]} bordered>
                     <View style={styles.summaryItem}>
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>You Sell</ThemedText>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('swap.youSell')}</ThemedText>
                       <ThemedText type="smallBold">{fromAmount} {fromAsset}</ThemedText>
                     </View>
                     <View style={[styles.summaryDivider, { backgroundColor: theme.border }]} />
                     <View style={styles.summaryItem}>
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>You Get (Net)</ThemedText>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('swap.youGet')}</ThemedText>
                       <ThemedText type="smallBold" style={{ color: theme.success }}>
                         {toAmount} {toAsset}
                       </ThemedText>
                     </View>
                     <View style={styles.summaryItem}>
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>Exchange Rate</ThemedText>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('swap.exchangeRate')}</ThemedText>
                       <ThemedText type="code">
                         1 {fromAsset} = {rate.toLocaleString('id-ID', { maximumFractionDigits: 6 })} {toAsset}
                       </ThemedText>
@@ -327,13 +329,13 @@ export default function SwapScreen() {
 
                   <View style={styles.modalButtons}>
                     <Button
-                      title="Cancel"
+                      title={t('common.cancel')}
                       variant="ghost"
                       onPress={() => setShowReviewModal(false)}
                       style={{ flex: 1 }}
                     />
                     <Button
-                      title="Confirm Swap"
+                      title={t('swap.confirmSwap')}
                       variant="primary"
                       loading={isSwapping}
                       onPress={handleConfirmSwap}
@@ -347,10 +349,10 @@ export default function SwapScreen() {
                     <Ionicons name="checkmark-circle" size={56} color={theme.success} />
                   </View>
                   <ThemedText type="subtitle" style={{ marginTop: Spacing.three }}>
-                    Exchange Successful!
+                    {t('swap.swapSuccess')}
                   </ThemedText>
                   <ThemedText style={{ color: theme.textSecondary, marginTop: Spacing.one }}>
-                    Aset berhasil ditukar. Saldo kamu sudah ter-update.
+                    {t('swap.swapSuccessDesc')}
                   </ThemedText>
                 </View>
               )}

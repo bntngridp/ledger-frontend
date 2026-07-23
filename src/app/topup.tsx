@@ -19,12 +19,14 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { AssetIcon } from '@/components/ui/asset-icon';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
 
 export default function TopUpScreen() {
   const router = useRouter();
   const theme = useTheme();
+  const { t } = useTranslation();
 
   // Safe back navigation
   const handleBack = () => {
@@ -101,7 +103,7 @@ export default function TopUpScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <AssetIcon symbol="IDR" size={24} containerStyle={{ marginRight: 8 }} />
             <ThemedText type="smallBold" style={styles.headerTitle}>
-              Top Up IDR
+              {t('topup.topUpTitle')}
             </ThemedText>
           </View>
           <View style={{ width: 32 }} />
@@ -111,7 +113,7 @@ export default function TopUpScreen() {
           {/* Main amount inputs */}
           <View style={styles.amountSection}>
             <ThemedText type="small" style={{ color: theme.textSecondary, textAlign: 'center' }}>
-              ENTER AMOUNT TO TOP UP
+              {t('topup.enterAmount')}
             </ThemedText>
             <View style={styles.inputContainer}>
               <ThemedText style={styles.currencyPrefix}>Rp</ThemedText>
@@ -158,8 +160,8 @@ export default function TopUpScreen() {
 
           {/* Notes */}
           <Input
-            label="NOTES (OPTIONAL)"
-            placeholder="Add a notes to this transaction"
+            label={t('topup.notesLabel')}
+            placeholder={t('topup.notesPlaceholder')}
             value={notes}
             onChangeText={setNotes}
             iconLeft="document-text-outline"
@@ -172,7 +174,7 @@ export default function TopUpScreen() {
           ) : null}
 
           <Button
-            title="Continue to Payment"
+            title={t('topup.continuePayment')}
             variant="primary"
             disabled={!isInputValid}
             loading={loading}
@@ -188,20 +190,20 @@ export default function TopUpScreen() {
               <View style={styles.modalHeader}>
                 <Ionicons name="shield-checkmark" size={24} color={theme.primary} />
                 <ThemedText type="smallBold" style={{ marginLeft: 8 }}>
-                  Secure Payment Gateway
+                  {t('topup.secureGateway')}
                 </ThemedText>
               </View>
               <ThemedText style={{ color: theme.textSecondary, marginBottom: Spacing.three }}>
-                Top up kamu diproses dengan aman menggunakan Midtrans.
+                {t('topup.processedBy')}
               </ThemedText>
 
               <Card style={[styles.summaryCard, { backgroundColor: theme.background }]} bordered>
                 <View style={styles.summaryItem}>
-                  <ThemedText type="small" style={{ color: theme.textSecondary }}>Order ID</ThemedText>
+                  <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('topup.orderId')}</ThemedText>
                   <ThemedText type="code">{transactionId}</ThemedText>
                 </View>
                 <View style={styles.summaryItem}>
-                  <ThemedText type="small" style={{ color: theme.textSecondary }}>Total Amount</ThemedText>
+                  <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('topup.totalAmount')}</ThemedText>
                   <ThemedText type="smallBold">
                     {`Rp ${amount ? parseInt(amount).toLocaleString('id-ID') : '0'}`}
                   </ThemedText>
@@ -210,13 +212,13 @@ export default function TopUpScreen() {
 
               <View style={styles.modalButtons}>
                 <Button
-                  title="Cancel"
+                  title={t('common.cancel')}
                   variant="ghost"
                   onPress={() => setShowPayModal(false)}
                   style={{ flex: 1 }}
                 />
                 <Button
-                  title="Open Payment Page"
+                  title={t('topup.openPaymentPage')}
                   variant="primary"
                   onPress={handleOpenPaymentPage}
                   style={{ flex: 1.5 }}

@@ -14,6 +14,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Card } from '@/components/ui/card';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
 
@@ -29,6 +30,7 @@ interface TransactionItem {
 
 export default function HistoryScreen() {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   // Filters state
   const [selectedType, setSelectedType] = useState('All');
@@ -38,8 +40,15 @@ export default function HistoryScreen() {
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [error, setError] = useState('');
 
-  // Filter options
-  const transactionTypes = ['All', 'Top Up', 'Transfer', 'Swap', 'Crypto', 'Withdrawal'];
+  // Filter options - now using translated labels
+  const transactionTypes = [
+    { label: t('history.allTypes'), value: 'All' },
+    { label: t('history.topUps'), value: 'Top Up' },
+    { label: t('history.transfers'), value: 'Transfer' },
+    { label: t('history.swaps'), value: 'Swap' },
+    { label: t('history.crypto'), value: 'Crypto' },
+    { label: t('history.withdrawals'), value: 'Withdrawal' },
+  ];
   const assetTypes = ['All', 'IDR', 'USDT', 'USDC'];
 
   const loadTransactions = async (isRef = false) => {
@@ -180,21 +189,21 @@ export default function HistoryScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <ThemedText type="subtitle" style={styles.title}>
-            Transactions
+            {t('history.historyTitle')}
           </ThemedText>
         </View>
 
         {/* Filter type scroll */}
         <View style={styles.filterSection}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-            {transactionTypes.map((type) => (
+            {transactionTypes.map((typeItem) => (
               <TouchableOpacity
-                key={type}
-                onPress={() => setSelectedType(type)}
+                key={typeItem.value}
+                onPress={() => setSelectedType(typeItem.value)}
                 style={[
                   styles.filterChip,
                   {
-                    backgroundColor: selectedType === type ? theme.primary : theme.backgroundElement,
+                    backgroundColor: selectedType === typeItem.value ? theme.primary : theme.backgroundElement,
                     borderColor: theme.border,
                   },
                 ]}
@@ -202,11 +211,11 @@ export default function HistoryScreen() {
                 <ThemedText
                   type="small"
                   style={{
-                    color: selectedType === type ? '#ffffff' : theme.textSecondary,
+                    color: selectedType === typeItem.value ? '#ffffff' : theme.textSecondary,
                     fontWeight: '600',
                   }}
                 >
-                  {type}
+                  {typeItem.label}
                 </ThemedText>
               </TouchableOpacity>
             ))}

@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { en, type TranslationKeys } from '@/constants/translations/en';
 import { id } from '@/constants/translations/id';
+import { ar } from '@/constants/translations/ar';
+import { es } from '@/constants/translations/es';
 import { storage } from '@/services/storage';
 
-export type LanguageCode = 'en' | 'id';
+export type LanguageCode = 'en' | 'id' | 'ar' | 'es';
 
 interface LanguageContextType {
   language: LanguageCode;
@@ -14,6 +16,8 @@ interface LanguageContextType {
 const translations: Record<LanguageCode, TranslationKeys> = {
   en,
   id,
+  ar,
+  es,
 };
 
 const LanguageContext = createContext<LanguageContextType>({
@@ -29,8 +33,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const loadLanguage = async () => {
       try {
         const savedLang = await storage.getItem('user_language');
-        if (savedLang === 'en' || savedLang === 'id') {
-          setLanguageState(savedLang);
+        if (savedLang && ['en', 'id', 'ar', 'es'].includes(savedLang)) {
+          setLanguageState(savedLang as LanguageCode);
         }
       } catch (err) {
         console.error('Failed to load saved language preference:', err);

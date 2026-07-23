@@ -63,6 +63,7 @@ export default function SettingsScreen() {
   // Settings states
   const [tfaEnabled, setTfaEnabled] = useState(false);
   const [showThemeModal, setShowThemeModal] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [userEmail, setUserEmail] = useState('user@ledger.io');
   const [username, setUsername] = useState('Ledger User');
@@ -251,7 +252,7 @@ export default function SettingsScreen() {
 
               <TouchableOpacity
                 style={styles.settingsRow}
-                onPress={() => setLanguage(language === 'en' ? 'id' : 'en')}
+                onPress={() => setShowLanguageModal(true)}
               >
                 <View style={styles.settingsLabelWrapper}>
                   <Ionicons name="globe-outline" size={20} color={theme.text} />
@@ -261,7 +262,13 @@ export default function SettingsScreen() {
                 </View>
                 <View style={styles.rowRight}>
                   <ThemedText type="small" style={{ color: theme.primary, fontWeight: '700', marginRight: 6 }}>
-                    {language === 'en' ? '🇺🇸 English' : '🇮🇩 Bahasa Indonesia'}
+                    {language === 'en'
+                      ? 'English'
+                      : language === 'id'
+                      ? 'Bahasa Indonesia'
+                      : language === 'ar'
+                      ? 'العربية'
+                      : 'Español'}
                   </ThemedText>
                   <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
                 </View>
@@ -405,6 +412,66 @@ export default function SettingsScreen() {
                 title="Cancel"
                 variant="secondary"
                 onPress={() => setShowThemeModal(false)}
+                style={{ marginTop: Spacing.three, width: '100%' }}
+              />
+            </View>
+          </View>
+        </Modal>
+
+        {/* Language Picker Modal */}
+        <Modal visible={showLanguageModal} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
+              <ThemedText type="smallBold" style={{ marginBottom: Spacing.two, fontSize: 16 }}>
+                {t('settings.languagePreference', 'Select Language')}
+              </ThemedText>
+              <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.four }}>
+                {t('settings.languageDesc', 'Choose your preferred display language')}
+              </ThemedText>
+
+              {([
+                { label: 'English', value: 'en' },
+                { label: 'Bahasa Indonesia', value: 'id' },
+                { label: 'العربية (Arabic)', value: 'ar' },
+                { label: 'Español (Spanish)', value: 'es' },
+              ] as const).map((opt) => {
+                const isSelected = language === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    onPress={async () => {
+                      await setLanguage(opt.value);
+                      setShowLanguageModal(false);
+                    }}
+                    style={[
+                      styles.themeOptionRow,
+                      { borderColor: isSelected ? theme.primary : theme.border },
+                      isSelected && { backgroundColor: theme.primary + '10' }
+                    ]}
+                  >
+                    <View style={styles.themeOptionLabel}>
+                      <Ionicons name="globe-outline" size={18} color={isSelected ? theme.primary : theme.textSecondary} />
+                      <ThemedText
+                        type="smallBold"
+                        style={{
+                          marginLeft: 12,
+                          color: isSelected ? theme.primary : theme.text,
+                        }}
+                      >
+                        {opt.label}
+                      </ThemedText>
+                    </View>
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={20} color={theme.primary} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+
+              <Button
+                title={t('common.cancel', 'Cancel')}
+                variant="secondary"
+                onPress={() => setShowLanguageModal(false)}
                 style={{ marginTop: Spacing.three, width: '100%' }}
               />
             </View>
