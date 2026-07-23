@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, TouchableOpacity, ScrollView, Platform, Linking, Alert, Image } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, ScrollView, Platform, Linking, Alert, Image, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,7 +40,8 @@ export default function LoginScreen() {
   // 2FA Flow states
   const [requires2FA, setRequires2FA] = useState(false);
   const [preAuthToken, setPreAuthToken] = useState('');
-  const [otpCode, setOtpCode] = useState('');
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const inputRefs = React.useRef<Array<any>>([]);
 
   // Handle URL redirect query parameters for Google OAuth and registration redirect
   useEffect(() => {
@@ -115,8 +116,8 @@ export default function LoginScreen() {
     }
   };
 
-  const handleVerify2FA = async () => {
-    if (otpCode.length !== 6) {
+  const verifyLogin2FADirect = async (codeStr: string) => {
+    if (codeStr.length !== 6) {
       setErrors({ otp: 'Code must be 6 digits' });
       return;
     }
@@ -126,7 +127,7 @@ export default function LoginScreen() {
     try {
       const response = await api.auth.verify2FALogin({
         pre_auth_token: preAuthToken,
-        code: otpCode,
+        code: codeStr,
       });
       setLoading(false);
 
@@ -134,12 +135,68 @@ export default function LoginScreen() {
         await storage.setItem('auth_token', response.data.token);
         router.replace('/(tabs)');
       } else {
-        setErrors({ otp: response.message });
+        setErrors({ otp: response.message || 'Verification failed' });
       }
     } catch (err: any) {
       setLoading(false);
       setErrors({ otp: err.message || 'Verification failed' });
     }
+  };
+
+  const handleOtpChange = (text: string, index: number) => {
+    const cleaned = text.replace(/[^0-9]/g, '');
+
+    // Handle Paste (user pastes 6 digits into any box)
+    if (cleaned.length > 1) {
+      const pastedDigits = cleaned.slice(0, 6).split('');
+      const newOtp = ['', '', '', '', '', ''];
+      pastedDigits.forEach((d, i) => {
+        if (i < 6) newOtp[i] = d;
+      });
+      setOtp(newOtp);
+      
+      const targetIndex = Math.min(pastedDigits.length, 5);
+      inputRefs.current[targetIndex]?.focus();
+
+      if (pastedDigits.length === 6) {
+        verifyLogin2FADirect(pastedDigits.join(''));
+      }
+      return;
+    }
+
+    // Normal single digit typing
+    const newOtp = [...otp];
+    newOtp[index] = cleaned;
+    setOtp(newOtp);
+
+    // Auto-advance focus to next input box if typed
+    if (cleaned && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+
+    // If all 6 digits completed, auto-submit
+    const fullCode = newOtp.join('');
+    if (fullCode.length === 6) {
+      verifyLogin2FADirect(fullCode);
+    }
+  };
+
+  const handleKeyPress = (e: any, index: number) => {
+    // Focus previous input box on Backspace
+    if (e.nativeEvent.key === 'Backspace') {
+      if (!otp[index] && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      } else if (otp[index]) {
+        const newOtp = [...otp];
+        newOtp[index] = '';
+        setOtp(newOtp);
+      }
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    const fullCode = otp.join('');
+    verifyLogin2FADirect(fullCode);
   };
 
   const handleGoogleLogin = () => {
@@ -261,16 +318,38 @@ export default function LoginScreen() {
                 {t('auth.twoFactorSubtitle')}
               </ThemedText>
 
-              <Input
-                label={t('auth.otpLabel')}
-                placeholder="000000"
-                value={otpCode}
-                onChangeText={(text) => setOtpCode(text.replace(/[^0-9]/g, ''))}
-                error={errors.otp}
-                keyboardType="numeric"
-                maxLength={6}
-                iconLeft="shield-outline"
-              />
+              {/* 6 box digit input */}
+              <View style={styles.otpInputRow}>
+                {otp.map((digit, idx) => (
+                  <TextInput
+                    key={idx}
+                    ref={(ref: any) => {
+                      inputRefs.current[idx] = ref;
+                    }}
+                    style={[
+                      styles.otpBox,
+                      {
+                        backgroundColor: theme.backgroundElement,
+                        borderColor: digit ? theme.primary : theme.border,
+                        color: theme.text,
+                      },
+                    ]}
+                    value={digit}
+                    onChangeText={(text: string) => handleOtpChange(text, idx)}
+                    onKeyPress={(e: any) => handleKeyPress(e, idx)}
+                    keyboardType="numeric"
+                    maxLength={6}
+                    selectTextOnFocus
+                    textAlign="center"
+                  />
+                ))}
+              </View>
+
+              {errors.otp ? (
+                <ThemedText style={{ color: theme.danger, marginTop: Spacing.two, fontWeight: '500' }}>
+                  {errors.otp}
+                </ThemedText>
+              ) : null}
 
               <Button
                 title={t('auth.verifyCode')}
@@ -283,7 +362,7 @@ export default function LoginScreen() {
               <TouchableOpacity
                 onPress={() => {
                   setRequires2FA(false);
-                  setOtpCode('');
+                  setOtp(['', '', '', '', '', '']);
                 }}
                 style={styles.footerLink}
               >
@@ -365,5 +444,20 @@ const styles = StyleSheet.create({
   footerLink: {
     alignItems: 'center',
     marginTop: Spacing.two,
+  },
+  otpInputRow: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    width: '100%',
+    marginVertical: Spacing.three,
+  },
+  otpBox: {
+    width: 44,
+    height: 52,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    fontSize: 20,
+    fontWeight: '700',
   },
 });

@@ -77,35 +77,15 @@ export default function TwoFactorScreen() {
     }
   };
 
-  const handleOtpChange = (text: string, index: number) => {
-    const cleaned = text.replace(/[^0-9]/g, '');
-    const newOtp = [...otp];
-    newOtp[index] = cleaned;
-    setOtp(newOtp);
-
-    // Auto-advance focus to next input box if typed
-    if (cleaned && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyPress = (e: any, index: number) => {
-    // Focus previous input box on backspace
-    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleVerify2FA = async () => {
-    const fullCode = otp.join('');
-    if (fullCode.length !== 6) return;
+  const verifyCodeDirect = async (codeStr: string) => {
+    if (codeStr.length !== 6) return;
     
     setLoading(true);
     setError('');
 
     try {
       const response = await api.auth.verify2FAActivation({
-        code: fullCode,
+        code: codeStr,
       });
       setLoading(false);
 
@@ -122,6 +102,63 @@ export default function TwoFactorScreen() {
       setLoading(false);
       setError(err.message || 'Verification failed');
     }
+  };
+
+  const handleOtpChange = (text: string, index: number) => {
+    const cleaned = text.replace(/[^0-9]/g, '');
+
+    // Handle Paste (user pastes 6 digits into any box)
+    if (cleaned.length > 1) {
+      const pastedDigits = cleaned.slice(0, 6).split('');
+      const newOtp = ['', '', '', '', '', ''];
+      pastedDigits.forEach((d, i) => {
+        if (i < 6) newOtp[i] = d;
+      });
+      setOtp(newOtp);
+      
+      const targetIndex = Math.min(pastedDigits.length, 5);
+      inputRefs.current[targetIndex]?.focus();
+
+      if (pastedDigits.length === 6) {
+        verifyCodeDirect(pastedDigits.join(''));
+      }
+      return;
+    }
+
+    // Normal single digit typing
+    const newOtp = [...otp];
+    newOtp[index] = cleaned;
+    setOtp(newOtp);
+
+    // Auto-advance focus to next input box if typed
+    if (cleaned && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+
+    // If all 6 digits completed, auto-submit
+    const fullCode = newOtp.join('');
+    if (fullCode.length === 6) {
+      verifyCodeDirect(fullCode);
+    }
+  };
+
+  const handleKeyPress = (e: any, index: number) => {
+    // Focus previous input box on Backspace
+    if (e.nativeEvent.key === 'Backspace') {
+      if (!otp[index] && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      } else if (otp[index]) {
+        // Clear current index digit
+        const newOtp = [...otp];
+        newOtp[index] = '';
+        setOtp(newOtp);
+      }
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    const fullCode = otp.join('');
+    verifyCodeDirect(fullCode);
   };
 
   const isOtpComplete = otp.every((val) => val !== '');
@@ -206,7 +243,7 @@ export default function TwoFactorScreen() {
                       onChangeText={(text) => handleOtpChange(text, idx)}
                       onKeyPress={(e) => handleKeyPress(e, idx)}
                       keyboardType="numeric"
-                      maxLength={1}
+                      maxLength={6}
                       selectTextOnFocus
                       textAlign="center"
                     />
