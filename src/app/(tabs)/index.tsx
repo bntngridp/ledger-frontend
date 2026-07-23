@@ -665,18 +665,18 @@ export default function DashboardScreen() {
           {/* Recent Transactions Table */}
           <Card style={styles.tableCard} bordered>
             <View style={styles.tableHeaderRow}>
-              <ThemedText type="smallBold">Recent Transactions</ThemedText>
+              <ThemedText type="smallBold">{t('dashboard.recentTransactions')}</ThemedText>
               <TouchableOpacity onPress={() => router.push('/(tabs)/history')}>
-                <ThemedText type="small" style={{ color: theme.primary, fontWeight: '600' }}>View All</ThemedText>
+                <ThemedText type="small" style={{ color: theme.primary, fontWeight: '600' }}>{t('dashboard.viewAll')}</ThemedText>
               </TouchableOpacity>
             </View>
 
             {/* Table headers */}
             <View style={[styles.tableColumns, { borderBottomColor: theme.border }]}>
-              <ThemedText type="code" style={[styles.col, { flex: 1 }]}>ASSET</ThemedText>
-              <ThemedText type="code" style={[styles.col, { flex: 1 }]}>TYPE</ThemedText>
-              <ThemedText type="code" style={[styles.col, { flex: 1, textAlign: 'right' }]}>AMOUNT</ThemedText>
-              <ThemedText type="code" style={[styles.col, { flex: 1, textAlign: 'right' }]}>STATUS</ThemedText>
+              <ThemedText type="code" style={[styles.col, { flex: 1 }]}>{t('dashboard.colAsset')}</ThemedText>
+              <ThemedText type="code" style={[styles.col, { flex: 1 }]}>{t('dashboard.colType')}</ThemedText>
+              <ThemedText type="code" style={[styles.col, { flex: 1, textAlign: 'right' }]}>{t('dashboard.colAmount')}</ThemedText>
+              <ThemedText type="code" style={[styles.col, { flex: 1, textAlign: 'right' }]}>{t('dashboard.colStatus')}</ThemedText>
             </View>
 
             {/* Table rows */}

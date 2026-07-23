@@ -27,6 +27,10 @@ export const en = {
     seeAll: 'See All',
     viewAll: 'View All',
     availableBalance: 'Available Balance',
+    home: 'Home',
+    history: 'History',
+    swap: 'Swap',
+    crypto: 'Crypto',
   },
 
   // Welcome Screen
@@ -107,6 +111,10 @@ export const en = {
     txTopUp: 'Top Up',
     txWithdrawal: 'Withdrawal',
     txSwap: 'Swapped',
+    colAsset: 'ASSET',
+    colType: 'TYPE',
+    colAmount: 'AMOUNT',
+    colStatus: 'STATUS',
   },
 
   // Crypto Screen

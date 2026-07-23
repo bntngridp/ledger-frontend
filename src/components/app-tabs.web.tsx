@@ -14,11 +14,13 @@ import { useRouter } from 'expo-router';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTranslation } from '@/hooks/use-translation';
 import { Colors, Spacing } from '@/constants/theme';
 
 export default function AppTabs() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
+  const { t } = useTranslation();
 
   if (isDesktop) {
     // Desktop: Vertical Sidebar layout
@@ -27,16 +29,16 @@ export default function AppTabs() {
         <TabList asChild>
           <CustomTabList>
             <TabTrigger name="home" href="/" asChild>
-              <TabButton icon="home-outline">Home</TabButton>
+              <TabButton icon="home-outline">{t('common.home')}</TabButton>
             </TabTrigger>
             <TabTrigger name="history" href="/history" asChild>
-              <TabButton icon="time-outline">History</TabButton>
+              <TabButton icon="time-outline">{t('common.history')}</TabButton>
             </TabTrigger>
             <TabTrigger name="swap" href="/swap" asChild>
-              <TabButton icon="swap-horizontal-outline">Swap</TabButton>
+              <TabButton icon="swap-horizontal-outline">{t('common.swap')}</TabButton>
             </TabTrigger>
             <TabTrigger name="crypto" href="/crypto" asChild>
-              <TabButton icon="key-outline">Crypto</TabButton>
+              <TabButton icon="key-outline">{t('common.crypto')}</TabButton>
             </TabTrigger>
           </CustomTabList>
         </TabList>
@@ -52,16 +54,16 @@ export default function AppTabs() {
       <TabList asChild>
         <MobileTabList>
           <TabTrigger name="home" href="/" asChild>
-            <MobileTabButton icon="home-outline">Home</MobileTabButton>
+            <MobileTabButton icon="home-outline">{t('common.home')}</MobileTabButton>
           </TabTrigger>
           <TabTrigger name="history" href="/history" asChild>
-            <MobileTabButton icon="time-outline">History</MobileTabButton>
+            <MobileTabButton icon="time-outline">{t('common.history')}</MobileTabButton>
           </TabTrigger>
           <TabTrigger name="swap" href="/swap" asChild>
-            <MobileTabButton icon="swap-horizontal-outline">Swap</MobileTabButton>
+            <MobileTabButton icon="swap-horizontal-outline">{t('common.swap')}</MobileTabButton>
           </TabTrigger>
           <TabTrigger name="crypto" href="/crypto" asChild>
-            <MobileTabButton icon="key-outline">Crypto</MobileTabButton>
+            <MobileTabButton icon="key-outline">{t('common.crypto')}</MobileTabButton>
           </TabTrigger>
         </MobileTabList>
       </TabList>
@@ -108,6 +110,7 @@ export function TabButton({ children, isFocused, icon, ...props }: TabButtonProp
 export function CustomTabList(props: TabListProps) {
   const router = useRouter();
   const theme = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  const { t } = useTranslation();
 
   return (
     <View {...props} style={[styles.tabListContainer, { backgroundColor: theme.backgroundElement, borderRightColor: theme.border }]}>
@@ -143,7 +146,7 @@ export function CustomTabList(props: TabListProps) {
           <View style={styles.profileTextWrapper}>
             <ThemedText type="smallBold">John Doe</ThemedText>
             <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
-              Profile & Settings
+              {t('settings.settingsTitle')}
             </ThemedText>
           </View>
           <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />

@@ -29,6 +29,10 @@ export const ar: TranslationKeys = {
     seeAll: 'عرض الكل',
     viewAll: 'عرض الكل',
     availableBalance: 'الرصيد المتاح',
+    home: 'الرئيسية',
+    history: 'السجل',
+    swap: 'تبديل',
+    crypto: 'عملات رقمية',
   },
 
   // Welcome Screen
@@ -109,11 +113,15 @@ export const ar: TranslationKeys = {
     txTopUp: 'إيداع',
     txWithdrawal: 'سحب بنكي',
     txSwap: 'تم التبديل',
+    colAsset: 'الأصل',
+    colType: 'النوع',
+    colAmount: 'المبلغ',
+    colStatus: 'الحالة',
   },
 
   // Crypto Screen
   crypto: {
-    cryptoTitle: 'المحفظة الرقمية',
+    cryptoTitle: 'العملات الرقمية المستقرة',
     cryptoSubtitle: 'إيداع وسحب USDT/USDC على الشبكة',
     depositTab: 'إيداع',
     withdrawTab: 'سحب',

@@ -29,6 +29,10 @@ export const id: TranslationKeys = {
     seeAll: 'Lihat Semua',
     viewAll: 'Lihat Semua',
     availableBalance: 'Saldo Tersedia',
+    home: 'Beranda',
+    history: 'Riwayat',
+    swap: 'Tukar',
+    crypto: 'Crypto',
   },
 
   // Welcome Screen
@@ -109,6 +113,10 @@ export const id: TranslationKeys = {
     txTopUp: 'Top Up',
     txWithdrawal: 'Penarikan Bank',
     txSwap: 'Ditukar',
+    colAsset: 'ASET',
+    colType: 'TIPE',
+    colAmount: 'JUMLAH',
+    colStatus: 'STATUS',
   },
 
   // Crypto Screen

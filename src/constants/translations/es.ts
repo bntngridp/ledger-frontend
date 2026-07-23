@@ -29,6 +29,10 @@ export const es: TranslationKeys = {
     seeAll: 'Ver todo',
     viewAll: 'Ver todo',
     availableBalance: 'Saldo disponible',
+    home: 'Inicio',
+    history: 'Historial',
+    swap: 'Intercambio',
+    crypto: 'Cripto',
   },
 
   // Welcome Screen
@@ -109,6 +113,10 @@ export const es: TranslationKeys = {
     txTopUp: 'Recarga',
     txWithdrawal: 'Retiro bancario',
     txSwap: 'Intercambiado',
+    colAsset: 'ACTIVO',
+    colType: 'TIPO',
+    colAmount: 'MONTO',
+    colStatus: 'ESTADO',
   },
 
   // Crypto Screen
