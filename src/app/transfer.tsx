@@ -152,7 +152,7 @@ export default function TransferScreen() {
             placeholder={t('transfer.recipientPlaceholder')}
             value={recipientId}
             onChangeText={setRecipientId}
-            error={isIdInvalid ? 'Enter a valid User ID' : undefined}
+            error={isIdInvalid ? t('transfer.recipientIdError') : undefined}
             iconLeft="person-outline"
             iconRight="clipboard-outline"
             onPressIconRight={handlePasteId}
@@ -199,7 +199,7 @@ export default function TransferScreen() {
             placeholder="0"
             value={amount}
             onChangeText={(text) => setAmount(text.replace(/[^0-9.]/g, ''))}
-            error={isAmountInvalid ? 'Insufficient balance' : undefined}
+            error={isAmountInvalid ? t('transfer.insufficientBalance') : undefined}
             keyboardType="numeric"
             iconLeft="logo-usd"
           />

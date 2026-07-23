@@ -278,7 +278,7 @@ export default function CryptoScreen() {
               <Card style={[styles.warningCard, { backgroundColor: theme.warning + '10', borderColor: theme.warning }]} bordered>
                 <Ionicons name="warning-outline" size={20} color={theme.warning} />
                 <ThemedText type="small" style={{ color: theme.textSecondary, flex: 1, marginLeft: 8 }}>
-                  Kirim hanya <Text style={{ fontWeight: '700', color: theme.text }}>{selectedAsset}</Text> menggunakan jaringan <Text style={{ fontWeight: '700', color: theme.text }}>Polygon</Text>. Mengirim aset lain dapat menyebabkan kehilangan dana permanen.
+                  {t('crypto.warningText').replace('{{asset}}', selectedAsset)}
                 </ThemedText>
               </Card>
             </View>
@@ -324,7 +324,7 @@ export default function CryptoScreen() {
                     placeholder={t('crypto.recipientPlaceholder')}
                     value={recipientAddress}
                     onChangeText={setRecipientAddress}
-                    error={isAddressInvalid ? 'Must be a valid 42-character EVM address' : undefined}
+                    error={isAddressInvalid ? t('crypto.invalidAddress') : undefined}
                     iconLeft="wallet-outline"
                     iconRight="clipboard-outline"
                     onPressIconRight={handlePasteAddress}
@@ -334,11 +334,11 @@ export default function CryptoScreen() {
                   {/* Amount Input */}
                   <View style={styles.amountWrapper}>
                     <Input
-                      label={`AMOUNT (${sendAsset})`}
+                      label={`${t('crypto.withdrawAmount')} (${sendAsset})`}
                       placeholder="0.00"
                       value={amount}
                       onChangeText={(text) => setAmount(text.replace(/[^0-9.]/g, ''))}
-                      error={isAmountInvalid ? 'Insufficient balance' : undefined}
+                      error={isAmountInvalid ? t('crypto.insufficientBalance') : undefined}
                       keyboardType="numeric"
                       iconLeft="logo-usd"
                     />

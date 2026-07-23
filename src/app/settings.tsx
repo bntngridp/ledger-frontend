@@ -152,7 +152,7 @@ export default function SettingsScreen() {
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
           <ThemedText type="smallBold" style={styles.headerTitle}>
-            Profile & Settings
+            {t('settings.settingsTitle')}
           </ThemedText>
           <View style={{ width: 32 }} />
         </View>
@@ -178,14 +178,14 @@ export default function SettingsScreen() {
           {/* Section: Security */}
           <View style={styles.section}>
             <ThemedText type="small" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-              SECURITY
+              {t('settings.securitySection')}
             </ThemedText>
             <Card style={styles.settingsGroup} bordered>
               <View style={styles.settingsRow}>
                 <View style={styles.settingsLabelWrapper}>
                   <Ionicons name="shield-checkmark-outline" size={20} color={theme.text} />
                   <ThemedText type="smallBold" style={styles.settingsLabel}>
-                    Two-Factor Authentication (2FA)
+                    {t('settings.securityTwoFactor')}
                   </ThemedText>
                 </View>
                 <Switch
@@ -202,7 +202,7 @@ export default function SettingsScreen() {
                 <View style={styles.settingsLabelWrapper}>
                   <Ionicons name="lock-closed-outline" size={20} color={theme.text} />
                   <ThemedText type="smallBold" style={styles.settingsLabel}>
-                    Change Password
+                    {t('settings.securityChangePassword')}
                   </ThemedText>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
@@ -213,14 +213,14 @@ export default function SettingsScreen() {
           {/* Section: Preferences */}
           <View style={styles.section}>
             <ThemedText type="small" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-              PREFERENCES
+              {t('settings.preferencesSection')}
             </ThemedText>
             <Card style={styles.settingsGroup} bordered>
               <View style={styles.settingsRow}>
                 <View style={styles.settingsLabelWrapper}>
                   <Ionicons name="notifications-outline" size={20} color={theme.text} />
                   <ThemedText type="smallBold" style={styles.settingsLabel}>
-                    Push Notifications
+                    {t('settings.pushNotifications')}
                   </ThemedText>
                 </View>
                 <Switch
@@ -237,12 +237,12 @@ export default function SettingsScreen() {
                 <View style={styles.settingsLabelWrapper}>
                   <Ionicons name="color-palette-outline" size={20} color={theme.text} />
                   <ThemedText type="smallBold" style={styles.settingsLabel}>
-                    Theme Mode
+                    {t('settings.themeMode')}
                   </ThemedText>
                 </View>
                 <View style={styles.rowRight}>
                   <ThemedText type="small" style={{ color: theme.textSecondary, marginRight: 6 }}>
-                    {themePreference === 'system' ? 'System (Auto)' : themePreference === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                    {themePreference === 'system' ? t('settings.systemDefault') : themePreference === 'dark' ? t('settings.darkMode') : t('settings.lightMode')}
                   </ThemedText>
                   <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
                 </View>
@@ -257,7 +257,7 @@ export default function SettingsScreen() {
                 <View style={styles.settingsLabelWrapper}>
                   <Ionicons name="globe-outline" size={20} color={theme.text} />
                   <ThemedText type="smallBold" style={styles.settingsLabel}>
-                    {t('settings.languagePreference', 'Language Preference')}
+                    {t('settings.languagePreference')}
                   </ThemedText>
                 </View>
                 <View style={styles.rowRight}>
@@ -279,14 +279,14 @@ export default function SettingsScreen() {
           {/* Section: About */}
           <View style={styles.section}>
             <ThemedText type="small" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-              ABOUT
+              {t('settings.aboutSection')}
             </ThemedText>
             <Card style={styles.settingsGroup} bordered>
               <View style={styles.settingsRow}>
                 <View style={styles.settingsLabelWrapper}>
                   <Ionicons name="information-circle-outline" size={20} color={theme.text} />
                   <ThemedText type="smallBold" style={styles.settingsLabel}>
-                    App Version
+                    {t('settings.appVersionLabel')}
                   </ThemedText>
                 </View>
                 <ThemedText type="code" style={{ color: theme.textSecondary }}>
@@ -298,7 +298,7 @@ export default function SettingsScreen() {
 
           {/* Logout button */}
           <Button
-            title="Log Out"
+            title={t('common.logout')}
             variant="danger"
             onPress={handleLogout}
             style={styles.logoutBtn}
@@ -310,10 +310,10 @@ export default function SettingsScreen() {
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
               <ThemedText type="smallBold" style={{ marginBottom: Spacing.two }}>
-                Disable Two-Factor Authentication
+                {t('settings.disable2FATitle')}
               </ThemedText>
               <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.three }}>
-                Enter the 6-digit verification code from your authenticator app to disable 2FA protection.
+                {t('settings.disable2FADesc')}
               </ThemedText>
 
               <TextInput
@@ -342,13 +342,13 @@ export default function SettingsScreen() {
 
               <View style={styles.modalButtons}>
                 <Button
-                  title="Cancel"
+                  title={t('common.cancel')}
                   variant="ghost"
                   onPress={() => setShowDisableModal(false)}
                   style={{ flex: 1 }}
                 />
                 <Button
-                  title="Disable"
+                  title={t('settings.disableBtn')}
                   variant="danger"
                   loading={disableLoading}
                   onPress={confirmDisable2FA}
@@ -364,16 +364,16 @@ export default function SettingsScreen() {
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
               <ThemedText type="smallBold" style={{ marginBottom: Spacing.two, fontSize: 16 }}>
-                Select Theme Mode
+                {t('settings.selectTheme')}
               </ThemedText>
               <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.four }}>
-                Choose how Ledger appears on your device.
+                {t('settings.selectThemeDesc')}
               </ThemedText>
 
               {([
-                { label: 'System Default (Auto)', value: 'system', icon: 'settings-outline' },
-                { label: 'Light Mode', value: 'light', icon: 'sunny-outline' },
-                { label: 'Dark Mode', value: 'dark', icon: 'moon-outline' },
+                { label: t('settings.systemDefault'), value: 'system', icon: 'settings-outline' },
+                { label: t('settings.lightMode'), value: 'light', icon: 'sunny-outline' },
+                { label: t('settings.darkMode'), value: 'dark', icon: 'moon-outline' },
               ] as const).map((opt) => {
                 const isSelected = themePreference === opt.value;
                 return (
@@ -409,7 +409,7 @@ export default function SettingsScreen() {
               })}
 
               <Button
-                title="Cancel"
+                title={t('common.cancel')}
                 variant="secondary"
                 onPress={() => setShowThemeModal(false)}
                 style={{ marginTop: Spacing.three, width: '100%' }}
@@ -423,10 +423,10 @@ export default function SettingsScreen() {
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
               <ThemedText type="smallBold" style={{ marginBottom: Spacing.two, fontSize: 16 }}>
-                {t('settings.languagePreference', 'Select Language')}
+                {t('settings.selectLanguage')}
               </ThemedText>
               <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.four }}>
-                {t('settings.languageDesc', 'Choose your preferred display language')}
+                {t('settings.selectLanguageDesc')}
               </ThemedText>
 
               {([

@@ -122,11 +122,11 @@ export default function HistoryScreen() {
 
       // Nice type display name
       let typeDisplay = tx.type;
-      if (tx.type === 'transfer_out') typeDisplay = 'Transfer Sent';
-      if (tx.type === 'transfer_in') typeDisplay = 'Transfer Received';
-      if (tx.type === 'topup') typeDisplay = 'Top Up';
-      if (tx.type === 'withdraw') typeDisplay = 'Withdrawal';
-      if (tx.type === 'swap') typeDisplay = 'Swap';
+      if (tx.type === 'transfer_out') typeDisplay = t('dashboard.txTransferSent');
+      if (tx.type === 'transfer_in') typeDisplay = t('dashboard.txTransferReceived');
+      if (tx.type === 'topup') typeDisplay = t('dashboard.txTopUp');
+      if (tx.type === 'withdraw') typeDisplay = t('dashboard.txWithdrawal');
+      if (tx.type === 'swap') typeDisplay = t('dashboard.txSwap');
 
       // Clean format amount
       let formattedAmount = '';
@@ -225,7 +225,7 @@ export default function HistoryScreen() {
         {/* Filter asset selector */}
         <View style={styles.assetFilterSection}>
           <ThemedText type="small" style={{ color: theme.textSecondary, marginRight: 8 }}>
-            Asset:
+            {t('history.assetLabel')}
           </ThemedText>
           {assetTypes.map((asset) => (
             <TouchableOpacity

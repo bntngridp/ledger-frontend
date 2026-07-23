@@ -166,7 +166,7 @@ export default function WithdrawScreen() {
               placeholder="0"
               value={amount}
               onChangeText={(text) => setAmount(text.replace(/[^0-9]/g, ''))}
-              error={isAmountInvalid ? 'Insufficient balance including admin fee' : undefined}
+              error={isAmountInvalid ? t('withdraw.insufficientBalance') : undefined}
               keyboardType="numeric"
               iconLeft="logo-usd"
             />
@@ -188,7 +188,7 @@ export default function WithdrawScreen() {
           <View style={[styles.feeCard, { backgroundColor: theme.backgroundElement }]}>
             <Ionicons name="information-circle-outline" size={20} color={theme.primary} />
             <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: 8, flex: 1 }}>
-              Setiap penarikan dana fiat dikenakan biaya administrasi tetap sebesar{' '}
+              {t('withdraw.adminFeeText')}{' '}
               <Text style={{ color: theme.text, fontWeight: '700' }}>Rp 6.500</Text>.
             </ThemedText>
           </View>
