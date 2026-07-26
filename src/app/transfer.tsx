@@ -75,7 +75,9 @@ export default function TransferScreen() {
   };
 
   useEffect(() => {
-    loadBalances();
+    (async () => {
+      await loadBalances();
+    })();
   }, []);
 
   const handlePasteId = async () => {

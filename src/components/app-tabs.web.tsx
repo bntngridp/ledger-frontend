@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Tabs,
   TabList,
@@ -16,6 +16,7 @@ import { ThemedView } from './themed-view';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTranslation } from '@/hooks/use-translation';
 import { Colors, Spacing } from '@/constants/theme';
+import { storage } from '@/services/storage';
 
 export default function AppTabs() {
   const { width } = useWindowDimensions();
@@ -112,6 +113,49 @@ export function CustomTabList(props: TabListProps) {
   const theme = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
   const { t } = useTranslation();
 
+  // State for user info
+  const [userName, setUserName] = useState('User');
+
+  // Load user info from JWT token on mount
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        const token = await storage.getItem('auth_token');
+        if (token) {
+          try {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+              if (payload?.email) {
+                // Extract name from email (part before @)
+                const namePart = payload.email.split('@')[0];
+                // Capitalize first letter
+                const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+                setUserName(displayName);
+              }
+            }
+          } catch (e) {
+            console.error('Failed to parse JWT token:', e);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load user info:', err);
+      }
+    };
+
+    loadUserInfo();
+  }, []);
+
+  // Generate initials from username
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <View {...props} style={[styles.tabListContainer, { backgroundColor: theme.backgroundElement, borderRightColor: theme.border }]}>
       <View style={styles.innerContainer}>
@@ -140,11 +184,11 @@ export function CustomTabList(props: TabListProps) {
         >
           <View style={[styles.profileAvatar, { backgroundColor: theme.primary }]}>
             <ThemedText type="code" style={styles.avatarText}>
-              JD
+              {getInitials(userName)}
             </ThemedText>
           </View>
           <View style={styles.profileTextWrapper}>
-            <ThemedText type="smallBold">John Doe</ThemedText>
+            <ThemedText type="smallBold">{userName}</ThemedText>
             <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
               {t('settings.settingsTitle')}
             </ThemedText>

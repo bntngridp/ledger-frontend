@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -36,7 +36,7 @@ export default function WithdrawScreen() {
   };
 
   // Input states
-  const [bankCode, setBankCode] = useState('bca');
+  const [bankCode] = useState('bca');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
   const [amount, setAmount] = useState('');
@@ -53,34 +53,81 @@ export default function WithdrawScreen() {
   const [availableBalance, setAvailableBalance] = useState(0);
   const adminFee = 6500;
 
-  const loadBalance = async () => {
+  const loadBalance = useCallback(async () => {
+    setBalanceLoading(true);
+    setError('');
     try {
       const response = await api.wallet.getDashboard();
       if (response.status === 'success' && response.data?.balances) {
         const idrBalance = response.data.balances.find((b: any) => b.asset_symbol === 'IDR');
         if (idrBalance) {
           setAvailableBalance(parseFloat(idrBalance.balance));
+        } else {
+          setError('IDR balance not found. Please try again.');
         }
+      } else {
+        setError('Failed to load balance. Please try again.');
       }
-    } catch (err) {
-      console.error('Failed to load balance for withdrawal:', err);
+    } catch (err: any) {
+      console.error('Failed to load balance:', err);
+      setError('Failed to load balance. Please check your connection.');
     } finally {
       setBalanceLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadBalance();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      await loadBalance();
+    })();
+  }, [loadBalance]);
+
   const handleReviewWithdraw = () => {
-    if (!accountNumber || !accountName || !amount || parseFloat(amount) <= 0) return;
+    // Validate all fields
+    if (!accountNumber) {
+      setError(t('withdraw.accountNumberRequired') || 'Account number is required');
+      return;
+    }
+
+    if (!accountName) {
+      setError(t('withdraw.accountNameRequired') || 'Account holder name is required');
+      return;
+    }
+
+    if (!amount) {
+      setError(t('withdraw.amountRequired') || 'Withdrawal amount is required');
+      return;
+    }
+
+    const val = parseFloat(amount);
+    if (isNaN(val) || val <= 0) {
+      setError('Amount must be greater than 0');
+      return;
+    }
+
+    if (val > availableBalance - adminFee) {
+      setError(t('withdraw.insufficientBalance') || 'Insufficient balance for this withdrawal');
+      return;
+    }
+
     setError('');
     setShowReviewModal(true);
   };
 
   const handleConfirmWithdraw = async () => {
     const val = parseFloat(amount);
+
+    // Revalidate before submission
+    if (isNaN(val) || val <= 0) {
+      setError('Invalid amount');
+      return;
+    }
+
+    if (val + adminFee > availableBalance) {
+      setError(t('withdraw.insufficientBalance') || 'Insufficient balance');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -94,18 +141,25 @@ export default function WithdrawScreen() {
 
       if (response.status === 'success') {
         setWithdrawSuccess(true);
+        // Wait 2 seconds then redirect back to dashboard
         setTimeout(() => {
           setWithdrawSuccess(false);
           setShowReviewModal(false);
+          // Reset form
+          setAccountNumber('');
+          setAccountName('');
+          setAmount('');
+          setNotes('');
           router.replace('/(tabs)');
         }, 2000);
       } else {
         setLoading(false);
-        setError(response.message || 'Withdrawal failed');
+        setError(response.message || 'Withdrawal failed. Please try again.');
       }
     } catch (err: any) {
       setLoading(false);
-      setError(err.message || 'An error occurred during withdrawal');
+      console.error('Withdraw error:', err);
+      setError(err.message || 'Failed to process withdrawal. Please check your connection and try again.');
     }
   };
 

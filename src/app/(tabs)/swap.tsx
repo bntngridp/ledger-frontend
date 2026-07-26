@@ -4,9 +4,7 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   Modal,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -91,17 +89,22 @@ export default function SwapScreen() {
   };
 
   useEffect(() => {
-    loadBalances();
+    (async () => {
+      await loadBalances();
+    })();
   }, []);
 
   useEffect(() => {
-    fetchRate();
+    (async () => {
+      await fetchRate();
+    })();
   }, [fromAsset, toAsset]);
 
-  // Live calculation effect
+  // Live calculation effect - Intentionally updating derived state based on dependencies
   useEffect(() => {
     const val = parseFloat(fromAmount);
     if (isNaN(val) || val <= 0 || loadingRate) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setToAmount('');
       return;
     }
@@ -110,7 +113,7 @@ export default function SwapScreen() {
     const calculated = val * rate;
     const netAmount = calculated * (1 - swapFeePercentage);
     setToAmount(netAmount.toFixed(toAsset === 'IDR' ? 2 : 6));
-  }, [fromAmount, rate, loadingRate]);
+  }, [fromAmount, rate, loadingRate, toAsset]);
 
   const handleFlip = () => {
     const temp = fromAsset;

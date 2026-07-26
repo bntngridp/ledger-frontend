@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Clipboard,
-  Text,
   ActivityIndicator,
   Alert,
 } from 'react-native';
@@ -41,7 +40,6 @@ export default function CryptoScreen() {
   const [sendAsset, setSendAsset] = useState<'USDT' | 'USDC'>('USDT');
   const [recipientAddress, setRecipientAddress] = useState('');
   const [amount, setAmount] = useState('');
-  const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -86,12 +84,16 @@ export default function CryptoScreen() {
   };
 
   useEffect(() => {
-    loadBalances();
+    (async () => {
+      await loadBalances();
+    })();
   }, []);
 
   useEffect(() => {
     if (activeSubTab === 'receive') {
-      fetchDepositAddress(selectedAsset);
+      (async () => {
+        await fetchDepositAddress(selectedAsset);
+      })();
     }
   }, [activeSubTab, selectedAsset]);
 
@@ -131,15 +133,14 @@ export default function CryptoScreen() {
       });
       setLoading(false);
 
-      if (response.status === 'success') {
-        setSuccess(true);
-        await loadBalances(); // Refresh balances
-        setTimeout(() => {
-          setSuccess(false);
-          setRecipientAddress('');
-          setAmount('');
-          setNotes('');
-        }, 2000);
+       if (response.status === 'success') {
+         setSuccess(true);
+         await loadBalances(); // Refresh balances
+         setTimeout(() => {
+           setSuccess(false);
+           setRecipientAddress('');
+           setAmount('');
+         }, 2000);
       } else {
         setError(response.message || 'Crypto withdrawal failed');
       }

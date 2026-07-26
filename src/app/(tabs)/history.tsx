@@ -73,7 +73,9 @@ export default function HistoryScreen() {
   };
 
   useEffect(() => {
-    loadTransactions();
+    (async () => {
+      await loadTransactions();
+    })();
   }, []);
 
   const getStatusColor = (status: string) => {

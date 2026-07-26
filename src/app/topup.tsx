@@ -45,7 +45,6 @@ export default function TopUpScreen() {
   // Bottom sheet / Modal state
   const [showPayModal, setShowPayModal] = useState(false);
   const [transactionId, setTransactionId] = useState('');
-  const [snapToken, setSnapToken] = useState('');
   const [redirectUrl, setRedirectUrl] = useState('');
   const [error, setError] = useState('');
 
@@ -57,8 +56,23 @@ export default function TopUpScreen() {
 
   const handleInitiateTopUp = async () => {
     const val = parseFloat(amount);
-    if (isNaN(val) || val <= 0) return;
-    
+
+    // Validation
+    if (isNaN(val) || val <= 0) {
+      setError(t('topup.invalidAmount') || 'Amount must be greater than 0');
+      return;
+    }
+
+    if (val < 10000) {
+      setError('Minimum top-up amount is Rp 10,000');
+      return;
+    }
+
+    if (val > 100000000) {
+      setError('Maximum top-up amount is Rp 100,000,000');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -71,24 +85,31 @@ export default function TopUpScreen() {
 
       if (response.status === 'success' && response.data) {
         setTransactionId(response.data.transaction_id || '');
-        setSnapToken(response.data.snap_token || '');
         setRedirectUrl(response.data.redirect_url || '');
         setShowPayModal(true);
       } else {
-        setError(response.message || 'Failed to initiate Top Up transaction');
+        setError(response.message || 'Failed to initiate Top Up transaction. Please try again.');
       }
     } catch (err: any) {
       setLoading(false);
-      setError(err.message || 'An error occurred');
+      console.error('Top-up error:', err);
+      setError(err.message || 'Failed to process top-up. Please check your connection and try again.');
     }
   };
 
   const handleOpenPaymentPage = () => {
-    if (redirectUrl) {
-      Linking.openURL(redirectUrl).catch(() => {
-        Alert.alert('Error', 'Failed to open payment gateway redirection URL.');
-      });
+    if (!redirectUrl) {
+      setError('Payment redirect URL is not available. Please try again.');
+      return;
     }
+
+    Linking.openURL(redirectUrl).catch((err) => {
+      console.error('Failed to open payment gateway:', err);
+      Alert.alert(
+        'Error',
+        'Failed to open payment gateway. Please try again or contact support.'
+      );
+    });
   };
 
   const isInputValid = amount && parseFloat(amount) > 0;

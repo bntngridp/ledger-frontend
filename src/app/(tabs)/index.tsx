@@ -116,7 +116,9 @@ export default function DashboardScreen() {
   };
 
   useEffect(() => {
-    loadData();
+    (async () => {
+      await loadData();
+    })();
   }, []);
 
   // Filter and process transactions chronologically to build balance history
