@@ -333,7 +333,7 @@ export default function DashboardScreen() {
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.mobileScrollContent}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.7}>
+        <TouchableOpacity onPress={() => router.push('/settings')} activeOpacity={0.7}>
           <ThemedText style={{ color: theme.textSecondary }}>{t('dashboard.welcomeBack')}</ThemedText>
           <ThemedText type="smallBold" style={styles.username}>
             {username} 👋
@@ -360,7 +360,7 @@ export default function DashboardScreen() {
           </TouchableOpacity>
           {/* Profile / Settings Button */}
           <TouchableOpacity
-            onPress={() => router.push('/(tabs)/profile')}
+            onPress={() => router.push('/settings')}
             style={[styles.iconButton, { backgroundColor: theme.backgroundElement, marginRight: 4 }]}
             id="dashboard-profile-btn"
           >
