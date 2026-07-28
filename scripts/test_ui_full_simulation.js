@@ -10,8 +10,8 @@ if (!fs.existsSync(SCREENSHOT_DIR)) {
 }
 
 (async () => {
-  console.log('🚀 Starting Full UI End-to-End Master Simulation (Robust Mode)...');
-  const browser = await chromium.launch({ headless: true });
+  console.log('🚀 Starting Full UI End-to-End Master Simulation (VISUAL HEADED MODE)...');
+  const browser = await chromium.launch({ headless: false, slowMo: 400 });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await context.newPage();
 
