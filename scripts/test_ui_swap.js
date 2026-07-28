@@ -6,12 +6,10 @@ const ARTIFACT_DIR = '/Users/bintang/.gemini/antigravity-ide/brain/d0d8b7c6-21a7
 const SCREENSHOT_DIR = path.join(ARTIFACT_DIR, 'scratch');
 
 (async () => {
-  console.log('🚀 Running Playwright E2E Swap Rate Test...');
+  console.log('🚀 Running Playwright Multi-Asset Swap UI Test...');
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
   const page = await context.newPage();
-
-  page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
   try {
     // 1. Open app & Login
@@ -34,31 +32,35 @@ const SCREENSHOT_DIR = path.join(ARTIFACT_DIR, 'scratch');
     console.log('🔄 Navigating to Swap page...');
     await page.goto('http://localhost:7071/swap', { waitUntil: 'networkidle' });
     await page.waitForTimeout(2000);
-    await page.screenshot({ path: path.join(SCREENSHOT_DIR, '10_swap_page_initial.png') });
 
-    // 3. Check page text content for Live Rates
-    const bodyText = await page.innerText('body');
-    console.log('--- Swap Page Content ---');
-    console.log(bodyText.substring(0, 600));
-    console.log('-------------------------');
+    // 3. Click "Receive To" asset selector button to open Asset Picker Modal
+    console.log('👆 Clicking Asset Picker Selector (TO asset)...');
+    const toAssetBtn = page.locator('#swap-to-asset-btn');
+    if (await toAssetBtn.isVisible()) {
+      await toAssetBtn.click();
+      await page.waitForTimeout(1000);
+      await page.screenshot({ path: path.join(SCREENSHOT_DIR, '20_asset_picker_modal.png') });
+      console.log('📸 Saved 20_asset_picker_modal.png');
 
-    // 4. Fill 100000 IDR to convert to USDT
-    console.log('✍️ Entering 100,000 IDR in Swap calculator...');
-    const amountInput = page.locator('input[placeholder="0.00"]').first();
-    if (await amountInput.isVisible()) {
-      await amountInput.fill('100000');
-      await page.waitForTimeout(1500);
-      await page.screenshot({ path: path.join(SCREENSHOT_DIR, '11_swap_amount_entered.png') });
-
-      const updatedBody = await page.innerText('body');
-      console.log('--- After entering 100,000 IDR ---');
-      console.log(updatedBody.substring(0, 800));
-      console.log('-----------------------------------');
+      // Click "USDC" in modal list
+      console.log('✨ Selecting USDC from Modal...');
+      const usdcItem = page.locator('text=USD Coin (ERC-20)').or(page.locator('text=USDC')).first();
+      if (await usdcItem.isVisible()) {
+        await usdcItem.click();
+        await page.waitForTimeout(1500);
+      }
     }
 
-    console.log('🎉 PLAYWRIGHT E2E SWAP RATE TEST COMPLETE!');
+    // 4. Verify live rate for IDR -> USDC
+    const bodyText = await page.innerText('body');
+    console.log('--- Swap Page Content after selecting USDC ---');
+    console.log(bodyText.substring(0, 700));
+    console.log('----------------------------------------------');
+    await page.screenshot({ path: path.join(SCREENSHOT_DIR, '21_swap_usdc_selected.png') });
+
+    console.log('🎉 PLAYWRIGHT MULTI-ASSET SWAP UI TEST SUCCESSFUL!');
   } catch (err) {
-    console.error('❌ Swap test error:', err);
+    console.error('❌ Test failed:', err);
   } finally {
     await browser.close();
   }

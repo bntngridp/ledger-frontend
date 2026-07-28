@@ -42,10 +42,30 @@ export default function SwapScreen() {
 
   const swapFeePercentage = 0.005; // 0.5%
 
-  // Modal Review Swap state
+  // Modal Review & Asset Selection states
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showAssetModal, setShowAssetModal] = useState<'from' | 'to' | null>(null);
   const [isSwapping, setIsSwapping] = useState(false);
   const [swapSuccess, setSwapSuccess] = useState(false);
+
+  const availableAssets = ['IDR', 'USDT', 'USDC'];
+
+  const handleSelectAsset = (asset: string) => {
+    if (showAssetModal === 'from') {
+      if (asset === toAsset) {
+        // Swap them if user picks the asset that is currently 'to'
+        setToAsset(fromAsset);
+      }
+      setFromAsset(asset);
+    } else if (showAssetModal === 'to') {
+      if (asset === fromAsset) {
+        // Swap them if user picks the asset that is currently 'from'
+        setFromAsset(toAsset);
+      }
+      setToAsset(asset);
+    }
+    setShowAssetModal(null);
+  };
 
   const loadBalances = async () => {
     try {
@@ -217,10 +237,15 @@ export default function SwapScreen() {
                   containerStyle={{ flex: 1, marginBottom: 0 }}
                   style={styles.amountInput}
                 />
-                <View style={[styles.assetSelector, { backgroundColor: theme.backgroundSelected }]}>
+                <TouchableOpacity
+                  onPress={() => setShowAssetModal('from')}
+                  style={[styles.assetSelector, { backgroundColor: theme.backgroundSelected }]}
+                  id="swap-from-asset-btn"
+                >
                   <AssetIcon symbol={fromAsset} size={22} containerStyle={{ marginRight: 6 }} />
                   <ThemedText type="smallBold">{fromAsset}</ThemedText>
-                </View>
+                  <Ionicons name="chevron-down" size={16} color={theme.textSecondary} style={{ marginLeft: 4 }} />
+                </TouchableOpacity>
               </View>
             </Card>
 
@@ -252,10 +277,15 @@ export default function SwapScreen() {
                   containerStyle={{ flex: 1, marginBottom: 0 }}
                   style={styles.amountInput}
                 />
-                <View style={[styles.assetSelector, { backgroundColor: theme.backgroundSelected }]}>
+                <TouchableOpacity
+                  onPress={() => setShowAssetModal('to')}
+                  style={[styles.assetSelector, { backgroundColor: theme.backgroundSelected }]}
+                  id="swap-to-asset-btn"
+                >
                   <AssetIcon symbol={toAsset} size={22} containerStyle={{ marginRight: 6 }} />
                   <ThemedText type="smallBold">{toAsset}</ThemedText>
-                </View>
+                  <Ionicons name="chevron-down" size={16} color={theme.textSecondary} style={{ marginLeft: 4 }} />
+                </TouchableOpacity>
               </View>
             </Card>
 
@@ -366,10 +396,61 @@ export default function SwapScreen() {
             </View>
           </View>
         </Modal>
+
+        {/* Asset Selection Modal */}
+        <Modal visible={showAssetModal !== null} transparent animationType="fade">
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowAssetModal(null)}
+          >
+            <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <ThemedText type="smallBold" style={{ fontSize: 16 }}>
+                  {showAssetModal === 'from' ? t('swap.payFrom') : t('swap.receiveTo')}
+                </ThemedText>
+                <TouchableOpacity onPress={() => setShowAssetModal(null)}>
+                  <Ionicons name="close" size={22} color={theme.text} />
+                </TouchableOpacity>
+              </View>
+
+              {availableAssets.map((asset) => {
+                const isSelected = showAssetModal === 'from' ? asset === fromAsset : asset === toAsset;
+                return (
+                  <TouchableOpacity
+                    key={asset}
+                    onPress={() => handleSelectAsset(asset)}
+                    style={[
+                      styles.assetItemRow,
+                      {
+                        backgroundColor: isSelected ? theme.backgroundSelected : 'transparent',
+                        borderColor: isSelected ? theme.primary : theme.border,
+                      },
+                    ]}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <AssetIcon symbol={asset} size={32} containerStyle={{ marginRight: 12 }} />
+                      <View>
+                        <ThemedText type="smallBold">{asset}</ThemedText>
+                        <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                          {asset === 'IDR' ? 'Rupiah Indonesia (Fiat)' : asset === 'USDT' ? 'Tether USD (ERC-20)' : 'USD Coin (ERC-20)'}
+                        </ThemedText>
+                      </View>
+                    </View>
+                    <ThemedText type="smallBold" style={{ color: theme.textSecondary }}>
+                      {balances[asset]?.toLocaleString('id-ID') || 0} {asset}
+                    </ThemedText>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </TouchableOpacity>
+        </Modal>
       </SafeAreaView>
     </ThemedView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -481,6 +562,15 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     padding: Spacing.four,
     paddingBottom: Spacing.five,
+  },
+  assetItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 10,
   },
   modalTitle: {
     fontSize: 18,
