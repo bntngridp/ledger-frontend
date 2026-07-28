@@ -693,7 +693,8 @@ export default function DashboardScreen() {
               { title: t('dashboard.send'), desc: t('dashboard.transferDesc'), icon: 'paper-plane-outline', route: '/transfer', color: theme.primary },
               { title: t('dashboard.receive'), desc: t('dashboard.receiveDesc'), icon: 'qr-code-outline', route: '/(tabs)/crypto', color: theme.success },
               { title: t('dashboard.quickSwap'), desc: t('dashboard.swapDesc'), icon: 'swap-horizontal-outline', route: '/(tabs)/swap', color: theme.warning },
-              { title: t('dashboard.buy'), desc: t('dashboard.buyDesc'), icon: 'add-circle-outline', route: '/topup', color: theme.danger },
+              { title: t('dashboard.buy'), desc: t('dashboard.buyDesc'), icon: 'add-circle-outline', route: '/topup', color: theme.primary },
+              { title: t('dashboard.quickWithdraw') || 'Withdraw', desc: 'Withdraw IDR to Bank / E-Wallet', icon: 'cash-outline', route: '/withdraw', color: theme.danger },
             ].map((action) => (
               <TouchableOpacity
                 key={action.title}
