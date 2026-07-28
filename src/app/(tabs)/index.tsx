@@ -538,6 +538,22 @@ export default function DashboardScreen() {
             <Ionicons name="refresh-outline" size={20} color={theme.text} />
           </TouchableOpacity>
 
+          {/* Notification Bell for Desktop Header */}
+          <TouchableOpacity
+            onPress={() => router.push('/notifications')}
+            style={[styles.iconButton, { backgroundColor: theme.backgroundElement, position: 'relative' }]}
+            id="dashboard-notif-btn"
+          >
+            <Ionicons name="notifications-outline" size={20} color={theme.text} />
+            {unreadNotifCount > 0 && (
+              <View style={[styles.notifBadge, { backgroundColor: theme.danger }]}>
+                <ThemedText style={styles.notifBadgeText}>
+                  {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+                </ThemedText>
+              </View>
+            )}
+          </TouchableOpacity>
+
           {/* Dynamic Theme Toggle for Web/Desktop */}
           <TouchableOpacity 
             onPress={() => setThemePreference(activeTheme === 'dark' ? 'light' : 'dark')} 
