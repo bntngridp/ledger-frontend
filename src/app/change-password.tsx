@@ -442,10 +442,10 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   sendOtpBtn: {
+    width: 'auto',
     height: 50,
     paddingHorizontal: 16,
     borderRadius: 12,
-    minWidth: 140,
     justifyContent: 'center',
     alignItems: 'center',
   },
