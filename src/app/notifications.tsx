@@ -20,6 +20,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
+import { OctopusLoader } from '@/components/ui/octopus-loader';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface NotificationItem {
@@ -230,7 +231,7 @@ export default function NotificationsScreen() {
         {/* Content */}
         {loading ? (
           <View style={styles.centerState}>
-            <ActivityIndicator size="large" color={theme.primary} />
+            <OctopusLoader size="large" message="Swimming to fetch notifications... 🐙🔔" />
           </View>
         ) : error ? (
           <View style={styles.centerState}>

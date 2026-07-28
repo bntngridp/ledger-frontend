@@ -10,6 +10,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
+import { OctopusLoader } from './octopus-loader';
 import { useTheme } from '@/hooks/use-theme';
 
 export interface ButtonProps extends PressableProps {
@@ -83,7 +84,7 @@ export function Button({
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator color={colors.text} size="small" />
+        <OctopusLoader size="small" />
       ) : (
         <>
           {iconLeft && <View style={styles.iconContainer}>{iconLeft}</View>}

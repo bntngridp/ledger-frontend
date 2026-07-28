@@ -22,6 +22,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
+import { OctopusLoader } from '@/components/ui/octopus-loader';
 
 export default function CryptoScreen() {
   const theme = useTheme();
@@ -243,7 +244,7 @@ export default function CryptoScreen() {
                 {/* QR Code Graphic */}
                 <View style={[styles.qrMock, { borderColor: theme.border, backgroundColor: '#ffffff' }]}>
                   {loadingAddress ? (
-                    <ActivityIndicator size="large" color={theme.primary} />
+                    <OctopusLoader size="small" message="Swimming to generate address... 🐙" />
                   ) : depositAddress ? (
                     <QRCode value={depositAddress} size={180} />
                   ) : (

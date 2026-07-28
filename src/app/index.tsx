@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-
+import { OctopusLoader } from '@/components/ui/octopus-loader';
 import { storage } from '@/services/storage';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -34,7 +34,7 @@ export default function Index() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <ActivityIndicator size="large" color={theme.primary} />
+      <OctopusLoader size="large" message="Swimming into Ledger... 🐙🌊" />
     </View>
   );
 }

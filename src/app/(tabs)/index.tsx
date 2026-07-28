@@ -23,6 +23,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { Spacing } from '@/constants/theme';
 import { Chart } from '@/components/chart';
 import { Button } from '@/components/ui/button';
+import { OctopusLoader } from '@/components/ui/octopus-loader';
 import { api } from '@/services/api';
 import { storage } from '@/services/storage';
 import { AssetIcon } from '@/components/ui/asset-icon';
@@ -805,8 +806,7 @@ export default function DashboardScreen() {
       <SafeAreaView style={styles.safeArea}>
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.primary} />
-            <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>{t('dashboard.syncingData')}</ThemedText>
+            <OctopusLoader size="large" message={t('dashboard.syncingData') || 'Swimming through your ledger... 🐙🌊'} />
           </View>
         ) : error ? (
           <View style={styles.errorContainer}>

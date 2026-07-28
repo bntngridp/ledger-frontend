@@ -17,6 +17,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
+import { OctopusLoader } from '@/components/ui/octopus-loader';
 
 interface TransactionItem {
   transaction_id: string;
@@ -256,8 +257,7 @@ export default function HistoryScreen() {
         {/* Transaction list */}
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={theme.primary} />
-            <ThemedText style={{ marginTop: 12, color: theme.textSecondary }}>Syncing ledger history...</ThemedText>
+            <OctopusLoader size="large" message="Swimming through transaction history... 🐙📜" />
           </View>
         ) : error ? (
           <View style={styles.errorContainer}>
