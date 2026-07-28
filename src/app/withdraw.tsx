@@ -35,8 +35,24 @@ export default function WithdrawScreen() {
     }
   };
 
+  // Supported channels
+  const SUPPORTED_CHANNELS = [
+    { code: 'bca', name: 'Bank Central Asia (BCA)', type: 'Bank', category: 'bank' },
+    { code: 'mandiri', name: 'Bank Mandiri', type: 'Bank', category: 'bank' },
+    { code: 'bni', name: 'Bank Negara Indonesia (BNI)', type: 'Bank', category: 'bank' },
+    { code: 'bri', name: 'Bank Rakyat Indonesia (BRI)', type: 'Bank', category: 'bank' },
+    { code: 'permata', name: 'Permata Bank', type: 'Bank', category: 'bank' },
+    { code: 'cimb', name: 'CIMB Niaga', type: 'Bank', category: 'bank' },
+    { code: 'dana', name: 'DANA E-Wallet', type: 'E-Wallet', category: 'ewallet' },
+    { code: 'gopay', name: 'GoPay E-Wallet', type: 'E-Wallet', category: 'ewallet' },
+    { code: 'ovo', name: 'OVO E-Wallet', type: 'E-Wallet', category: 'ewallet' },
+    { code: 'shopeepay', name: 'ShopeePay E-Wallet', type: 'E-Wallet', category: 'ewallet' },
+    { code: 'linkaja', name: 'LinkAja E-Wallet', type: 'E-Wallet', category: 'ewallet' },
+  ];
+
   // Input states
-  const [bankCode] = useState('bca');
+  const [bankCode, setBankCode] = useState('bca');
+  const [showBankModal, setShowBankModal] = useState(false);
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
   const [amount, setAmount] = useState('');
@@ -51,7 +67,7 @@ export default function WithdrawScreen() {
 
   // Real IDR balance loaded from API
   const [availableBalance, setAvailableBalance] = useState(0);
-  const adminFee = 6500;
+  const adminFee = 2500;
 
   const loadBalance = useCallback(async () => {
     setBalanceLoading(true);
@@ -180,18 +196,27 @@ export default function WithdrawScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {/* Bank Picker Dropdown (Simulated) */}
+          {/* Bank / E-Wallet Selector */}
           <View style={styles.bankPickerContainer}>
             <ThemedText type="small" style={[styles.label, { color: theme.textSecondary }]}>
-              {t('withdraw.beneficiaryBank')}
+              {t('withdraw.beneficiaryBank')} / E-Wallet
             </ThemedText>
-            <View style={[styles.pickerRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-              <Ionicons name="business-outline" size={20} color={theme.textSecondary} style={{ marginRight: 10 }} />
+            <TouchableOpacity
+              onPress={() => setShowBankModal(true)}
+              style={[styles.pickerRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
+              id="withdraw-bank-selector-btn"
+            >
+              <Ionicons
+                name={SUPPORTED_CHANNELS.find((c) => c.code === bankCode)?.category === 'ewallet' ? 'wallet-outline' : 'business-outline'}
+                size={20}
+                color={theme.primary}
+                style={{ marginRight: 10 }}
+              />
               <ThemedText type="smallBold" style={{ flex: 1 }}>
-                {bankCode.toUpperCase()} - PT. Bank Central Asia
+                {SUPPORTED_CHANNELS.find((c) => c.code === bankCode)?.name || bankCode.toUpperCase()}
               </ThemedText>
               <Ionicons name="chevron-down" size={20} color={theme.textSecondary} />
-            </View>
+            </TouchableOpacity>
           </View>
 
           {/* Account Number */}
@@ -243,7 +268,7 @@ export default function WithdrawScreen() {
             <Ionicons name="information-circle-outline" size={20} color={theme.primary} />
             <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: 8, flex: 1 }}>
               {t('withdraw.adminFeeText')}{' '}
-              <Text style={{ color: theme.text, fontWeight: '700' }}>Rp 6.500</Text>.
+              <Text style={{ color: theme.text, fontWeight: '700' }}>{`Rp ${adminFee.toLocaleString('id-ID')}`}</Text>.
             </ThemedText>
           </View>
 
@@ -346,10 +371,93 @@ export default function WithdrawScreen() {
             </View>
           </View>
         </Modal>
+
+        {/* Bank & E-Wallet Selection Modal */}
+        <Modal visible={showBankModal} transparent animationType="slide">
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowBankModal(false)}
+          >
+            <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement, maxHeight: '80%' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <ThemedText type="smallBold" style={{ fontSize: 16 }}>
+                  Pilih Bank / E-Wallet Tujuan
+                </ThemedText>
+                <TouchableOpacity onPress={() => setShowBankModal(false)}>
+                  <Ionicons name="close" size={22} color={theme.text} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <ThemedText type="smallBold" style={{ color: theme.textSecondary, marginBottom: 8 }}>
+                  🏦 BANK TRANSFER (IDR)
+                </ThemedText>
+                {SUPPORTED_CHANNELS.filter((c) => c.category === 'bank').map((channel) => {
+                  const isSelected = channel.code === bankCode;
+                  return (
+                    <TouchableOpacity
+                      key={channel.code}
+                      onPress={() => {
+                        setBankCode(channel.code);
+                        setShowBankModal(false);
+                      }}
+                      style={[
+                        styles.channelItemRow,
+                        {
+                          backgroundColor: isSelected ? theme.backgroundSelected : 'transparent',
+                          borderColor: isSelected ? theme.primary : theme.border,
+                        },
+                      ]}
+                      id={`withdraw-bank-option-${channel.code}`}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="business-outline" size={20} color={theme.primary} style={{ marginRight: 12 }} />
+                        <ThemedText type="smallBold">{channel.name}</ThemedText>
+                      </View>
+                      {isSelected && <Ionicons name="checkmark-circle" size={20} color={theme.primary} />}
+                    </TouchableOpacity>
+                  );
+                })}
+
+                <ThemedText type="smallBold" style={{ color: theme.textSecondary, marginTop: 16, marginBottom: 8 }}>
+                  📱 E-WALLET (IDR)
+                </ThemedText>
+                {SUPPORTED_CHANNELS.filter((c) => c.category === 'ewallet').map((channel) => {
+                  const isSelected = channel.code === bankCode;
+                  return (
+                    <TouchableOpacity
+                      key={channel.code}
+                      onPress={() => {
+                        setBankCode(channel.code);
+                        setShowBankModal(false);
+                      }}
+                      style={[
+                        styles.channelItemRow,
+                        {
+                          backgroundColor: isSelected ? theme.backgroundSelected : 'transparent',
+                          borderColor: isSelected ? theme.primary : theme.border,
+                        },
+                      ]}
+                      id={`withdraw-bank-option-${channel.code}`}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="wallet-outline" size={20} color={theme.primary} style={{ marginRight: 12 }} />
+                        <ThemedText type="smallBold">{channel.name}</ThemedText>
+                      </View>
+                      {isSelected && <Ionicons name="checkmark-circle" size={20} color={theme.primary} />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </TouchableOpacity>
+        </Modal>
       </SafeAreaView>
     </ThemedView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -433,6 +541,15 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     padding: Spacing.four,
     paddingBottom: Spacing.five,
+  },
+  channelItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 8,
   },
   modalTitle: {
     fontSize: 18,
