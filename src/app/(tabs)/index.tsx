@@ -333,12 +333,12 @@ export default function DashboardScreen() {
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.mobileScrollContent}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} activeOpacity={0.7}>
           <ThemedText style={{ color: theme.textSecondary }}>{t('dashboard.welcomeBack')}</ThemedText>
           <ThemedText type="smallBold" style={styles.username}>
             {username} 👋
           </ThemedText>
-        </View>
+        </TouchableOpacity>
         <View style={styles.headerActions}>
           <TouchableOpacity onPress={loadData} style={[styles.iconButton, { backgroundColor: theme.backgroundElement, marginRight: 4 }]}>
             <Ionicons name="refresh-outline" size={20} color={theme.text} />
@@ -357,6 +357,14 @@ export default function DashboardScreen() {
                 </ThemedText>
               </View>
             )}
+          </TouchableOpacity>
+          {/* Profile / Settings Button */}
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/profile')}
+            style={[styles.iconButton, { backgroundColor: theme.backgroundElement, marginRight: 4 }]}
+            id="dashboard-profile-btn"
+          >
+            <Ionicons name="person-circle-outline" size={22} color={theme.primary} />
           </TouchableOpacity>
           <View style={[styles.themeBadge, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
             <Ionicons
