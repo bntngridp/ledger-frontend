@@ -186,7 +186,11 @@ export default function SwapScreen() {
               <View>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('swap.currentRate')}</ThemedText>
                 <ThemedText type="smallBold">
-                  {loadingRate ? t('swap.loadingRate') : `1 ${fromAsset} = ${rate.toLocaleString('id-ID', { maximumFractionDigits: 6 })} ${toAsset}`}
+                  {loadingRate
+                    ? t('swap.loadingRate')
+                    : rate < 0.01
+                    ? `1 ${fromAsset} = ${rate.toFixed(6)} ${toAsset} (1 ${toAsset} ≈ Rp ${(1 / rate).toLocaleString('id-ID', { maximumFractionDigits: 0 })})`
+                    : `1 ${fromAsset} = ${rate.toLocaleString('id-ID', { maximumFractionDigits: 4 })} ${toAsset}`}
                 </ThemedText>
               </View>
             </View>
