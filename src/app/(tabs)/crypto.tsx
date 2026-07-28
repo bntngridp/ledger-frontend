@@ -211,9 +211,10 @@ export default function CryptoScreen() {
                       alignItems: 'center',
                     },
                   ]}
+                  id="crypto-deposit-asset-usdt-btn"
                 >
-                  <AssetIcon symbol="USDT" size={18} containerStyle={{ marginRight: 6 }} />
-                  <ThemedText style={{ color: selectedAsset === 'USDT' ? '#ffffff' : theme.textSecondary }}>
+                  <AssetIcon symbol="USDT" size={18} bgCircle containerStyle={{ marginRight: 8 }} />
+                  <ThemedText style={{ color: selectedAsset === 'USDT' ? '#ffffff' : theme.text, fontWeight: '700' }}>
                     USDT
                   </ThemedText>
                 </TouchableOpacity>
@@ -228,9 +229,10 @@ export default function CryptoScreen() {
                       alignItems: 'center',
                     },
                   ]}
+                  id="crypto-deposit-asset-usdc-btn"
                 >
-                  <AssetIcon symbol="USDC" size={18} containerStyle={{ marginRight: 6 }} />
-                  <ThemedText style={{ color: selectedAsset === 'USDC' ? '#ffffff' : theme.textSecondary }}>
+                  <AssetIcon symbol="USDC" size={18} bgCircle containerStyle={{ marginRight: 8 }} />
+                  <ThemedText style={{ color: selectedAsset === 'USDC' ? '#ffffff' : theme.text, fontWeight: '700' }}>
                     USDC
                   </ThemedText>
                 </TouchableOpacity>
@@ -239,7 +241,7 @@ export default function CryptoScreen() {
               {/* QR Code Container */}
               <Card style={styles.qrCard} bordered>
                 <View style={[styles.networkBadge, { backgroundColor: theme.warning + '15', flexDirection: 'row', alignItems: 'center' }]}>
-                  <AssetIcon symbol="Polygon" size={16} containerStyle={{ marginRight: 6 }} />
+                  <AssetIcon symbol="Polygon" size={16} bgCircle containerStyle={{ marginRight: 6 }} />
                   <ThemedText type="code" style={{ color: theme.warning, fontWeight: '700' }}>
                     POLYGON AMOY TESTNET
                   </ThemedText>
@@ -278,8 +280,8 @@ export default function CryptoScreen() {
               {/* Warning card */}
               <Card style={[styles.warningCard, { backgroundColor: theme.warning + '10', borderColor: theme.warning }]} bordered>
                 <Ionicons name="warning-outline" size={20} color={theme.warning} />
-                <ThemedText type="small" style={{ color: theme.textSecondary, flex: 1, marginLeft: 8 }}>
-                  {t('crypto.warningText').replace('{{asset}}', selectedAsset)}
+                <ThemedText type="small" style={{ color: theme.warning, marginLeft: 8, flex: 1 }}>
+                  {t('crypto.depositWarning')}
                 </ThemedText>
               </Card>
             </View>
