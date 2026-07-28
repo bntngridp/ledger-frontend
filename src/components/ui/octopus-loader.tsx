@@ -16,51 +16,48 @@ export function OctopusLoader({
 }: OctopusLoaderProps) {
   const theme = useTheme();
 
-  // Animation References
-  const swimAnim = useRef(new Animated.Value(0)).current;
-  const tentacleWiggleAnim = useRef(new Animated.Value(0)).current;
+  // Animation values for GitHub-style Octocat Swimming Physics
+  const swimAnim = useRef(new Animated.Value(0)).current; // 0 to 1 cycle
+  const jetParticleAnim = useRef(new Animated.Value(0)).current;
   const bubble1Anim = useRef(new Animated.Value(0)).current;
   const bubble2Anim = useRef(new Animated.Value(0)).current;
   const bubble3Anim = useRef(new Animated.Value(0)).current;
 
+  // Ledger Brand Colors
+  const LEDGER_INDIGO = '#6C63FF';
+  const LEDGER_INDIGO_DARK = '#4F46E5';
+  const LEDGER_EMERALD = '#10B981';
+  const LEDGER_MINT_GLOW = '#34D399';
+
   useEffect(() => {
-    // 1. Swimming bobbing animation (up & down)
+    // 1. GitHub-style Squish-and-Propel Swim Cycle (1400ms duration)
     const swimLoop = Animated.loop(
+      Animated.timing(swimAnim, {
+        toValue: 1,
+        duration: 1400,
+        easing: Easing.bezier(0.42, 0, 0.58, 1),
+        useNativeDriver: true,
+      })
+    );
+
+    // 2. Jet propulsion bubble particles
+    const jetLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(swimAnim, {
+        Animated.timing(jetParticleAnim, {
           toValue: 1,
-          duration: 1200,
-          easing: Easing.inOut(Easing.quad),
+          duration: 1400,
+          easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
-        Animated.timing(swimAnim, {
+        Animated.timing(jetParticleAnim, {
           toValue: 0,
-          duration: 1200,
-          easing: Easing.inOut(Easing.quad),
+          duration: 0,
           useNativeDriver: true,
         }),
       ])
     );
 
-    // 2. Tentacles wiggle animation
-    const tentacleLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(tentacleWiggleAnim, {
-          toValue: 1,
-          duration: 600,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-        Animated.timing(tentacleWiggleAnim, {
-          toValue: 0,
-          duration: 600,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    // 3. Bubbles floating upwards animation
+    // 3. Background floating water bubbles
     const createBubbleLoop = (anim: Animated.Value, delay: number, duration: number) => {
       return Animated.loop(
         Animated.sequence([
@@ -80,72 +77,243 @@ export function OctopusLoader({
       );
     };
 
-    const b1Loop = createBubbleLoop(bubble1Anim, 0, 1800);
-    const b2Loop = createBubbleLoop(bubble2Anim, 400, 2200);
-    const b3Loop = createBubbleLoop(bubble3Anim, 900, 1600);
+    const b1Loop = createBubbleLoop(bubble1Anim, 0, 1600);
+    const b2Loop = createBubbleLoop(bubble2Anim, 450, 2000);
+    const b3Loop = createBubbleLoop(bubble3Anim, 900, 1800);
 
     swimLoop.start();
-    tentacleLoop.start();
+    jetLoop.start();
     b1Loop.start();
     b2Loop.start();
     b3Loop.start();
 
     return () => {
       swimLoop.stop();
-      tentacleLoop.stop();
+      jetLoop.stop();
       b1Loop.stop();
       b2Loop.stop();
       b3Loop.stop();
     };
-  }, [swimAnim, tentacleWiggleAnim, bubble1Anim, bubble2Anim, bubble3Anim]);
+  }, [swimAnim, jetParticleAnim, bubble1Anim, bubble2Anim, bubble3Anim]);
 
-  // Interpolations
+  // Interpolations for GitHub Propulsion Swim Physics:
+  // Phase 1 (0-0.2): Compress (down + squish wide)
+  // Phase 2 (0.2-0.5): Propel upward (launch + stretch tall)
+  // Phase 3 (0.5-0.8): Glide at peak height
+  // Phase 4 (0.8-1.0): Relax & sink back to start
   const translateY = swimAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, size === 'small' ? -6 : -14],
+    inputRange: [0, 0.2, 0.5, 0.8, 1],
+    outputRange: [0, size === 'small' ? 3 : 6, size === 'small' ? -12 : -24, size === 'small' ? -8 : -16, 0],
   });
 
-  const bodyScaleY = swimAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [1, 1.05, 0.96],
+  const scaleY = swimAnim.interpolate({
+    inputRange: [0, 0.2, 0.5, 0.8, 1],
+    outputRange: [1, 0.86, 1.18, 1.02, 1],
   });
 
-  const tentacleRotate1 = tentacleWiggleAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['-12deg', '12deg'],
+  const scaleX = swimAnim.interpolate({
+    inputRange: [0, 0.2, 0.5, 0.8, 1],
+    outputRange: [1, 1.15, 0.86, 0.98, 1],
   });
 
-  const tentacleRotate2 = tentacleWiggleAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['10deg', '-10deg'],
+  // Tentacle fan angle during propulsion & glide
+  const tentacleWaveLeft = swimAnim.interpolate({
+    inputRange: [0, 0.2, 0.5, 0.8, 1],
+    outputRange: ['0deg', '15deg', '-20deg', '8deg', '0deg'],
   });
 
-  // Size configurations
+  const tentacleWaveRight = swimAnim.interpolate({
+    inputRange: [0, 0.2, 0.5, 0.8, 1],
+    outputRange: ['0deg', '-15deg', '20deg', '-8deg', '0deg'],
+  });
+
   const dimensions = {
-    small: { body: 32, font: 24, bubbleMax: 20 },
-    medium: { body: 56, font: 44, bubbleMax: 40 },
-    large: { body: 80, font: 64, bubbleMax: 60 },
+    small: { width: 36, height: 36, head: 22, tentacleH: 14, font: 12 },
+    medium: { width: 64, height: 64, head: 40, tentacleH: 24, font: 14 },
+    large: { width: 90, height: 90, head: 56, tentacleH: 34, font: 16 },
   }[size];
 
-  const renderBubbles = () => (
+  // Render GitHub-style Vector Octopus in Ledger Brand Colors
+  const renderLedgerOctopus = () => {
+    const isSmall = size === 'small';
+    const headSize = dimensions.head;
+
+    return (
+      <Animated.View
+        style={[
+          styles.octopusBodyWrapper,
+          {
+            transform: [
+              { translateY },
+              { scaleX },
+              { scaleY },
+            ],
+          },
+        ]}
+      >
+        {/* Octopus Dome Head (Ledger Brand Indigo Gradient) */}
+        <View
+          style={[
+            styles.octopusHead,
+            {
+              width: headSize,
+              height: headSize * 0.9,
+              borderRadius: headSize * 0.45,
+              backgroundColor: LEDGER_INDIGO,
+              borderWidth: 2,
+              borderColor: LEDGER_INDIGO_DARK,
+            },
+          ]}
+        >
+          {/* Head Shine Highlight */}
+          <View
+            style={[
+              styles.headShine,
+              {
+                width: headSize * 0.3,
+                height: headSize * 0.18,
+                borderRadius: 10,
+                backgroundColor: 'rgba(255, 255, 255, 0.4)',
+              },
+            ]}
+          />
+
+          {/* Expressive Ledger Eyes */}
+          <View style={styles.eyesRow}>
+            <View style={[styles.eye, { width: isSmall ? 4 : 8, height: isSmall ? 4 : 8 }]}>
+              <View style={[styles.pupil, { backgroundColor: LEDGER_MINT_GLOW }]} />
+            </View>
+            <View style={[styles.eye, { width: isSmall ? 4 : 8, height: isSmall ? 4 : 8 }]}>
+              <View style={[styles.pupil, { backgroundColor: LEDGER_MINT_GLOW }]} />
+            </View>
+          </View>
+
+          {/* Cute Smiling Mouth */}
+          {!isSmall && <View style={[styles.mouth, { borderColor: '#FFFFFF' }]} />}
+        </View>
+
+        {/* 8 Swimming Tentacles in Ledger Emerald & Indigo Accent */}
+        <View style={[styles.tentaclesContainer, { width: headSize, height: dimensions.tentacleH }]}>
+          {/* Tentacle 1 & 2 (Outer Left) */}
+          <Animated.View
+            style={[
+              styles.tentacle,
+              {
+                backgroundColor: LEDGER_EMERALD,
+                height: dimensions.tentacleH,
+                width: isSmall ? 3 : 6,
+                transform: [{ rotate: tentacleWaveLeft }],
+              },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.tentacle,
+              {
+                backgroundColor: LEDGER_INDIGO_DARK,
+                height: dimensions.tentacleH * 0.85,
+                width: isSmall ? 3 : 5,
+                transform: [{ rotate: tentacleWaveLeft }],
+              },
+            ]}
+          />
+
+          {/* Tentacle 3 & 4 (Inner Left & Middle) */}
+          <Animated.View
+            style={[
+              styles.tentacle,
+              {
+                backgroundColor: LEDGER_EMERALD,
+                height: dimensions.tentacleH * 1.1,
+                width: isSmall ? 3 : 6,
+                transform: [{ rotate: tentacleWaveRight }],
+              },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.tentacle,
+              {
+                backgroundColor: LEDGER_MINT_GLOW,
+                height: dimensions.tentacleH * 0.9,
+                width: isSmall ? 3 : 5,
+                transform: [{ rotate: tentacleWaveLeft }],
+              },
+            ]}
+          />
+
+          {/* Tentacle 5 & 6 (Inner Right & Middle) */}
+          <Animated.View
+            style={[
+              styles.tentacle,
+              {
+                backgroundColor: LEDGER_MINT_GLOW,
+                height: dimensions.tentacleH * 0.9,
+                width: isSmall ? 3 : 5,
+                transform: [{ rotate: tentacleWaveRight }],
+              },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.tentacle,
+              {
+                backgroundColor: LEDGER_EMERALD,
+                height: dimensions.tentacleH * 1.1,
+                width: isSmall ? 3 : 6,
+                transform: [{ rotate: tentacleWaveLeft }],
+              },
+            ]}
+          />
+
+          {/* Tentacle 7 & 8 (Outer Right) */}
+          <Animated.View
+            style={[
+              styles.tentacle,
+              {
+                backgroundColor: LEDGER_INDIGO_DARK,
+                height: dimensions.tentacleH * 0.85,
+                width: isSmall ? 3 : 5,
+                transform: [{ rotate: tentacleWaveRight }],
+              },
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.tentacle,
+              {
+                backgroundColor: LEDGER_EMERALD,
+                height: dimensions.tentacleH,
+                width: isSmall ? 3 : 6,
+                transform: [{ rotate: tentacleWaveRight }],
+              },
+            ]}
+          />
+        </View>
+      </Animated.View>
+    );
+  };
+
+  // Water Bubbles Trail (Ledger Mint Glowing Particles)
+  const renderWaterTrail = () => (
     <View style={styles.bubblesContainer}>
       <Animated.View
         style={[
           styles.bubble,
           {
-            backgroundColor: theme.primary + '60',
+            backgroundColor: LEDGER_EMERALD,
             width: size === 'small' ? 4 : 8,
             height: size === 'small' ? 4 : 8,
-            left: '30%',
+            left: '35%',
             opacity: bubble1Anim.interpolate({
-              inputRange: [0, 0.8, 1],
-              outputRange: [0.9, 0.6, 0],
+              inputRange: [0, 0.7, 1],
+              outputRange: [0.8, 0.4, 0],
             }),
             transform: [
               {
                 translateY: bubble1Anim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [0, -dimensions.bubbleMax],
+                  outputRange: [10, -45],
                 }),
               },
             ],
@@ -156,19 +324,19 @@ export function OctopusLoader({
         style={[
           styles.bubble,
           {
-            backgroundColor: theme.primary + '50',
+            backgroundColor: LEDGER_MINT_GLOW,
             width: size === 'small' ? 3 : 6,
             height: size === 'small' ? 3 : 6,
-            left: '60%',
+            left: '55%',
             opacity: bubble2Anim.interpolate({
-              inputRange: [0, 0.8, 1],
-              outputRange: [0.8, 0.5, 0],
+              inputRange: [0, 0.7, 1],
+              outputRange: [0.9, 0.3, 0],
             }),
             transform: [
               {
                 translateY: bubble2Anim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [5, -dimensions.bubbleMax * 1.3],
+                  outputRange: [15, -55],
                 }),
               },
             ],
@@ -179,19 +347,19 @@ export function OctopusLoader({
         style={[
           styles.bubble,
           {
-            backgroundColor: theme.primary + '70',
-            width: size === 'small' ? 5 : 10,
-            height: size === 'small' ? 5 : 10,
+            backgroundColor: LEDGER_INDIGO,
+            width: size === 'small' ? 5 : 9,
+            height: size === 'small' ? 5 : 9,
             left: '45%',
             opacity: bubble3Anim.interpolate({
-              inputRange: [0, 0.8, 1],
-              outputRange: [1, 0.4, 0],
+              inputRange: [0, 0.7, 1],
+              outputRange: [0.7, 0.2, 0],
             }),
             transform: [
               {
                 translateY: bubble3Anim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [2, -dimensions.bubbleMax * 1.5],
+                  outputRange: [5, -60],
                 }),
               },
             ],
@@ -203,56 +371,41 @@ export function OctopusLoader({
 
   const loaderContent = (
     <View style={styles.centerContainer}>
-      {renderBubbles()}
+      {renderWaterTrail()}
+      {renderLedgerOctopus()}
 
-      {/* Animated Swimming Octopus */}
-      <Animated.View
-        style={[
-          styles.octopusWrapper,
-          {
-            transform: [
-              { translateY },
-              { scaleY: bodyScaleY },
-            ],
-          },
-        ]}
-      >
-        {/* Octopus Emoji / Character with Swimming Tentacles */}
-        <Animated.View
-          style={{
-            transform: [{ rotate: tentacleRotate1 }],
-          }}
-        >
-          <ThemedText style={{ fontSize: dimensions.font }}>🐙</ThemedText>
-        </Animated.View>
-      </Animated.View>
-
-      {/* Ripple wave shadow under octopus */}
+      {/* Water Propulsion Ripple Shadow */}
       <Animated.View
         style={[
           styles.waterRipple,
           {
-            backgroundColor: theme.primary + '25',
-            width: dimensions.body * 0.8,
-            height: size === 'small' ? 4 : 8,
+            backgroundColor: LEDGER_EMERALD + '35',
+            width: dimensions.head * 0.9,
+            height: size === 'small' ? 3 : 6,
             transform: [
               {
                 scaleX: swimAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [1, 0.6],
+                  inputRange: [0, 0.5, 1],
+                  outputRange: [1, 0.5, 1],
                 }),
               },
             ],
             opacity: swimAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.7, 0.2],
+              inputRange: [0, 0.5, 1],
+              outputRange: [0.6, 0.15, 0.6],
             }),
           },
         ]}
       />
 
       {message && (
-        <ThemedText type="small" style={[styles.messageText, { color: theme.textSecondary }]}>
+        <ThemedText
+          type="smallBold"
+          style={[
+            styles.messageText,
+            { color: theme.textSecondary, fontSize: dimensions.font },
+          ]}
+        >
           {message}
         </ThemedText>
       )}
@@ -280,30 +433,79 @@ const styles = StyleSheet.create({
   centerContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    padding: 8,
     position: 'relative',
   },
   bubblesContainer: {
     position: 'absolute',
-    width: 60,
-    height: 60,
+    width: 70,
+    height: 70,
     top: 0,
   },
   bubble: {
     position: 'absolute',
     borderRadius: 50,
   },
-  octopusWrapper: {
+  octopusBodyWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  waterRipple: {
-    borderRadius: 10,
+  octopusHead: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    shadowColor: '#6C63FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  headShine: {
+    position: 'absolute',
+    top: 5,
+    left: 6,
+  },
+  eyesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '50%',
     marginTop: 4,
   },
+  eye: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pupil: {
+    width: '60%',
+    height: '60%',
+    borderRadius: 50,
+  },
+  mouth: {
+    width: 6,
+    height: 3,
+    borderBottomWidth: 1.5,
+    borderRadius: 3,
+    marginTop: 2,
+  },
+  tentaclesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-start',
+    marginTop: -2,
+  },
+  tentacle: {
+    borderRadius: 4,
+    marginHorizontal: 1,
+  },
+  waterRipple: {
+    borderRadius: 10,
+    marginTop: 8,
+  },
   messageText: {
-    marginTop: 12,
-    fontWeight: '600',
+    marginTop: 10,
     textAlign: 'center',
+    letterSpacing: 0.2,
   },
 });
