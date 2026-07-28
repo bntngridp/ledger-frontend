@@ -103,34 +103,34 @@ export function OctopusLoader({
   // Phase 4 (0.8-1.0): Relax & sink back to start
   const translateY = swimAnim.interpolate({
     inputRange: [0, 0.2, 0.5, 0.8, 1],
-    outputRange: [0, size === 'small' ? 3 : 6, size === 'small' ? -12 : -24, size === 'small' ? -8 : -16, 0],
+    outputRange: [0, size === 'small' ? 2 : 3, size === 'small' ? -6 : size === 'medium' ? -9 : -12, size === 'small' ? -4 : -6, 0],
   });
 
   const scaleY = swimAnim.interpolate({
     inputRange: [0, 0.2, 0.5, 0.8, 1],
-    outputRange: [1, 0.86, 1.18, 1.02, 1],
+    outputRange: [1, 0.90, 1.12, 1.02, 1],
   });
 
   const scaleX = swimAnim.interpolate({
     inputRange: [0, 0.2, 0.5, 0.8, 1],
-    outputRange: [1, 1.15, 0.86, 0.98, 1],
+    outputRange: [1, 1.10, 0.90, 0.98, 1],
   });
 
   // Tentacle fan angle during propulsion & glide
   const tentacleWaveLeft = swimAnim.interpolate({
     inputRange: [0, 0.2, 0.5, 0.8, 1],
-    outputRange: ['0deg', '15deg', '-20deg', '8deg', '0deg'],
+    outputRange: ['0deg', '10deg', '-14deg', '6deg', '0deg'],
   });
 
   const tentacleWaveRight = swimAnim.interpolate({
     inputRange: [0, 0.2, 0.5, 0.8, 1],
-    outputRange: ['0deg', '-15deg', '20deg', '-8deg', '0deg'],
+    outputRange: ['0deg', '-10deg', '14deg', '-6deg', '0deg'],
   });
 
   const dimensions = {
-    small: { width: 36, height: 36, head: 22, tentacleH: 14, font: 12 },
-    medium: { width: 64, height: 64, head: 40, tentacleH: 24, font: 14 },
-    large: { width: 90, height: 90, head: 56, tentacleH: 34, font: 16 },
+    small: { width: 24, height: 24, head: 14, tentacleH: 8, font: 11, bubbleMax: 12 },
+    medium: { width: 36, height: 36, head: 22, tentacleH: 13, font: 13, bubbleMax: 20 },
+    large: { width: 48, height: 48, head: 30, tentacleH: 18, font: 13, bubbleMax: 26 },
   }[size];
 
   // Render GitHub-style Vector Octopus in Ledger Brand Colors
@@ -180,10 +180,10 @@ export function OctopusLoader({
 
           {/* Expressive Ledger Eyes */}
           <View style={styles.eyesRow}>
-            <View style={[styles.eye, { width: isSmall ? 4 : 8, height: isSmall ? 4 : 8 }]}>
+            <View style={[styles.eye, { width: isSmall ? 3 : size === 'medium' ? 5 : 6, height: isSmall ? 3 : size === 'medium' ? 5 : 6 }]}>
               <View style={[styles.pupil, { backgroundColor: LEDGER_MINT_GLOW }]} />
             </View>
-            <View style={[styles.eye, { width: isSmall ? 4 : 8, height: isSmall ? 4 : 8 }]}>
+            <View style={[styles.eye, { width: isSmall ? 3 : size === 'medium' ? 5 : 6, height: isSmall ? 3 : size === 'medium' ? 5 : 6 }]}>
               <View style={[styles.pupil, { backgroundColor: LEDGER_MINT_GLOW }]} />
             </View>
           </View>
@@ -201,7 +201,7 @@ export function OctopusLoader({
               {
                 backgroundColor: LEDGER_EMERALD,
                 height: dimensions.tentacleH,
-                width: isSmall ? 3 : 6,
+                width: isSmall ? 2 : size === 'medium' ? 3 : 4,
                 transform: [{ rotate: tentacleWaveLeft }],
               },
             ]}
@@ -212,7 +212,7 @@ export function OctopusLoader({
               {
                 backgroundColor: LEDGER_INDIGO_DARK,
                 height: dimensions.tentacleH * 0.85,
-                width: isSmall ? 3 : 5,
+                width: isSmall ? 2 : size === 'medium' ? 2.5 : 3.5,
                 transform: [{ rotate: tentacleWaveLeft }],
               },
             ]}
@@ -225,7 +225,7 @@ export function OctopusLoader({
               {
                 backgroundColor: LEDGER_EMERALD,
                 height: dimensions.tentacleH * 1.1,
-                width: isSmall ? 3 : 6,
+                width: isSmall ? 2 : size === 'medium' ? 3 : 4,
                 transform: [{ rotate: tentacleWaveRight }],
               },
             ]}
@@ -236,7 +236,7 @@ export function OctopusLoader({
               {
                 backgroundColor: LEDGER_MINT_GLOW,
                 height: dimensions.tentacleH * 0.9,
-                width: isSmall ? 3 : 5,
+                width: isSmall ? 2 : size === 'medium' ? 2.5 : 3.5,
                 transform: [{ rotate: tentacleWaveLeft }],
               },
             ]}
@@ -249,7 +249,7 @@ export function OctopusLoader({
               {
                 backgroundColor: LEDGER_MINT_GLOW,
                 height: dimensions.tentacleH * 0.9,
-                width: isSmall ? 3 : 5,
+                width: isSmall ? 2 : size === 'medium' ? 2.5 : 3.5,
                 transform: [{ rotate: tentacleWaveRight }],
               },
             ]}
@@ -260,7 +260,7 @@ export function OctopusLoader({
               {
                 backgroundColor: LEDGER_EMERALD,
                 height: dimensions.tentacleH * 1.1,
-                width: isSmall ? 3 : 6,
+                width: isSmall ? 2 : size === 'medium' ? 3 : 4,
                 transform: [{ rotate: tentacleWaveLeft }],
               },
             ]}
@@ -273,7 +273,7 @@ export function OctopusLoader({
               {
                 backgroundColor: LEDGER_INDIGO_DARK,
                 height: dimensions.tentacleH * 0.85,
-                width: isSmall ? 3 : 5,
+                width: isSmall ? 2 : size === 'medium' ? 2.5 : 3.5,
                 transform: [{ rotate: tentacleWaveRight }],
               },
             ]}
@@ -284,7 +284,7 @@ export function OctopusLoader({
               {
                 backgroundColor: LEDGER_EMERALD,
                 height: dimensions.tentacleH,
-                width: isSmall ? 3 : 6,
+                width: isSmall ? 2 : size === 'medium' ? 3 : 4,
                 transform: [{ rotate: tentacleWaveRight }],
               },
             ]}
