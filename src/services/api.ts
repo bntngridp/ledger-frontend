@@ -202,7 +202,7 @@ export const api = {
       });
     },
     async getCryptoAddress(asset: string) {
-      return request(`/crypto/address?asset=${asset}`, {
+      return request(`/crypto/address?asset_symbol=${asset}&network=polygon_amoy`, {
         method: 'GET',
       });
     },

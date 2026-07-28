@@ -298,8 +298,10 @@ export default function CryptoScreen() {
                           borderColor: theme.border,
                         },
                       ]}
+                      id="crypto-send-asset-usdt-btn"
                     >
-                      <ThemedText style={{ color: sendAsset === 'USDT' ? '#ffffff' : theme.textSecondary }}>
+                      <AssetIcon symbol="USDT" size={18} containerStyle={{ marginRight: 6 }} />
+                      <ThemedText style={{ color: sendAsset === 'USDT' ? '#ffffff' : theme.textSecondary, fontWeight: '700' }}>
                         USDT
                       </ThemedText>
                     </TouchableOpacity>
@@ -312,8 +314,10 @@ export default function CryptoScreen() {
                           borderColor: theme.border,
                         },
                       ]}
+                      id="crypto-send-asset-usdc-btn"
                     >
-                      <ThemedText style={{ color: sendAsset === 'USDC' ? '#ffffff' : theme.textSecondary }}>
+                      <AssetIcon symbol="USDC" size={18} containerStyle={{ marginRight: 6 }} />
+                      <ThemedText style={{ color: sendAsset === 'USDC' ? '#ffffff' : theme.textSecondary, fontWeight: '700' }}>
                         USDC
                       </ThemedText>
                     </TouchableOpacity>
@@ -437,9 +441,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.three,
   },
   selectorBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1.5,
   },
   qrCard: {
