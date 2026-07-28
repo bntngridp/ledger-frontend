@@ -694,7 +694,7 @@ export default function DashboardScreen() {
               { title: t('dashboard.receive'), desc: t('dashboard.receiveDesc'), icon: 'qr-code-outline', route: '/(tabs)/crypto', color: theme.success },
               { title: t('dashboard.quickSwap'), desc: t('dashboard.swapDesc'), icon: 'swap-horizontal-outline', route: '/(tabs)/swap', color: theme.warning },
               { title: t('dashboard.buy'), desc: t('dashboard.buyDesc'), icon: 'add-circle-outline', route: '/topup', color: theme.primary },
-              { title: t('dashboard.quickWithdraw') || 'Withdraw', desc: 'Withdraw IDR to Bank / E-Wallet', icon: 'cash-outline', route: '/withdraw', color: theme.danger },
+              { title: t('dashboard.quickWithdraw') || 'Withdraw', desc: 'Cash out IDR', icon: 'cash-outline', route: '/withdraw', color: theme.danger },
             ].map((action) => (
               <TouchableOpacity
                 key={action.title}
@@ -705,12 +705,15 @@ export default function DashboardScreen() {
                   <View style={[styles.actionIconBg, { backgroundColor: action.color + '15' }]}>
                     <Ionicons name={action.icon as any} size={20} color={action.color} />
                   </View>
-                  <ThemedText type="smallBold" style={{ marginTop: 8 }}>{action.title}</ThemedText>
-                  <ThemedText type="code" style={{ color: theme.textSecondary, fontSize: 10, marginTop: 2 }}>{action.desc}</ThemedText>
+                  <ThemedText type="smallBold" style={{ marginTop: 8, textAlign: 'center' }}>{action.title}</ThemedText>
+                  <ThemedText type="code" numberOfLines={1} style={{ color: theme.textSecondary, fontSize: 10, marginTop: 2, textAlign: 'center' }}>
+                    {action.desc}
+                  </ThemedText>
                 </Card>
               </TouchableOpacity>
             ))}
           </View>
+
 
           {/* Recent Transactions Table */}
           <Card style={styles.tableCard} bordered>
@@ -1098,9 +1101,12 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     alignItems: 'center',
-    padding: 16,
+    justifyContent: 'center',
+    height: 124,
+    padding: 12,
     borderRadius: 16,
   },
+
   actionIconBg: {
     width: 40,
     height: 40,
