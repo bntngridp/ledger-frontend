@@ -195,12 +195,18 @@ export default function SwapScreen() {
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* Rate Card */}
-          <Card style={[styles.rateCard, { backgroundColor: theme.backgroundElement }]}>
+          <Card style={[styles.rateCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
             <View style={styles.rateHeader}>
-              <Ionicons name="stats-chart" size={16} color={theme.primary} />
-              <ThemedText type="smallBold" style={{ marginLeft: 6 }}>
-                {t('swap.liveRates')}
-              </ThemedText>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="stats-chart" size={16} color={theme.primary} />
+                <ThemedText type="smallBold" style={{ marginLeft: 6 }}>
+                  {t('swap.liveRates')}
+                </ThemedText>
+              </View>
+              <View style={[styles.liveBadge, { backgroundColor: theme.success + '1A' }]}>
+                <View style={[styles.liveDot, { backgroundColor: theme.success }]} />
+                <ThemedText style={[styles.liveText, { color: theme.success }]}>LIVE</ThemedText>
+              </View>
             </View>
             <View style={styles.rateGrid}>
               <View>
@@ -483,7 +489,26 @@ const styles = StyleSheet.create({
   rateHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 12,
+  },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    gap: 5,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  liveText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   rateGrid: {
     flexDirection: 'row',
@@ -512,12 +537,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   assetSelector: {
-    paddingHorizontal: 16,
-    height: 48,
-    borderRadius: 12,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
-    minWidth: 80,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    height: 46,
+    borderRadius: 14,
+    minWidth: 95,
   },
   flipWrapper: {
     alignItems: 'center',
