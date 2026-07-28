@@ -307,4 +307,24 @@ export const id: TranslationKeys = {
     disable2FADesc: 'Masukkan 6-digit kode verifikasi dari aplikasi authenticator Anda untuk menonaktifkan perlindungan 2FA.',
     disableBtn: 'Nonaktifkan',
   },
+
+  // Notifications Screen
+  notifications: {
+    title: 'Notifikasi',
+    empty: 'Belum ada notifikasi',
+    emptyDesc: 'Notifikasi aktivitas akun Anda akan muncul di sini.',
+    markAllRead: 'Tandai Semua Dibaca',
+    markRead: 'Tandai Dibaca',
+    delete: 'Hapus',
+    unread: 'belum dibaca',
+    typeTopup: 'Top Up',
+    typeTransfer: 'Transfer',
+    typeWithdraw: 'Penarikan',
+    typeSwap: 'Tukar',
+    typeSecurity: 'Keamanan',
+    typeCrypto: 'Kripto',
+    typeSystem: 'Sistem',
+    loadError: 'Gagal memuat notifikasi',
+    allCaughtUp: 'Semua sudah dibaca!',
+  },
 };

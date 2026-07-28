@@ -217,4 +217,26 @@ export const api = {
       });
     },
   },
+
+  notifications: {
+    async getNotifications(params: { page?: number; per_page?: number } = {}) {
+      const q = new URLSearchParams();
+      if (params.page) q.append('page', String(params.page));
+      if (params.per_page) q.append('per_page', String(params.per_page));
+      const qs = q.toString();
+      return request(`/notifications${qs ? `?${qs}` : ''}`, { method: 'GET' });
+    },
+    async getUnreadCount() {
+      return request('/notifications/unread-count', { method: 'GET' });
+    },
+    async markAsRead(notificationId: string) {
+      return request(`/notifications/${notificationId}/read`, { method: 'PATCH' });
+    },
+    async markAllAsRead() {
+      return request('/notifications/read-all', { method: 'PATCH' });
+    },
+    async deleteNotification(notificationId: string) {
+      return request(`/notifications/${notificationId}`, { method: 'DELETE' });
+    },
+  },
 };

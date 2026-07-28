@@ -305,6 +305,26 @@ export const en = {
     disable2FADesc: 'Enter the 6-digit verification code from your authenticator app to disable 2FA protection.',
     disableBtn: 'Disable',
   },
+
+  // Notifications Screen
+  notifications: {
+    title: 'Notifications',
+    empty: 'No notifications yet',
+    emptyDesc: 'Your activity notifications will appear here.',
+    markAllRead: 'Mark All as Read',
+    markRead: 'Mark as Read',
+    delete: 'Delete',
+    unread: 'unread',
+    typeTopup: 'Top Up',
+    typeTransfer: 'Transfer',
+    typeWithdraw: 'Withdrawal',
+    typeSwap: 'Swap',
+    typeSecurity: 'Security',
+    typeCrypto: 'Crypto',
+    typeSystem: 'System',
+    loadError: 'Failed to load notifications',
+    allCaughtUp: 'All caught up!',
+  },
 };
 
 export type TranslationKeys = typeof en;

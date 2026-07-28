@@ -65,6 +65,7 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [username, setUsername] = useState('Ledger User');
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
   // Real data states
   const [dashboard, setDashboard] = useState<DashboardResponseData | null>(null);
@@ -119,6 +120,21 @@ export default function DashboardScreen() {
     (async () => {
       await loadData();
     })();
+  }, []);
+
+  // Fetch unread notification count on focus
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const res = await api.notifications.getUnreadCount();
+        if (res.status === 'success' && res.data) {
+          setUnreadNotifCount((res.data as any).unread_count || 0);
+        }
+      } catch {
+        // silent — unread count is non-critical
+      }
+    };
+    fetchUnreadCount();
   }, []);
 
   // Filter and process transactions chronologically to build balance history
@@ -326,6 +342,21 @@ export default function DashboardScreen() {
         <View style={styles.headerActions}>
           <TouchableOpacity onPress={loadData} style={[styles.iconButton, { backgroundColor: theme.backgroundElement, marginRight: 4 }]}>
             <Ionicons name="refresh-outline" size={20} color={theme.text} />
+          </TouchableOpacity>
+          {/* Notification Bell */}
+          <TouchableOpacity
+            onPress={() => router.push('/notifications')}
+            style={[styles.iconButton, { backgroundColor: theme.backgroundElement, marginRight: 4, position: 'relative' }]}
+            id="dashboard-notif-btn"
+          >
+            <Ionicons name="notifications-outline" size={20} color={theme.text} />
+            {unreadNotifCount > 0 && (
+              <View style={[styles.notifBadge, { backgroundColor: theme.danger }]}>
+                <ThemedText style={styles.notifBadgeText}>
+                  {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+                </ThemedText>
+              </View>
+            )}
           </TouchableOpacity>
           <View style={[styles.themeBadge, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
             <Ionicons
@@ -1158,5 +1189,21 @@ const styles = StyleSheet.create({
   emptyStateContainer: {
     padding: 32,
     alignItems: 'center',
+  },
+  notifBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  notifBadgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '700',
   },
 });

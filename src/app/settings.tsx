@@ -335,20 +335,19 @@ export default function SettingsScreen() {
               {t('settings.preferencesSection')}
             </ThemedText>
             <Card style={styles.settingsGroup} bordered>
-              <View style={styles.settingsRow}>
+              <TouchableOpacity
+                style={styles.settingsRow}
+                onPress={() => router.push('/notifications')}
+                id="settings-notif-btn"
+              >
                 <View style={styles.settingsLabelWrapper}>
                   <Ionicons name="notifications-outline" size={20} color={theme.text} />
                   <ThemedText type="smallBold" style={styles.settingsLabel}>
-                    {t('settings.pushNotifications')}
+                    {t('notifications.title')}
                   </ThemedText>
                 </View>
-                <Switch
-                  value={notificationsEnabled}
-                  onValueChange={setNotificationsEnabled}
-                  trackColor={{ false: theme.border, true: theme.primary }}
-                  thumbColor="#ffffff"
-                />
-              </View>
+                <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+              </TouchableOpacity>
 
               <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />
 
