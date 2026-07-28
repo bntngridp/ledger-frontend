@@ -120,6 +120,27 @@ export const api = {
         body: JSON.stringify(payload),
       });
     },
+    async send2FAEmailOTP() {
+      return request('/auth/2fa/email-otp/send', {
+        method: 'POST',
+      });
+    },
+    async sendChangePasswordEmailOTP() {
+      return request('/auth/password/email-otp/send', {
+        method: 'POST',
+      });
+    },
+    async changePassword(payload: {
+      old_password: string;
+      new_password: string;
+      email_otp: string;
+      two_factor_code?: string;
+    }) {
+      return request('/auth/password/change', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
   },
 
   wallet: {

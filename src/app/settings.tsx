@@ -68,6 +68,104 @@ export default function SettingsScreen() {
   const [userEmail, setUserEmail] = useState('user@ledger.io');
   const [username, setUsername] = useState('Ledger User');
 
+  // Change Password Modal states
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [emailOtp, setEmailOtp] = useState('');
+  const [twoFactorCodeInput, setTwoFactorCodeInput] = useState('');
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+  const [changePasswordError, setChangePasswordError] = useState('');
+  const [emailOtpSending, setEmailOtpSending] = useState(false);
+  const [emailOtpCooldown, setEmailOtpCooldown] = useState(0);
+  const [emailOtpSuccessMsg, setEmailOtpSuccessMsg] = useState('');
+
+  // Cooldown Timer for Email OTP
+  React.useEffect(() => {
+    let timer: any;
+    if (emailOtpCooldown > 0) {
+      timer = setInterval(() => {
+        setEmailOtpCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [emailOtpCooldown]);
+
+  const handleSendChangePasswordEmailOTP = async () => {
+    setEmailOtpSending(true);
+    setChangePasswordError('');
+    setEmailOtpSuccessMsg('');
+
+    try {
+      const resp = await api.auth.sendChangePasswordEmailOTP();
+      setEmailOtpSending(false);
+      if (resp.status === 'success') {
+        setEmailOtpSuccessMsg(t('auth.otpSentToEmail'));
+        setEmailOtpCooldown(60);
+      } else {
+        setChangePasswordError(resp.message || 'Failed to send OTP email');
+      }
+    } catch (err: any) {
+      setEmailOtpSending(false);
+      setChangePasswordError(err.message || 'Failed to send OTP email');
+    }
+  };
+
+  const handleConfirmChangePassword = async () => {
+    if (!oldPassword) {
+      setChangePasswordError(t('auth.oldPasswordLabel') + ' is required');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setChangePasswordError(t('auth.newPasswordLabel'));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setChangePasswordError(t('auth.passwordMismatch'));
+      return;
+    }
+    if (!emailOtp || emailOtp.length !== 6) {
+      setChangePasswordError('6-digit Email OTP code is required');
+      return;
+    }
+    if (tfaEnabled && (!twoFactorCodeInput || twoFactorCodeInput.length !== 6)) {
+      setChangePasswordError('6-digit 2FA Authenticator code is required');
+      return;
+    }
+
+    setChangePasswordLoading(true);
+    setChangePasswordError('');
+
+    try {
+      const resp = await api.auth.changePassword({
+        old_password: oldPassword,
+        new_password: newPassword,
+        email_otp: emailOtp,
+        two_factor_code: tfaEnabled ? twoFactorCodeInput : undefined,
+      });
+
+      setChangePasswordLoading(false);
+
+      if (resp.status === 'success') {
+        setShowChangePasswordModal(false);
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setEmailOtp('');
+        setTwoFactorCodeInput('');
+        Alert.alert(t('common.success'), t('auth.changePasswordSuccess'));
+      } else {
+        setChangePasswordError(resp.message || 'Failed to change password');
+      }
+    } catch (err: any) {
+      setChangePasswordLoading(false);
+      setChangePasswordError(err.message || 'Failed to change password');
+    }
+  };
+
   // Disable 2FA Modal states
   const [showDisableModal, setShowDisableModal] = useState(false);
   const [disableMode, setDisableMode] = useState<'totp' | 'recovery'>('totp');
@@ -216,7 +314,19 @@ export default function SettingsScreen() {
 
               <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />
 
-              <TouchableOpacity style={styles.settingsRow}>
+              <TouchableOpacity
+                style={styles.settingsRow}
+                onPress={() => {
+                  setOldPassword('');
+                  setNewPassword('');
+                  setConfirmPassword('');
+                  setEmailOtp('');
+                  setTwoFactorCodeInput('');
+                  setChangePasswordError('');
+                  setEmailOtpSuccessMsg('');
+                  setShowChangePasswordModal(true);
+                }}
+              >
                 <View style={styles.settingsLabelWrapper}>
                   <Ionicons name="lock-closed-outline" size={20} color={theme.text} />
                   <ThemedText type="smallBold" style={styles.settingsLabel}>
@@ -539,6 +649,167 @@ export default function SettingsScreen() {
             </View>
           </View>
         </Modal>
+
+        {/* Change Password Modal */}
+        <Modal visible={showChangePasswordModal} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement, maxWidth: 440 }]}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <ThemedText type="smallBold" style={{ fontSize: 16 }}>
+                  {t('auth.changePasswordTitle')}
+                </ThemedText>
+                <TouchableOpacity onPress={() => setShowChangePasswordModal(false)}>
+                  <Ionicons name="close" size={22} color={theme.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              <ThemedText type="small" style={{ color: theme.textSecondary, marginBottom: Spacing.three }}>
+                {t('auth.changePasswordSubtitle')}
+              </ThemedText>
+
+              <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
+                {/* 1. Old Password */}
+                <ThemedText type="smallBold" style={{ fontSize: 11, letterSpacing: 0.5, color: theme.textSecondary, marginBottom: 4 }}>
+                  {t('auth.oldPasswordLabel')}
+                </ThemedText>
+                <View style={[styles.passwordInputContainer, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                  <TextInput
+                    style={[styles.passwordInput, { color: theme.text }]}
+                    placeholder={t('auth.oldPasswordPlaceholder')}
+                    placeholderTextColor={theme.textSecondary}
+                    value={oldPassword}
+                    onChangeText={setOldPassword}
+                    secureTextEntry={!showOldPassword}
+                  />
+                  <TouchableOpacity onPress={() => setShowOldPassword(!showOldPassword)} style={{ padding: 6 }}>
+                    <Ionicons name={showOldPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color={theme.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* 2. New Password */}
+                <ThemedText type="smallBold" style={{ fontSize: 11, letterSpacing: 0.5, color: theme.textSecondary, marginTop: 10, marginBottom: 4 }}>
+                  {t('auth.newPasswordLabel')}
+                </ThemedText>
+                <View style={[styles.passwordInputContainer, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                  <TextInput
+                    style={[styles.passwordInput, { color: theme.text }]}
+                    placeholder={t('auth.newPasswordPlaceholder')}
+                    placeholderTextColor={theme.textSecondary}
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    secureTextEntry={!showNewPassword}
+                  />
+                  <TouchableOpacity onPress={() => setShowNewPassword(!showNewPassword)} style={{ padding: 6 }}>
+                    <Ionicons name={showNewPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color={theme.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* 3. Confirm New Password */}
+                <ThemedText type="smallBold" style={{ fontSize: 11, letterSpacing: 0.5, color: theme.textSecondary, marginTop: 10, marginBottom: 4 }}>
+                  {t('auth.confirmPasswordLabel')}
+                </ThemedText>
+                <View style={[styles.passwordInputContainer, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                  <TextInput
+                    style={[styles.passwordInput, { color: theme.text }]}
+                    placeholder={t('auth.confirmPasswordPlaceholder')}
+                    placeholderTextColor={theme.textSecondary}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showNewPassword}
+                  />
+                </View>
+
+                {/* 4. Email OTP Section */}
+                <ThemedText type="smallBold" style={{ fontSize: 11, letterSpacing: 0.5, color: theme.textSecondary, marginTop: 12, marginBottom: 4 }}>
+                  {t('auth.emailOTPLabel')}
+                </ThemedText>
+                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                  <TextInput
+                    style={[
+                      styles.modalInput,
+                      {
+                        flex: 1,
+                        backgroundColor: theme.background,
+                        color: theme.text,
+                        borderColor: theme.border,
+                        marginVertical: 0,
+                      },
+                    ]}
+                    placeholder={t('auth.emailOTPPlaceholder')}
+                    placeholderTextColor={theme.textSecondary}
+                    value={emailOtp}
+                    onChangeText={(text) => setEmailOtp(text.replace(/[^0-9]/g, ''))}
+                    keyboardType="numeric"
+                    maxLength={6}
+                    textAlign="center"
+                  />
+                  <Button
+                    title={emailOtpCooldown > 0 ? `${emailOtpCooldown}s` : t('auth.sendEmailOTP')}
+                    variant="secondary"
+                    loading={emailOtpSending}
+                    disabled={emailOtpCooldown > 0}
+                    onPress={handleSendChangePasswordEmailOTP}
+                    style={{ height: 48, paddingHorizontal: 12, borderRadius: 12 }}
+                  />
+                </View>
+                {emailOtpSuccessMsg ? (
+                  <ThemedText type="small" style={{ color: theme.primary, marginTop: 4, fontWeight: '500' }}>
+                    {emailOtpSuccessMsg}
+                  </ThemedText>
+                ) : null}
+
+                {/* 5. 2FA Code if enabled */}
+                {tfaEnabled && (
+                  <>
+                    <ThemedText type="smallBold" style={{ fontSize: 11, letterSpacing: 0.5, color: theme.textSecondary, marginTop: 12, marginBottom: 4 }}>
+                      {t('auth.twoFactorCodeLabel')}
+                    </ThemedText>
+                    <TextInput
+                      style={[
+                        styles.modalInput,
+                        {
+                          backgroundColor: theme.background,
+                          color: theme.text,
+                          borderColor: theme.border,
+                          marginVertical: 0,
+                        },
+                      ]}
+                      placeholder={t('auth.twoFactorCodePlaceholder')}
+                      placeholderTextColor={theme.textSecondary}
+                      value={twoFactorCodeInput}
+                      onChangeText={(text) => setTwoFactorCodeInput(text.replace(/[^0-9]/g, ''))}
+                      keyboardType="numeric"
+                      maxLength={6}
+                      textAlign="center"
+                    />
+                  </>
+                )}
+
+                {changePasswordError ? (
+                  <ThemedText style={{ color: theme.danger, marginTop: Spacing.two, fontWeight: '500' }}>
+                    {changePasswordError}
+                  </ThemedText>
+                ) : null}
+              </ScrollView>
+
+              <View style={styles.modalButtons}>
+                <Button
+                  title={t('common.cancel')}
+                  variant="ghost"
+                  onPress={() => setShowChangePasswordModal(false)}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  title={t('common.save')}
+                  variant="primary"
+                  loading={changePasswordLoading}
+                  onPress={handleConfirmChangePassword}
+                  style={{ flex: 1 }}
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </ThemedView>
   );
@@ -691,5 +962,19 @@ const styles = StyleSheet.create({
   themeOptionLabel: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingHorizontal: 12,
+    width: '100%',
+  },
+  passwordInput: {
+    flex: 1,
+    height: '100%',
+    fontSize: 15,
   },
 });
