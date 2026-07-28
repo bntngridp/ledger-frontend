@@ -46,3 +46,7 @@ CLAUDE.md
 AGENTS.md
 .agents/
 .claude/
+
+# Playwright test outputs
+test-results/
+playwright-report/

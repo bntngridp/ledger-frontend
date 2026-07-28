@@ -13,17 +13,44 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
+import { Ionicons } from '@expo/vector-icons';
+
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/hooks/use-translation';
 import { API_BASE_URL } from '@/services/api';
 
+const LANGUAGES = [
+  { code: 'en', label: 'English', flag: '🇺🇸', shortName: 'EN' },
+  { code: 'id', label: 'Bahasa Indonesia', flag: '🇮🇩', shortName: 'ID' },
+  { code: 'es', label: 'Español', flag: '🇪🇸', shortName: 'ES' },
+  { code: 'ar', label: 'العربية', flag: '🇸🇦', shortName: 'AR' },
+] as const;
+
 export default function WelcomeScreen() {
   const router = useRouter();
   const theme = useTheme();
   const { width } = useWindowDimensions();
   const { t, language, setLanguage } = useTranslation();
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = React.useState(false);
+  const dropdownRef = React.useRef<any>(null);
+
+  // Close dropdown on click outside for Web platform
+  React.useEffect(() => {
+    if (!isLangDropdownOpen || Platform.OS !== 'web') return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsLangDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isLangDropdownOpen]);
 
   const isDesktop = width >= 768;
 
@@ -40,34 +67,80 @@ export default function WelcomeScreen() {
     }
   };
 
+  const currentLangObj = LANGUAGES.find((l) => l.code === language) || LANGUAGES[0];
+
   return (
     <View style={[styles.mainWrapper, { backgroundColor: isDesktop ? '#2E1E6B' : theme.background }]}>
       <View style={[styles.contentContainer, isDesktop ? styles.desktopLayout : styles.mobileLayout]}>
         {/* ================= LEFT PANEL (BRAND & HERO) ================= */}
         <View style={[styles.leftPanel, isDesktop ? styles.leftPanelDesktop : styles.leftPanelMobile]}>
-          {/* Header Brand Logo & Language Switcher */}
+          {/* Header Brand Logo & Language Switcher Dropdown */}
           <View style={styles.brandHeader}>
             <View style={styles.brandLeftGroup}>
               <View style={styles.brandLogoBg}>
                 <Image
                   source={require('@/assets/images/logo-leder.png')}
-                  style={{ width: 56, height: 56, resizeMode: 'contain' }}
+                  style={{ width: 26, height: 26, resizeMode: 'contain' }}
                 />
               </View>
               <ThemedText style={styles.brandNameText}>Ledger</ThemedText>
             </View>
 
-            <TouchableOpacity
-              onPress={() => {
-                const nextLang = language === 'en' ? 'id' : language === 'id' ? 'ar' : language === 'ar' ? 'es' : 'en';
-                setLanguage(nextLang);
-              }}
-              style={styles.langToggleBadge}
-            >
-              <ThemedText style={styles.langToggleText}>
-                {language.toUpperCase()}
-              </ThemedText>
-            </TouchableOpacity>
+            {/* Language Dropdown Picker */}
+            <View ref={dropdownRef} style={{ position: 'relative', zIndex: 100 }}>
+              <TouchableOpacity
+                onPress={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                style={styles.langToggleBadge}
+                activeOpacity={0.8}
+                testID="language-dropdown-trigger"
+              >
+                <Ionicons name="globe-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <ThemedText style={styles.langToggleText}>
+                  {currentLangObj.shortName}
+                </ThemedText>
+                <Ionicons
+                  name={isLangDropdownOpen ? 'chevron-up' : 'chevron-down'}
+                  size={14}
+                  color="#FFFFFF"
+                  style={{ marginLeft: 6 }}
+                />
+              </TouchableOpacity>
+
+              {isLangDropdownOpen && (
+                <View style={styles.langDropdownMenu} testID="language-dropdown-menu">
+                  {LANGUAGES.map((lang) => {
+                    const isSelected = language === lang.code;
+                    return (
+                      <TouchableOpacity
+                        key={lang.code}
+                        style={[
+                          styles.langDropdownItem,
+                          isSelected && styles.langDropdownItemSelected,
+                        ]}
+                        onPress={() => {
+                          setLanguage(lang.code);
+                          setIsLangDropdownOpen(false);
+                        }}
+                        testID={`lang-option-${lang.code}`}
+                      >
+                        <ThemedText style={styles.langFlagText}>{lang.flag}</ThemedText>
+                        <ThemedText
+                          style={[
+                            styles.langItemText,
+                            isSelected && styles.langItemTextSelected,
+                          ]}
+                        >
+                          {lang.label}
+                        </ThemedText>
+                        {isSelected && (
+                          <Ionicons name="checkmark" size={16} color="#A78BFA" />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
           </View>
 
           {/* Hero Headline & Subtitle */}
@@ -189,7 +262,7 @@ const styles = StyleSheet.create({
     paddingVertical: 48,
     justifyContent: 'space-between',
     position: 'relative',
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   leftPanelDesktop: {
     flex: 1.25,
@@ -201,18 +274,30 @@ const styles = StyleSheet.create({
     paddingVertical: 36,
   },
 
+  dropdownBackdrop: {
+    position: Platform.OS === 'web' ? ('fixed' as any) : 'absolute',
+    top: -1000,
+    left: -1000,
+    right: -1000,
+    bottom: -1000,
+    zIndex: 999,
+  },
+
   brandHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
+    zIndex: 100,
   },
   brandLeftGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 10,
   },
   langToggleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.16)',
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -225,25 +310,66 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 13,
   },
+  langDropdownMenu: {
+    position: 'absolute',
+    top: 44,
+    right: 0,
+    width: 195,
+    backgroundColor: '#1C1042',
+    borderRadius: 14,
+    padding: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 10,
+    zIndex: 1000,
+  },
+  langDropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 8,
+  },
+  langDropdownItemSelected: {
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+  },
+  langFlagText: {
+    fontSize: 16,
+  },
+  langItemText: {
+    flex: 1,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  langItemTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
   brandLogoBg: {
-    width: 68,
-    height: 68,
-    borderRadius: 18,
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
   brandNameText: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: '800',
     color: '#FFFFFF',
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
   },
 
   heroContent: {
