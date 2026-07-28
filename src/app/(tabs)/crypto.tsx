@@ -200,48 +200,41 @@ export default function CryptoScreen() {
             <View style={styles.tabContent}>
               {/* Asset Selector */}
               <View style={styles.selectorRow}>
-                <TouchableOpacity
-                  onPress={() => setSelectedAsset('USDT')}
-                  style={[
-                    styles.selectorBadge,
-                    {
-                      backgroundColor: selectedAsset === 'USDT' ? theme.primary : theme.backgroundElement,
-                      borderColor: theme.border,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                    },
-                  ]}
-                  id="crypto-deposit-asset-usdt-btn"
-                >
-                  <AssetIcon symbol="USDT" size={18} bgCircle containerStyle={{ marginRight: 8 }} />
-                  <ThemedText style={{ color: selectedAsset === 'USDT' ? '#ffffff' : theme.text, fontWeight: '700' }}>
-                    USDT
-                  </ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setSelectedAsset('USDC')}
-                  style={[
-                    styles.selectorBadge,
-                    {
-                      backgroundColor: selectedAsset === 'USDC' ? theme.primary : theme.backgroundElement,
-                      borderColor: theme.border,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                    },
-                  ]}
-                  id="crypto-deposit-asset-usdc-btn"
-                >
-                  <AssetIcon symbol="USDC" size={18} bgCircle containerStyle={{ marginRight: 8 }} />
-                  <ThemedText style={{ color: selectedAsset === 'USDC' ? '#ffffff' : theme.text, fontWeight: '700' }}>
-                    USDC
-                  </ThemedText>
-                </TouchableOpacity>
+                {['USDT', 'USDC'].map((asset) => {
+                  const isSelected = selectedAsset === asset;
+                  return (
+                    <TouchableOpacity
+                      key={asset}
+                      onPress={() => setSelectedAsset(asset as any)}
+                      style={[
+                        styles.selectorBadge,
+                        {
+                          backgroundColor: isSelected ? theme.primary + '15' : theme.backgroundElement,
+                          borderColor: isSelected ? theme.primary : theme.border,
+                          borderWidth: isSelected ? 2 : 1,
+                        },
+                      ]}
+                      id={`crypto-deposit-asset-${asset.toLowerCase()}-btn`}
+                    >
+                      <AssetIcon symbol={asset} size={20} containerStyle={{ marginRight: 8 }} />
+                      <ThemedText
+                        style={{
+                          color: isSelected ? theme.primary : theme.textSecondary,
+                          fontWeight: '700',
+                          fontSize: 13,
+                        }}
+                      >
+                        {asset}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
 
               {/* QR Code Container */}
               <Card style={styles.qrCard} bordered>
                 <View style={[styles.networkBadge, { backgroundColor: theme.warning + '15', flexDirection: 'row', alignItems: 'center' }]}>
-                  <AssetIcon symbol="Polygon" size={16} bgCircle containerStyle={{ marginRight: 6 }} />
+                  <AssetIcon symbol="Polygon" size={16} containerStyle={{ marginRight: 6 }} />
                   <ThemedText type="code" style={{ color: theme.warning, fontWeight: '700' }}>
                     POLYGON AMOY TESTNET
                   </ThemedText>
@@ -287,43 +280,53 @@ export default function CryptoScreen() {
             </View>
           ) : (
             <View style={styles.tabContent}>
-              {!success ? (
-                <>
-                  {/* Send Asset Selector */}
-                  <View style={styles.selectorRow}>
-                    <TouchableOpacity
-                      onPress={() => setSendAsset('USDT')}
-                      style={[
-                        styles.selectorBadge,
-                        {
-                          backgroundColor: sendAsset === 'USDT' ? theme.primary : theme.backgroundElement,
-                          borderColor: theme.border,
-                        },
-                      ]}
-                      id="crypto-send-asset-usdt-btn"
-                    >
-                      <AssetIcon symbol="USDT" size={18} containerStyle={{ marginRight: 6 }} />
-                      <ThemedText style={{ color: sendAsset === 'USDT' ? '#ffffff' : theme.textSecondary, fontWeight: '700' }}>
-                        USDT
-                      </ThemedText>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => setSendAsset('USDC')}
-                      style={[
-                        styles.selectorBadge,
-                        {
-                          backgroundColor: sendAsset === 'USDC' ? theme.primary : theme.backgroundElement,
-                          borderColor: theme.border,
-                        },
-                      ]}
-                      id="crypto-send-asset-usdc-btn"
-                    >
-                      <AssetIcon symbol="USDC" size={18} containerStyle={{ marginRight: 6 }} />
-                      <ThemedText style={{ color: sendAsset === 'USDC' ? '#ffffff' : theme.textSecondary, fontWeight: '700' }}>
-                        USDC
-                      </ThemedText>
-                    </TouchableOpacity>
+              <Card bordered style={{ padding: Spacing.four, borderRadius: 24 }}>
+                {success ? (
+                  <View style={{ alignItems: 'center', paddingVertical: Spacing.four }}>
+
+                    <Ionicons name="checkmark-circle-outline" size={64} color={theme.success} />
+                    <ThemedText type="subtitle" style={{ marginTop: Spacing.two }}>
+                      {t('crypto.sendSuccess')}
+                    </ThemedText>
+                    <ThemedText style={{ color: theme.textSecondary, textAlign: 'center', marginTop: 4 }}>
+                      {t('crypto.sendSuccessDesc')}
+                    </ThemedText>
                   </View>
+                ) : (
+                  <>
+                    {/* Send Asset Selector */}
+                    <View style={styles.selectorRow}>
+                      {['USDT', 'USDC'].map((asset) => {
+                        const isSelected = sendAsset === asset;
+                        return (
+                          <TouchableOpacity
+                            key={asset}
+                            onPress={() => setSendAsset(asset as any)}
+                            style={[
+                              styles.selectorBadge,
+                              {
+                                backgroundColor: isSelected ? theme.primary + '15' : theme.backgroundElement,
+                                borderColor: isSelected ? theme.primary : theme.border,
+                                borderWidth: isSelected ? 2 : 1,
+                              },
+                            ]}
+                            id={`crypto-send-asset-${asset.toLowerCase()}-btn`}
+                          >
+                            <AssetIcon symbol={asset} size={20} containerStyle={{ marginRight: 8 }} />
+                            <ThemedText
+                              style={{
+                                color: isSelected ? theme.primary : theme.textSecondary,
+                                fontWeight: '700',
+                                fontSize: 13,
+                              }}
+                            >
+                              {asset}
+                            </ThemedText>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+
 
                   {/* Recipient Address */}
                   <Input
@@ -375,21 +378,11 @@ export default function CryptoScreen() {
                     style={styles.sendBtn}
                   />
                 </>
-              ) : (
-                <View style={styles.successState}>
-                  <View style={[styles.successIconContainer, { backgroundColor: theme.success + '20' }]}>
-                    <Ionicons name="checkmark-circle" size={56} color={theme.success} />
-                  </View>
-                  <ThemedText type="subtitle" style={{ marginTop: Spacing.three }}>
-                    {t('withdraw.withdrawSuccess')}
-                  </ThemedText>
-                  <ThemedText style={{ color: theme.textSecondary, marginTop: Spacing.one }}>
-                    {t('withdraw.withdrawSuccessDesc')}
-                  </ThemedText>
-                </View>
               )}
-            </View>
-          )}
+            </Card>
+          </View>
+        )}
+
         </ScrollView>
       </SafeAreaView>
     </ThemedView>

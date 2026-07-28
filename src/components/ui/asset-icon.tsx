@@ -19,10 +19,9 @@ interface AssetIconProps {
   size?: number;
   style?: StyleProp<ImageStyle>;
   containerStyle?: StyleProp<ViewStyle>;
-  bgCircle?: boolean;
 }
 
-export function AssetIcon({ symbol, size = 32, style, containerStyle, bgCircle }: AssetIconProps) {
+export function AssetIcon({ symbol, size = 32, style, containerStyle }: AssetIconProps) {
   const getAssetSource = (sym: string) => {
     const s = sym ? sym.toUpperCase() : '';
     switch (s) {
@@ -46,36 +45,6 @@ export function AssetIcon({ symbol, size = 32, style, containerStyle, bgCircle }
     }
   };
 
-  if (bgCircle) {
-    const containerDim = size + 8;
-    return (
-      <View
-        style={[
-          styles.container,
-          {
-            width: containerDim,
-            height: containerDim,
-            borderRadius: containerDim / 2,
-            backgroundColor: '#ffffff',
-            justifyContent: 'center',
-            alignItems: 'center',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.15,
-            shadowRadius: 2,
-            elevation: 2,
-          },
-          containerStyle,
-        ]}
-      >
-        <Image
-          source={getAssetSource(symbol)}
-          style={[{ width: size, height: size, borderRadius: size / 2, resizeMode: 'contain' }, style]}
-        />
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.container, { width: size, height: size }, containerStyle]}>
       <Image
@@ -93,4 +62,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 });
+
 
