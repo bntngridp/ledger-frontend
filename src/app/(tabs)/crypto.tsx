@@ -24,6 +24,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
 import { OctopusLoader } from '@/components/ui/octopus-loader';
+import { QrScannerModal } from '@/components/qr-scanner-modal';
 
 export default function CryptoScreen() {
   const theme = useTheme();
@@ -431,96 +432,12 @@ export default function CryptoScreen() {
 
         </ScrollView>
 
-        {/* Modal QR Code Scanner */}
-        <Modal
+        {/* Real Camera & Image File QR Scanner Modal */}
+        <QrScannerModal
           visible={isQrModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setIsQrModalVisible(false)}
-        >
-          <View style={styles.modalBackdrop}>
-            <Card style={[styles.qrModalCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]} bordered>
-              {/* Modal Header */}
-              <View style={styles.qrModalHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  <View style={[styles.qrHeaderIcon, { backgroundColor: theme.primary + '20' }]}>
-                    <Ionicons name="qr-code" size={22} color={theme.primary} />
-                  </View>
-                  <View>
-                    <ThemedText type="smallBold" style={{ fontSize: 16 }}>Scan Barcode / QR Wallet</ThemedText>
-                    <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
-                      Scan QR Code penerima EVM Wallet
-                    </ThemedText>
-                  </View>
-                </View>
-                <TouchableOpacity onPress={() => setIsQrModalVisible(false)} style={styles.closeBtn}>
-                  <Ionicons name="close" size={20} color={theme.textSecondary} />
-                </TouchableOpacity>
-              </View>
-
-              {/* Viewfinder Camera Simulation */}
-              <View style={[styles.viewfinderBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
-                <View style={[styles.viewfinderFrame, { borderColor: theme.primary }]}>
-                  <Ionicons name="camera-outline" size={36} color={theme.primary} style={{ opacity: 0.8 }} />
-                  <ThemedText type="code" style={{ fontSize: 11, color: theme.textSecondary, marginTop: 8 }}>
-                    Arahkan Kamera ke QR Code Penerima
-                  </ThemedText>
-
-                  {/* Animated Laser Scanning Beam */}
-                  <style>{`
-                    @keyframes laserScan {
-                      0% { top: 12%; opacity: 0.6; }
-                      50% { top: 82%; opacity: 1; }
-                      100% { top: 12%; opacity: 0.6; }
-                    }
-                    .laser-beam {
-                      position: absolute;
-                      left: 6%;
-                      right: 6%;
-                      height: 2.5px;
-                      background-color: ${theme.primary};
-                      box-shadow: 0 0 10px ${theme.primary};
-                      animation: laserScan 2s ease-in-out infinite;
-                      border-radius: 2px;
-                    }
-                  `}</style>
-                  <div className="laser-beam" />
-                </View>
-              </View>
-
-              {/* Sample QR Addresses for testing / demo */}
-              <ThemedText type="code" style={{ fontSize: 11, color: theme.textSecondary, marginBottom: 10 }}>
-                Pilih Alamat EVM hasil Scan / Simulasi QR:
-              </ThemedText>
-
-              <View style={{ gap: 8 }}>
-                {[
-                  { label: 'Vitalik.eth Wallet (EVM)', address: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' },
-                  { label: 'Binance Hot Wallet (EVM)', address: '0x28C6c06298d514Db089934071355E5743bf21d60' },
-                  { label: 'Trust Wallet Recipient', address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F' },
-                ].map((item) => (
-                  <TouchableOpacity
-                    key={item.address}
-                    onPress={() => handleSelectScannedAddress(item.address)}
-                    style={[styles.demoAddressRow, { backgroundColor: theme.background, borderColor: theme.border }]}
-                    id={`qr-sample-${item.label.split(' ')[0].toLowerCase()}`}
-                  >
-                    <View style={[styles.qrDemoIcon, { backgroundColor: theme.primary + '15' }]}>
-                      <Ionicons name="qr-code-outline" size={16} color={theme.primary} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <ThemedText type="smallBold" style={{ fontSize: 12 }}>{item.label}</ThemedText>
-                      <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
-                        {item.address.substring(0, 14)}...{item.address.slice(-8)}
-                      </ThemedText>
-                    </View>
-                    <Ionicons name="checkmark-circle-outline" size={18} color={theme.primary} />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </Card>
-          </View>
-        </Modal>
+          onClose={() => setIsQrModalVisible(false)}
+          onScanSuccess={handleSelectScannedAddress}
+        />
       </SafeAreaView>
     </ThemedView>
   );
