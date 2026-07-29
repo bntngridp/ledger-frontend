@@ -7,6 +7,7 @@ import {
   Clipboard,
   ActivityIndicator,
   Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,6 +45,21 @@ export default function CryptoScreen() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  // QR Scanner Modal State
+  const [isQrModalVisible, setIsQrModalVisible] = useState(false);
+  const [scannedToast, setScannedToast] = useState(false);
+
+  const handleScanQr = () => {
+    setIsQrModalVisible(true);
+  };
+
+  const handleSelectScannedAddress = (scannedAddr: string) => {
+    setRecipientAddress(scannedAddr);
+    setIsQrModalVisible(false);
+    setScannedToast(true);
+    setTimeout(() => setScannedToast(false), 2500);
+  };
 
   // Available balances
   const [balances, setBalances] = useState<{ USDT: number; USDC: number }>({
@@ -329,7 +345,17 @@ export default function CryptoScreen() {
                     </View>
 
 
-                  {/* Recipient Address */}
+                  {/* Toast Feedback for Scanned Address */}
+                  {scannedToast && (
+                    <View style={[styles.scannedToast, { backgroundColor: theme.success + '20', borderColor: theme.success }]}>
+                      <Ionicons name="checkmark-circle" size={18} color={theme.success} />
+                      <ThemedText type="smallBold" style={{ color: theme.success, marginLeft: 6, fontSize: 12 }}>
+                        Alamat Wallet berhasil di-scan! ✨
+                      </ThemedText>
+                    </View>
+                  )}
+
+                  {/* Recipient Address with Dual Actions: Scan QR & Paste */}
                   <Input
                     label={t('crypto.recipientAddress')}
                     placeholder={t('crypto.recipientPlaceholder')}
@@ -337,9 +363,28 @@ export default function CryptoScreen() {
                     onChangeText={setRecipientAddress}
                     error={isAddressInvalid ? t('crypto.invalidAddress') : undefined}
                     iconLeft="wallet-outline"
-                    iconRight="clipboard-outline"
-                    onPressIconRight={handlePasteAddress}
                     autoCapitalize="none"
+                    rightComponent={
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <TouchableOpacity
+                          onPress={handleScanQr}
+                          style={[styles.inputActionIcon, { backgroundColor: theme.primary + '15' }]}
+                          id="crypto-scan-qr-btn"
+                          title="Scan QR Code"
+                        >
+                          <Ionicons name="qr-code-outline" size={18} color={theme.primary} />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          onPress={handlePasteAddress}
+                          style={styles.inputActionIcon}
+                          id="crypto-paste-addr-btn"
+                          title="Paste Clipboard"
+                        >
+                          <Ionicons name="clipboard-outline" size={18} color={theme.textSecondary} />
+                        </TouchableOpacity>
+                      </View>
+                    }
                   />
 
                   {/* Amount Input */}
@@ -385,6 +430,97 @@ export default function CryptoScreen() {
         )}
 
         </ScrollView>
+
+        {/* Modal QR Code Scanner */}
+        <Modal
+          visible={isQrModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsQrModalVisible(false)}
+        >
+          <View style={styles.modalBackdrop}>
+            <Card style={[styles.qrModalCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]} bordered>
+              {/* Modal Header */}
+              <View style={styles.qrModalHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={[styles.qrHeaderIcon, { backgroundColor: theme.primary + '20' }]}>
+                    <Ionicons name="qr-code" size={22} color={theme.primary} />
+                  </View>
+                  <View>
+                    <ThemedText type="smallBold" style={{ fontSize: 16 }}>Scan Barcode / QR Wallet</ThemedText>
+                    <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
+                      Scan QR Code penerima EVM Wallet
+                    </ThemedText>
+                  </View>
+                </View>
+                <TouchableOpacity onPress={() => setIsQrModalVisible(false)} style={styles.closeBtn}>
+                  <Ionicons name="close" size={20} color={theme.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Viewfinder Camera Simulation */}
+              <View style={[styles.viewfinderBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                <View style={[styles.viewfinderFrame, { borderColor: theme.primary }]}>
+                  <Ionicons name="camera-outline" size={36} color={theme.primary} style={{ opacity: 0.8 }} />
+                  <ThemedText type="code" style={{ fontSize: 11, color: theme.textSecondary, marginTop: 8 }}>
+                    Arahkan Kamera ke QR Code Penerima
+                  </ThemedText>
+
+                  {/* Animated Laser Scanning Beam */}
+                  <style>{`
+                    @keyframes laserScan {
+                      0% { top: 12%; opacity: 0.6; }
+                      50% { top: 82%; opacity: 1; }
+                      100% { top: 12%; opacity: 0.6; }
+                    }
+                    .laser-beam {
+                      position: absolute;
+                      left: 6%;
+                      right: 6%;
+                      height: 2.5px;
+                      background-color: ${theme.primary};
+                      box-shadow: 0 0 10px ${theme.primary};
+                      animation: laserScan 2s ease-in-out infinite;
+                      border-radius: 2px;
+                    }
+                  `}</style>
+                  <div className="laser-beam" />
+                </View>
+              </View>
+
+              {/* Sample QR Addresses for testing / demo */}
+              <ThemedText type="code" style={{ fontSize: 11, color: theme.textSecondary, marginBottom: 10 }}>
+                Pilih Alamat EVM hasil Scan / Simulasi QR:
+              </ThemedText>
+
+              <View style={{ gap: 8 }}>
+                {[
+                  { label: 'Vitalik.eth Wallet (EVM)', address: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' },
+                  { label: 'Binance Hot Wallet (EVM)', address: '0x28C6c06298d514Db089934071355E5743bf21d60' },
+                  { label: 'Trust Wallet Recipient', address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F' },
+                ].map((item) => (
+                  <TouchableOpacity
+                    key={item.address}
+                    onPress={() => handleSelectScannedAddress(item.address)}
+                    style={[styles.demoAddressRow, { backgroundColor: theme.background, borderColor: theme.border }]}
+                    id={`qr-sample-${item.label.split(' ')[0].toLowerCase()}`}
+                  >
+                    <View style={[styles.qrDemoIcon, { backgroundColor: theme.primary + '15' }]}>
+                      <Ionicons name="qr-code-outline" size={16} color={theme.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <ThemedText type="smallBold" style={{ fontSize: 12 }}>{item.label}</ThemedText>
+                      <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
+                        {item.address.substring(0, 14)}...{item.address.slice(-8)}
+                      </ThemedText>
+                    </View>
+                    <Ionicons name="checkmark-circle-outline" size={18} color={theme.primary} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Card>
+          </View>
+        </Modal>
       </SafeAreaView>
     </ThemedView>
   );
@@ -509,6 +645,85 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  inputActionIcon: {
+    padding: 6,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scannedToast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  qrModalCard: {
+    width: '100%',
+    maxWidth: 440,
+    borderRadius: 24,
+    padding: 20,
+  },
+  qrModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  qrHeaderIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeBtn: {
+    padding: 6,
+  },
+  viewfinderBox: {
+    width: '100%',
+    height: 180,
+    borderRadius: 16,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  viewfinderFrame: {
+    width: 140,
+    height: 140,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  demoAddressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 10,
+  },
+  qrDemoIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },

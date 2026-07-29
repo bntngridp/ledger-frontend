@@ -21,6 +21,7 @@ export interface InputProps extends TextInputProps {
   iconLeft?: keyof typeof Ionicons.glyphMap;
   iconRight?: keyof typeof Ionicons.glyphMap;
   onPressIconRight?: () => void;
+  rightComponent?: React.ReactNode;
 }
 
 export function Input({
@@ -31,6 +32,7 @@ export function Input({
   iconLeft,
   iconRight,
   onPressIconRight,
+  rightComponent,
   style,
   onFocus,
   onBlur,
@@ -104,7 +106,9 @@ export function Input({
           {...rest}
         />
 
-        {isPasswordInput ? (
+        {rightComponent ? (
+          rightComponent
+        ) : isPasswordInput ? (
           <TouchableOpacity
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             style={styles.iconRight}
