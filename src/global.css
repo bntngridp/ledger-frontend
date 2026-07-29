@@ -57,3 +57,25 @@ input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
   transition: background-color 5000s ease-in-out 0s;
 }
+
+/* ─── Fix Expo Web Scroll Block ────────────────────────────────────────────── */
+/* Expo Web sets body { overflow: hidden } which prevents ALL page scrolling.  */
+/* Override so ScrollView and native scroll containers work correctly on web.  */
+
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* The root Expo container div should be scrollable */
+body > div:first-child {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: 100% !important;
+  -webkit-overflow-scrolling: touch;
+}

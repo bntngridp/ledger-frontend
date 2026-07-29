@@ -73,10 +73,12 @@ export function Chart({ dataPoints = [], color }: ChartProps) {
       return { x, y };
     });
 
-    const smoothLine = getSmoothCurvePath(coords);
-    const smoothFill = `${smoothLine} L ${width.toFixed(1)} ${(height + 2).toFixed(1)} L 0 ${(height + 2).toFixed(1)} Z`;
-
     const lastCoord = coords[coords.length - 1];
+    const firstCoord = coords[0];
+
+    const smoothLine = getSmoothCurvePath(coords);
+    // Close fill from last point DOWN, left along bottom, then back up — no diagonal skew
+    const smoothFill = `${smoothLine} L ${lastCoord.x.toFixed(1)} ${(height + 2).toFixed(1)} L ${firstCoord.x.toFixed(1)} ${(height + 2).toFixed(1)} Z`;
 
     return {
       linePath: smoothLine,
