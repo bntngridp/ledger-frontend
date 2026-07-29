@@ -705,7 +705,11 @@ export default function DashboardScreen() {
 
   // Desktop Responsive Widescreen layout
   const renderDesktop = () => (
-    <View style={styles.desktopContainer}>
+    <ScrollView
+      style={styles.desktopContainer}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 40 }}
+    >
       {/* Top Navbar */}
       <View style={[styles.topNavbar, { borderBottomColor: theme.border }]}>
         <ThemedText type="subtitle" style={styles.topNavbarTitle}>
@@ -926,8 +930,15 @@ export default function DashboardScreen() {
                 <ThemedText style={{ color: theme.textSecondary }}>{t('dashboard.noTransactions')}</ThemedText>
               </View>
             ) : (
-              uiTransactions.slice(0, 5).map((tx) => (
-                <View key={tx.id} style={[styles.tableRow, { borderBottomColor: theme.border }]}>
+              uiTransactions.slice(0, 5).map((tx, idx, arr) => (
+                <View 
+                  key={tx.id} 
+                  style={[
+                    styles.tableRow, 
+                    { borderBottomColor: theme.border },
+                    idx === arr.length - 1 && { borderBottomWidth: 0 }
+                  ]}
+                >
                   <View style={[styles.assetCol, { flex: 2 }]}>
                     <AssetIcon symbol={tx.asset} size={28} containerStyle={{ marginRight: 10 }} />
                     <ThemedText type="smallBold" numberOfLines={1}>{tx.assetName}</ThemedText>
@@ -977,7 +988,7 @@ export default function DashboardScreen() {
           </Card>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 
   return (
