@@ -665,7 +665,7 @@ export default function DashboardScreen() {
             <ThemedText style={{ color: theme.textSecondary }}>{t('dashboard.noTransactions')}</ThemedText>
           </View>
         ) : (
-          uiTransactions.map((tx) => (
+          uiTransactions.slice(0, 5).map((tx) => (
             <View key={tx.id} style={[styles.txRow, { borderBottomColor: theme.border }]}>
               <View style={[styles.txIconContainer, { backgroundColor: tx.color + '15' }]}>
                 <Ionicons
@@ -912,33 +912,33 @@ export default function DashboardScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Table headers */}
+            {/* Table headers with explicit balanced flex ratios */}
             <View style={[styles.tableColumns, { borderBottomColor: theme.border }]}>
-              <ThemedText type="code" style={[styles.col, { flex: 1 }]}>{t('dashboard.colAsset')}</ThemedText>
-              <ThemedText type="code" style={[styles.col, { flex: 1 }]}>{t('dashboard.colType')}</ThemedText>
-              <ThemedText type="code" style={[styles.col, { flex: 1, textAlign: 'right' }]}>{t('dashboard.colAmount')}</ThemedText>
+              <ThemedText type="code" style={[styles.col, { flex: 2 }]}>{t('dashboard.colAsset')}</ThemedText>
+              <ThemedText type="code" style={[styles.col, { flex: 1.5 }]}>{t('dashboard.colType')}</ThemedText>
+              <ThemedText type="code" style={[styles.col, { flex: 1.5, textAlign: 'right' }]}>{t('dashboard.colAmount')}</ThemedText>
               <ThemedText type="code" style={[styles.col, { flex: 1, textAlign: 'right' }]}>{t('dashboard.colStatus')}</ThemedText>
             </View>
 
-            {/* Table rows */}
+            {/* Table rows (limited to 5 for optimal dashboard UI density) */}
             {uiTransactions.length === 0 ? (
               <View style={styles.emptyStateContainer}>
                 <ThemedText style={{ color: theme.textSecondary }}>{t('dashboard.noTransactions')}</ThemedText>
               </View>
             ) : (
-              uiTransactions.map((tx) => (
+              uiTransactions.slice(0, 5).map((tx) => (
                 <View key={tx.id} style={[styles.tableRow, { borderBottomColor: theme.border }]}>
-                  <View style={styles.assetCol}>
+                  <View style={[styles.assetCol, { flex: 2 }]}>
                     <AssetIcon symbol={tx.asset} size={28} containerStyle={{ marginRight: 10 }} />
-                    <ThemedText type="smallBold">{tx.assetName}</ThemedText>
+                    <ThemedText type="smallBold" numberOfLines={1}>{tx.assetName}</ThemedText>
                   </View>
-                  <ThemedText type="small" style={[styles.col, { color: theme.textSecondary }]}>
+                  <ThemedText type="small" numberOfLines={1} style={[styles.col, { flex: 1.5, color: theme.textSecondary }]}>
                     {tx.type}
                   </ThemedText>
-                  <ThemedText type="smallBold" style={[styles.col, { textAlign: 'right', color: tx.amount.startsWith('+') ? theme.success : theme.text }]}>
+                  <ThemedText type="smallBold" numberOfLines={1} style={[styles.col, { flex: 1.5, textAlign: 'right', color: tx.amount.startsWith('+') ? theme.success : theme.text }]}>
                     {tx.amount}
                   </ThemedText>
-                  <View style={styles.statusCol}>
+                  <View style={[styles.statusCol, { flex: 1 }]}>
                     <View style={[styles.statusPill, { backgroundColor: (tx.color) + '15' }]}>
                       <ThemedText type="code" style={{ fontSize: 10, color: tx.color, fontWeight: '700' }}>
                         {tx.status}
