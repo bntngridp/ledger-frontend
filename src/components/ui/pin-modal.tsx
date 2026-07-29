@@ -13,6 +13,11 @@ import { ThemedText } from '../themed-text';
 import { Card } from './card';
 import { useTheme } from '@/hooks/use-theme';
 import { api } from '@/services/api';
+import {
+  isBiometricSupported,
+  isBiometricRegistered,
+  verifyBiometric,
+} from '@/hooks/use-biometric';
 
 interface PinVerificationModalProps {
   visible: boolean;
@@ -33,6 +38,8 @@ export function PinVerificationModal({
   const [pin, setPin] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [biometricAvailable, setBiometricAvailable] = useState<boolean>(false);
+  const [biometricLoading, setBiometricLoading] = useState<boolean>(false);
 
   // Clear state when modal opens/closes
   useEffect(() => {
@@ -40,6 +47,11 @@ export function PinVerificationModal({
       setPin('');
       setError('');
       setLoading(false);
+      setBiometricLoading(false);
+      // Check if biometric is available & registered on this device
+      isBiometricSupported().then((supported) => {
+        setBiometricAvailable(supported && isBiometricRegistered());
+      });
     }
   }, [visible]);
 
@@ -242,6 +254,45 @@ export function PinVerificationModal({
               </View>
             ))}
           </View>
+
+          {/* Biometric Fingerprint Button */}
+          {biometricAvailable && (
+            <TouchableOpacity
+              onPress={async () => {
+                setBiometricLoading(true);
+                setError('');
+                const result = await verifyBiometric();
+                setBiometricLoading(false);
+                if (result.success) {
+                  onSuccess();
+                } else {
+                  setError(result.error || 'Verifikasi biometrik gagal');
+                }
+              }}
+              disabled={loading || biometricLoading}
+              style={[
+                styles.biometricBtn,
+                {
+                  backgroundColor: theme.primary + '15',
+                  borderColor: theme.primary + '40',
+                  opacity: (loading || biometricLoading) ? 0.5 : 1,
+                },
+              ]}
+              id="pin-biometric-btn"
+            >
+              {biometricLoading ? (
+                <ActivityIndicator size="small" color={theme.primary} />
+              ) : (
+                <Ionicons name="finger-print" size={22} color={theme.primary} />
+              )}
+              <ThemedText
+                type="smallBold"
+                style={{ color: theme.primary, fontSize: 13, marginLeft: 8 }}
+              >
+                {biometricLoading ? 'Memverifikasi...' : 'Gunakan Sidik Jari'}
+              </ThemedText>
+            </TouchableOpacity>
+          )}
         </Card>
       </View>
     </Modal>
@@ -328,5 +379,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
+  },
+  biometricBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 12,
   },
 });

@@ -8,6 +8,7 @@ import {
   Alert,
   Modal,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +24,11 @@ import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { storage } from '@/services/storage';
 import { api } from '@/services/api';
+import {
+  isBiometricSupported,
+  isBiometricRegistered,
+  registerBiometric,
+} from '@/hooks/use-biometric';
 
 // Simple JWT decoder helper to extract email
 function decodeJwt(token: string): { email?: string; user_id?: string } | null {
@@ -82,6 +88,50 @@ export default function SettingsScreen() {
   const [emailOtpSending, setEmailOtpSending] = useState(false);
   const [emailOtpCooldown, setEmailOtpCooldown] = useState(0);
   const [emailOtpSuccessMsg, setEmailOtpSuccessMsg] = useState('');
+
+  // Biometric states
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  const [biometricRegistered, setBiometricRegistered] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
+  const [biometricStatus, setBiometricStatus] = useState('');
+
+  // Check biometric support on mount
+  React.useEffect(() => {
+    isBiometricSupported().then((supported) => {
+      setBiometricSupported(supported);
+      if (supported) {
+        setBiometricRegistered(isBiometricRegistered());
+      }
+    });
+  }, []);
+
+  const handleRegisterBiometric = async () => {
+    setBiometricLoading(true);
+    setBiometricStatus('');
+    try {
+      const token = await storage.getItem('auth_token');
+      if (!token) {
+        setBiometricStatus('Silakan login terlebih dahulu');
+        setBiometricLoading(false);
+        return;
+      }
+      // Decode user info from JWT
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      const userId = payload.user_id || 'user';
+      const email = payload.email || userEmail;
+      const userIdBytes = new TextEncoder().encode(userId);
+      const result = await registerBiometric(userIdBytes, username, email);
+      if (result.success) {
+        setBiometricRegistered(true);
+        setBiometricStatus('✓ Fingerprint berhasil didaftarkan!');
+      } else {
+        setBiometricStatus(result.error || 'Gagal mendaftarkan fingerprint');
+      }
+    } catch (err: any) {
+      setBiometricStatus(err?.message || 'Terjadi kesalahan');
+    }
+    setBiometricLoading(false);
+  };
 
   // Cooldown Timer for Email OTP
   React.useEffect(() => {
@@ -326,6 +376,42 @@ export default function SettingsScreen() {
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
               </TouchableOpacity>
+
+              {/* Biometric Registration Row */}
+              {biometricSupported && (
+                <>
+                  <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />
+                  <TouchableOpacity
+                    style={styles.settingsRow}
+                    onPress={handleRegisterBiometric}
+                    disabled={biometricLoading}
+                    id="settings-biometric-btn"
+                  >
+                    <View style={styles.settingsLabelWrapper}>
+                      <Ionicons name="finger-print" size={20} color={biometricRegistered ? theme.success : theme.text} />
+                      <View>
+                        <ThemedText type="smallBold" style={[styles.settingsLabel, biometricRegistered && { color: theme.success }]}>
+                          {biometricRegistered ? '✓ Fingerprint Terdaftar' : 'Daftarkan Fingerprint'}
+                        </ThemedText>
+                        {biometricStatus ? (
+                          <ThemedText type="small" style={{ color: biometricRegistered ? theme.success : theme.danger, fontSize: 10, marginTop: 2 }}>
+                            {biometricStatus}
+                          </ThemedText>
+                        ) : (
+                          <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 10, marginTop: 2 }}>
+                            {biometricRegistered ? 'Tap untuk daftarkan ulang' : 'Aktifkan autentikasi sidik jari'}
+                          </ThemedText>
+                        )}
+                      </View>
+                    </View>
+                    {biometricLoading ? (
+                      <ActivityIndicator size="small" color={theme.primary} />
+                    ) : (
+                      <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+                    )}
+                  </TouchableOpacity>
+                </>
+              )}
             </Card>
           </View>
 

@@ -153,6 +153,34 @@ export const api = {
         body: JSON.stringify({ pin }),
       });
     },
+    async getBiometricChallenge() {
+      return request('/auth/biometric/challenge', {
+        method: 'GET',
+      });
+    },
+    async registerBiometric(payload: {
+      credential_id: string;
+      public_key_base64: string;
+      client_data_json: string;
+      authenticator_data: string;
+    }) {
+      return request('/auth/biometric/register', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    async verifyBiometric(payload: {
+      credential_id: string;
+      client_data_json: string;
+      authenticator_data: string;
+      signature: string;
+      challenge: string;
+    }) {
+      return request('/auth/biometric/verify', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
   },
 
   wallet: {
