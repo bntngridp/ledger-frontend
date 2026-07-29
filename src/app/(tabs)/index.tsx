@@ -97,7 +97,7 @@ export default function DashboardScreen() {
 
       const [dashRes, txRes] = await Promise.all([
         api.wallet.getDashboard(),
-        api.wallet.getTransactions({ per_page: 5 }),
+        api.wallet.getTransactions({ per_page: 100 }),
       ]);
 
       if (dashRes.status === 'success' && dashRes.data) {
@@ -140,19 +140,39 @@ export default function DashboardScreen() {
 
   // Filter and process transactions chronologically to build balance history
   const chartData = useMemo(() => {
-    const currentBalance = dashboard ? parseFloat(String(dashboard.estimated_total_idr)) : 0;
-    
-    // 1. Filter out failed transactions
+    if (!dashboard) return [0, 0];
+
+    // 1. Calculate current starting point based on activeAssetFilter ('All', 'Crypto', 'Fiat')
+    const idrBalObj = dashboard.balances.find((b) => b.asset_symbol.toUpperCase() === 'IDR');
+    const idrBal = idrBalObj ? parseFloat(String(idrBalObj.balance)) || 0 : 0;
+
+    const usdtBalObj = dashboard.balances.find((b) => b.asset_symbol.toUpperCase() === 'USDT');
+    const usdtBal = usdtBalObj ? parseFloat(String(usdtBalObj.balance)) || 0 : 0;
+
+    const usdcBalObj = dashboard.balances.find((b) => b.asset_symbol.toUpperCase() === 'USDC');
+    const usdcBal = usdcBalObj ? parseFloat(String(usdcBalObj.balance)) || 0 : 0;
+
+    const cryptoTotalIdr = (usdtBal + usdcBal) * 16000;
+    const totalPortfolioIdr = parseFloat(String(dashboard.estimated_total_idr)) || (idrBal + cryptoTotalIdr);
+
+    let currentBalance = totalPortfolioIdr;
+    if (activeAssetFilter === 'Fiat') {
+      currentBalance = idrBal;
+    } else if (activeAssetFilter === 'Crypto') {
+      currentBalance = cryptoTotalIdr;
+    }
+
+    // 2. Filter ONLY successful transactions
     const successfulTx = transactions.filter(
-      (tx) => tx.status.toLowerCase() !== 'failed'
+      (tx) => tx.status.toLowerCase() === 'success'
     );
 
-    // 2. Sort from oldest to newest to build cumulative history
+    // 3. Sort from oldest to newest to build cumulative history
     const sortedTx = [...successfulTx].sort(
       (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
 
-    // 3. Filter based on selected time range
+    // 4. Filter based on selected time range
     const now = new Date();
     const filteredTx = sortedTx.filter((tx) => {
       const txDate = new Date(tx.created_at);
@@ -165,21 +185,61 @@ export default function DashboardScreen() {
       return true; // 'ALL'
     });
 
-    // 4. Calculate historical data points starting backward from current balance
+    // 5. Calculate historical data points starting backward from currentBalance
     let runningBalance = currentBalance;
     const points: number[] = [runningBalance];
 
     for (let i = filteredTx.length - 1; i >= 0; i--) {
       const tx = filteredTx[i];
       const amount = parseFloat(String(tx.amount)) || 0;
+      const asset = (tx.asset_symbol || '').toUpperCase();
+      const notes = (tx.transaction_notes || '').toLowerCase();
+      const rate = (tx as any).rate_used ? parseFloat(String((tx as any).rate_used)) : 16000;
 
-      if (tx.type === 'topup' || tx.type === 'transfer_in') {
-        runningBalance -= amount;
-      } else if (tx.type === 'withdraw' || tx.type === 'transfer_out') {
-        runningBalance += amount;
-      } else if (tx.type === 'swap') {
-        runningBalance += amount * 0.005;
+      if (activeAssetFilter === 'All') {
+        // Impact on total portfolio value in IDR
+        if (tx.type === 'topup' || tx.type === 'transfer_in' || tx.type === 'crypto_deposit') {
+          const idrVal = asset === 'IDR' ? amount : amount * rate;
+          runningBalance -= idrVal;
+        } else if (tx.type === 'withdraw' || tx.type === 'withdraw_fiat' || tx.type === 'transfer_out' || tx.type === 'crypto_withdrawal') {
+          const idrVal = asset === 'IDR' ? amount : amount * rate;
+          runningBalance += idrVal;
+        } else if (tx.type === 'swap') {
+          const fee = (tx as any).fee_charged ? parseFloat(String((tx as any).fee_charged)) : 0;
+          runningBalance += fee;
+        }
+      } else if (activeAssetFilter === 'Fiat') {
+        // Impact ONLY on FIAT (IDR) balance
+        if (asset === 'IDR' && (tx.type === 'topup' || tx.type === 'transfer_in')) {
+          runningBalance -= amount;
+        } else if (asset === 'IDR' && (tx.type === 'withdraw' || tx.type === 'withdraw_fiat' || tx.type === 'transfer_out')) {
+          runningBalance += amount;
+        } else if (tx.type === 'swap') {
+          if (notes.includes('idr ->') || asset === 'IDR') {
+            // Swapped IDR -> USDT/USDC: IDR balance decreased by `amount`
+            runningBalance += amount;
+          } else if (notes.includes('-> idr')) {
+            // Swapped USDT/USDC -> IDR: IDR balance increased by `amount * rate`
+            runningBalance -= (amount * rate);
+          }
+        }
+      } else if (activeAssetFilter === 'Crypto') {
+        // Impact ONLY on CRYPTO balance (in IDR value)
+        if ((asset === 'USDT' || asset === 'USDC') && (tx.type === 'crypto_deposit' || tx.type === 'transfer_in')) {
+          runningBalance -= (amount * rate);
+        } else if ((asset === 'USDT' || asset === 'USDC') && (tx.type === 'crypto_withdrawal' || tx.type === 'transfer_out')) {
+          runningBalance += (amount * rate);
+        } else if (tx.type === 'swap') {
+          if (notes.includes('idr ->') || asset === 'IDR') {
+            // Swapped IDR -> USDT/USDC: Crypto balance INCREASED by `amount` (IDR value)
+            runningBalance -= amount;
+          } else if (notes.includes('-> idr')) {
+            // Swapped USDT/USDC -> IDR: Crypto balance DECREASED by `amount * rate` (IDR value)
+            runningBalance += (amount * rate);
+          }
+        }
       }
+
       points.unshift(Math.max(0, runningBalance));
     }
 
@@ -188,7 +248,7 @@ export default function DashboardScreen() {
     }
 
     return points;
-  }, [transactions, dashboard, timeRange]);
+  }, [transactions, dashboard, timeRange, activeAssetFilter]);
 
   // Calculate overall profit/loss percentage
   const chartStats = useMemo(() => {
@@ -326,7 +386,28 @@ export default function DashboardScreen() {
 
   const getEstimatedTotal = () => {
     if (!dashboard) return 'Rp 0';
+    if (activeAssetFilter === 'Fiat') {
+      const idrBalObj = dashboard.balances.find((b) => b.asset_symbol.toUpperCase() === 'IDR');
+      const idrBal = idrBalObj ? parseFloat(String(idrBalObj.balance)) || 0 : 0;
+      return `Rp ${idrBal.toLocaleString('id-ID')}`;
+    }
+    if (activeAssetFilter === 'Crypto') {
+      const usdtBalObj = dashboard.balances.find((b) => b.asset_symbol.toUpperCase() === 'USDT');
+      const usdtBal = usdtBalObj ? parseFloat(String(usdtBalObj.balance)) || 0 : 0;
+
+      const usdcBalObj = dashboard.balances.find((b) => b.asset_symbol.toUpperCase() === 'USDC');
+      const usdcBal = usdcBalObj ? parseFloat(String(usdcBalObj.balance)) || 0 : 0;
+
+      const cryptoTotalIdr = (usdtBal + usdcBal) * 16000;
+      return `Rp ${cryptoTotalIdr.toLocaleString('id-ID')}`;
+    }
     return `Rp ${parseFloat(String(dashboard.estimated_total_idr)).toLocaleString('id-ID')}`;
+  };
+
+  const getPortfolioTitle = () => {
+    if (activeAssetFilter === 'Fiat') return 'ESTIMASI SALDO FIAT (IDR)';
+    if (activeAssetFilter === 'Crypto') return 'ESTIMASI SALDO CRYPTO (IDR)';
+    return t('dashboard.estimatedPortfolio');
   };
 
   // Mobile layout
@@ -380,11 +461,11 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      {/* Portfolio Balance Card */}
+      {/* Portfolio Balance Card & Interactive Chart */}
       <Card style={[styles.portfolioCard, { backgroundColor: theme.backgroundElement }]}>
         <View style={styles.portfolioHeader}>
           <ThemedText style={[styles.portfolioLabel, { color: theme.textSecondary }]}>
-            {t('dashboard.estimatedBalance')}
+            {getPortfolioTitle()}
           </ThemedText>
           <TouchableOpacity onPress={() => setShowBalance(!showBalance)}>
             <Ionicons
@@ -394,15 +475,101 @@ export default function DashboardScreen() {
             />
           </TouchableOpacity>
         </View>
+
         <ThemedText type="title" style={styles.totalBalance}>
           {showBalance ? getEstimatedTotal() : '••••••••'}
         </ThemedText>
-        <View style={styles.portfolioFooter}>
-          <Ionicons name="trending-up-outline" size={16} color={theme.success} />
-          <ThemedText type="small" style={{ color: theme.success, marginLeft: 4 }}>
-            {t('dashboard.activeSession')}
+
+        {/* Profit/Loss percentage trend row */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 12 }}>
+          <ThemedText
+            type="smallBold"
+            style={{
+              color: chartStats.isPositive ? theme.success : theme.danger,
+              fontSize: 12,
+            }}
+          >
+            {chartStats.isPositive ? '▲' : '▼'} Profit/Loss{' '}
+          </ThemedText>
+          <ThemedText
+            type="small"
+            style={{ color: chartStats.isPositive ? theme.success : theme.danger, fontWeight: '600', fontSize: 12 }}
+          >
+            {chartStats.diff >= 0 ? '+' : ''}
+            {chartStats.percent.toFixed(2)}% (All time)
           </ThemedText>
         </View>
+
+        {/* Segmented Asset Filter ('All', 'Crypto', 'Fiat') */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <View style={[styles.segmentedWrapper, { backgroundColor: theme.background, flex: 1, marginRight: 8 }]}>
+            {['All', 'Crypto', 'Fiat'].map((tab) => {
+              const isActive = tab === activeAssetFilter;
+              return (
+                <TouchableOpacity
+                  key={tab}
+                  onPress={() => setActiveAssetFilter(tab as any)}
+                  style={[
+                    styles.segmentBtn,
+                    isActive && { 
+                      backgroundColor: theme.primary,
+                      shadowColor: theme.primary,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 4,
+                      elevation: 2
+                    }
+                  ]}
+                >
+                  <ThemedText
+                    type="code"
+                    style={{
+                      fontSize: 11,
+                      fontWeight: isActive ? '700' : '500',
+                      color: isActive ? '#FFFFFF' : theme.textSecondary,
+                    }}
+                  >
+                    {tab}
+                  </ThemedText>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Time range selector */}
+          <View style={[styles.timeSelector, { backgroundColor: theme.background }]}>
+            {(['1D', '1W', '1M', 'ALL'] as const).map((range) => {
+              const isActive = range === timeRange;
+              return (
+                <TouchableOpacity
+                  key={range}
+                  onPress={() => setTimeRange(range)}
+                  style={[
+                    styles.timeBtn,
+                    isActive && { 
+                      backgroundColor: theme.backgroundElement,
+                      borderColor: theme.border,
+                      borderWidth: 1
+                    },
+                  ]}
+                >
+                  <ThemedText
+                    type="smallBold"
+                    style={{
+                      fontSize: 10,
+                      color: isActive ? theme.primary : theme.textSecondary,
+                    }}
+                  >
+                    {range}
+                  </ThemedText>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Interactive Line Chart */}
+        <Chart dataPoints={chartData} />
       </Card>
 
       {/* Asset List Section */}
@@ -594,7 +761,7 @@ export default function DashboardScreen() {
           <Card style={styles.overviewCard}>
             <View style={styles.overviewHeader}>
               <View style={{ flex: 1 }}>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('dashboard.estimatedPortfolio')}</ThemedText>
+                <ThemedText type="small" style={{ color: theme.textSecondary }}>{getPortfolioTitle()}</ThemedText>
                 <View style={styles.balanceContainer}>
                   <ThemedText type="subtitle" style={styles.desktopBalanceText}>
                     {getEstimatedTotal()}
