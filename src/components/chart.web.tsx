@@ -45,8 +45,8 @@ export function Chart({ dataPoints = [], color }: ChartProps) {
   // Generate SVG smooth curve path and gradient fill
   const { linePath, fillPath, isFlat, lastX, lastY } = useMemo(() => {
     const width = 500;
-    const height = 150;
-    const padding = 15;
+    const height = 200;
+    const padding = 8;
 
     const N = dataPoints.length;
     const minVal = Math.min(...dataPoints);
@@ -55,7 +55,7 @@ export function Chart({ dataPoints = [], color }: ChartProps) {
 
     // Handle flat balance histories or empty datasets
     if (range === 0 || N < 2) {
-      const midY = height / 2;
+      const midY = height * 0.75;
       return {
         linePath: `M 0 ${midY} L ${width} ${midY}`,
         fillPath: `M 0 ${midY} L ${width} ${midY} L ${width} ${height} L 0 ${height} Z`,
@@ -73,7 +73,7 @@ export function Chart({ dataPoints = [], color }: ChartProps) {
     });
 
     const smoothLine = getSmoothCurvePath(coords);
-    const smoothFill = `${smoothLine} L ${width.toFixed(1)} ${height.toFixed(1)} L 0 ${height.toFixed(1)} Z`;
+    const smoothFill = `${smoothLine} L ${width.toFixed(1)} ${(height + 2).toFixed(1)} L 0 ${(height + 2).toFixed(1)} Z`;
 
     const lastCoord = coords[coords.length - 1];
 
@@ -91,57 +91,59 @@ export function Chart({ dataPoints = [], color }: ChartProps) {
       <svg
         width="100%"
         height="100%"
-        viewBox="0 0 500 150"
+        viewBox="0 0 500 200"
         preserveAspectRatio="none"
         style={{ display: 'block', overflow: 'visible' }}
       >
         <defs>
-          {/* Soft vertical gradient fade under curve */}
+          {/* Subtle gradient fade under curve */}
           <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={strokeColor} stopOpacity="0.45" />
-            <stop offset="60%" stopColor={strokeColor} stopOpacity="0.12" />
+            <stop offset="0%" stopColor={strokeColor} stopOpacity="0.28" />
+            <stop offset="55%" stopColor={strokeColor} stopOpacity="0.07" />
             <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
           </linearGradient>
 
-          {/* Glow drop shadow filter */}
-          <filter id="chartGlow" x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor={strokeColor} floodOpacity="0.4" />
+          {/* Subtle glow effect */}
+          <filter id="chartGlow" x="-5%" y="-20%" width="110%" height="140%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
         </defs>
 
         {/* Gradient Fill under curve */}
         <path d={fillPath} fill="url(#chartGradient)" stroke="none" />
 
-        {/* Glowing smooth curve line */}
+        {/* Smooth curve line with subtle glow */}
         <path
           d={linePath}
           fill="none"
           stroke={strokeColor}
-          strokeWidth="3.5"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
+          opacity="0.9"
           filter="url(#chartGlow)"
         />
 
-        {/* Pulse end dot marker */}
+        {/* End dot marker */}
         {!isFlat && dataPoints.length > 0 && (
           <g>
-            {/* Outer pulse aura */}
+            {/* Subtle outer aura */}
             <circle
               cx={lastX}
               cy={lastY}
-              r="7"
+              r="6"
               fill={strokeColor}
-              fillOpacity="0.3"
+              fillOpacity="0.18"
             />
             {/* Inner solid dot */}
             <circle
               cx={lastX}
               cy={lastY}
-              r="4"
+              r="3.5"
               fill={strokeColor}
               stroke="#FFFFFF"
-              strokeWidth="2"
+              strokeWidth="1.5"
             />
           </g>
         )}
@@ -153,7 +155,7 @@ export function Chart({ dataPoints = [], color }: ChartProps) {
 const styles = StyleSheet.create({
   chartWrapper: {
     width: '100%',
-    height: 150,
+    height: 200,
     marginTop: 8,
   },
 });
