@@ -47,6 +47,7 @@ export function Chart({ dataPoints = [], color }: ChartProps) {
     const width = 500;
     const height = 200;
     const padding = 8;
+    const paddingRight = 14; // prevent end dot clipping at right edge
 
     const N = dataPoints.length;
     const minVal = Math.min(...dataPoints);
@@ -65,9 +66,9 @@ export function Chart({ dataPoints = [], color }: ChartProps) {
       };
     }
 
-    // Construct coordinates
+    // Construct coordinates — leave right padding for end dot
     const coords = dataPoints.map((val, i) => {
-      const x = (i / (N - 1)) * width;
+      const x = paddingRight + (i / (N - 1)) * (width - paddingRight * 2);
       const y = height - padding - ((val - minVal) / range) * (height - 2 * padding);
       return { x, y };
     });
@@ -102,18 +103,12 @@ export function Chart({ dataPoints = [], color }: ChartProps) {
             <stop offset="55%" stopColor={strokeColor} stopOpacity="0.07" />
             <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
           </linearGradient>
-
-          {/* Subtle glow effect */}
-          <filter id="chartGlow" x="-5%" y="-20%" width="110%" height="140%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
         </defs>
 
         {/* Gradient Fill under curve */}
         <path d={fillPath} fill="url(#chartGradient)" stroke="none" />
 
-        {/* Smooth curve line with subtle glow */}
+        {/* Smooth crisp curve line — no blur filter */}
         <path
           d={linePath}
           fill="none"
@@ -122,7 +117,6 @@ export function Chart({ dataPoints = [], color }: ChartProps) {
           strokeLinecap="round"
           strokeLinejoin="round"
           opacity="0.9"
-          filter="url(#chartGlow)"
         />
 
         {/* End dot marker */}
