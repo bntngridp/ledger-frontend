@@ -252,10 +252,22 @@ export default function DashboardScreen() {
 
   // Calculate overall profit/loss percentage
   const chartStats = useMemo(() => {
+    if (!chartData || chartData.length < 2) {
+      return { diff: 0, percent: 0, isPositive: true };
+    }
+
     const start = chartData[0];
     const end = chartData[chartData.length - 1];
     const diff = end - start;
-    const percent = start === 0 ? 0 : (diff / start) * 100;
+
+    let percent = 0;
+    if (start === 0 && end > 0) {
+      percent = 100;
+    } else if (start === 0 && end < 0) {
+      percent = -100;
+    } else if (start !== 0) {
+      percent = (diff / Math.abs(start)) * 100;
+    }
 
     return {
       diff,
