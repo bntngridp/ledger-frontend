@@ -134,20 +134,23 @@ export function Chart({ dataPoints = [], color }: ChartProps) {
           <style>{`
             @keyframes chartPulse {
               0%   { transform: scale(1);   opacity: 0.55; }
-              70%  { transform: scale(2.4); opacity: 0;    }
-              100% { transform: scale(2.4); opacity: 0;    }
+              70%  { transform: scale(2.6); opacity: 0;    }
+              100% { transform: scale(2.6); opacity: 0;    }
             }
             .chart-pulse-ring {
               position: absolute;
-              width: 10px;
-              height: 10px;
+              width: 12px;
+              height: 12px;
+              top: 50%;
+              left: 50%;
+              margin-top: -6px;
+              margin-left: -6px;
               border-radius: 50%;
               background-color: ${strokeColor};
               opacity: 0.55;
               animation: chartPulse 2s ease-out infinite;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
+              transform-origin: center center;
+              pointer-events: none;
             }
           `}</style>
 
