@@ -231,6 +231,24 @@ export default function TopUpScreen() {
                 </View>
               </Card>
 
+              {/* Midtrans Sandbox Simulation Banner */}
+              <View style={[styles.simBanner, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '40' }]}>
+                <Ionicons name="information-circle-outline" size={20} color={theme.primary} />
+                <ThemedText type="small" style={{ color: theme.text, flex: 1, marginLeft: 8 }}>
+                  Mode Simulasi Sandbox: Gunakan <ThemedText type="smallBold" style={{ color: theme.primary }}>Midtrans Payment Simulator</ThemedText> untuk menyelesaikan pembayaran tanpa uang sungguhan.
+                </ThemedText>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => Linking.openURL('https://simulator.sandbox.midtrans.com/')}
+                style={[styles.simulatorBtn, { borderColor: theme.primary }]}
+              >
+                <Ionicons name="flask-outline" size={18} color={theme.primary} />
+                <ThemedText type="smallBold" style={{ color: theme.primary, marginLeft: 6 }}>
+                  Buka Midtrans Payment Simulator 🧪
+                </ThemedText>
+              </TouchableOpacity>
+
               <View style={styles.modalButtons}>
                 <Button
                   title={t('common.cancel')}
@@ -350,5 +368,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.two,
     marginTop: Spacing.three,
+  },
+  simBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.three,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginVertical: Spacing.two,
+  },
+  simulatorBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    marginBottom: Spacing.two,
   },
 });
