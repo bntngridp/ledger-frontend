@@ -20,6 +20,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
+import { storage } from '@/services/storage';
 import { OctopusLoader } from '@/components/ui/octopus-loader';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -116,12 +117,26 @@ export default function NotificationsScreen() {
     setError('');
 
     try {
+      const token = await storage.getItem('auth_token');
+      if (!token) {
+        setError('authorization header required');
+        setLoading(false);
+        setRefreshing(false);
+        router.replace('/login');
+        return;
+      }
+
       const res = await api.notifications.getNotifications({ per_page: 50 });
       if (res.status === 'success' && res.data) {
         const data = res.data as NotificationListResponse;
         setNotifications(data.notifications || []);
         setUnreadCount(data.unread_count || 0);
       } else {
+        if (res.message && (res.message.includes('authorization') || res.message.includes('Unauthorized') || res.message.includes('401'))) {
+          await storage.removeItem('auth_token');
+          router.replace('/login');
+          return;
+        }
         setError(res.message || t('notifications.loadError'));
       }
     } catch (err: any) {
@@ -130,7 +145,7 @@ export default function NotificationsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [t]);
+  }, [t, router]);
 
   useFocusEffect(
     useCallback(() => {
@@ -235,15 +250,29 @@ export default function NotificationsScreen() {
           </View>
         ) : error ? (
           <View style={styles.centerState}>
-            <Ionicons name="alert-circle-outline" size={48} color={theme.danger} />
-            <ThemedText style={[styles.stateText, { color: theme.textSecondary }]}>
-              {error}
-            </ThemedText>
-            <Button
-              title={t('common.retry')}
-              onPress={() => loadNotifications()}
-              style={{ marginTop: Spacing.three }}
+            <Ionicons
+              name={error.toLowerCase().includes('authorization') || error.toLowerCase().includes('unauthorized') ? 'lock-closed-outline' : 'alert-circle-outline'}
+              size={48}
+              color={error.toLowerCase().includes('authorization') || error.toLowerCase().includes('unauthorized') ? theme.primary : theme.danger}
             />
+            <ThemedText style={[styles.stateText, { color: theme.textSecondary }]}>
+              {error.toLowerCase().includes('authorization') || error.toLowerCase().includes('unauthorized')
+                ? 'Sesi Anda telah berakhir. Silakan masuk kembali.'
+                : error}
+            </ThemedText>
+            {error.toLowerCase().includes('authorization') || error.toLowerCase().includes('unauthorized') ? (
+              <Button
+                title="Masuk Akun"
+                onPress={() => router.replace('/login')}
+                style={{ marginTop: Spacing.three }}
+              />
+            ) : (
+              <Button
+                title={t('common.retry')}
+                onPress={() => loadNotifications()}
+                style={{ marginTop: Spacing.three }}
+              />
+            )}
           </View>
         ) : notifications.length === 0 ? (
           <View style={styles.centerState}>
