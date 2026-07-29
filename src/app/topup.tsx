@@ -47,8 +47,65 @@ export default function TopUpScreen() {
   const [transactionId, setTransactionId] = useState('');
   const [redirectUrl, setRedirectUrl] = useState('');
   const [error, setError] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(false);
+  const [simulating, setSimulating] = useState(false);
 
   const quickAmounts = ['50000', '100000', '250000', '500000'];
+
+  // Auto-polling transaction status while modal is open
+  React.useEffect(() => {
+    let interval: any = null;
+    if (showPayModal && transactionId && !isSuccess) {
+      interval = setInterval(async () => {
+        try {
+          const res = await api.wallet.checkTopUpStatus({ transaction_id: transactionId });
+          if (res.status === 'success' && res.data && res.data.is_settled) {
+            setIsSuccess(true);
+            if (interval) clearInterval(interval);
+          }
+        } catch {
+          // silent
+        }
+      }, 3000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [showPayModal, transactionId, isSuccess]);
+
+  const handleCheckStatus = async () => {
+    if (!transactionId) return;
+    setCheckingStatus(true);
+    try {
+      const res = await api.wallet.checkTopUpStatus({ transaction_id: transactionId });
+      setCheckingStatus(false);
+      if (res.status === 'success' && res.data && res.data.is_settled) {
+        setIsSuccess(true);
+      } else {
+        Alert.alert('Status Pembayaran', 'Pembayaran masih diproses/pending. Jika Anda telah membayar via simulator, klik tombol "Verifikasi Pembayaran Simulasi" di bawah.');
+      }
+    } catch {
+      setCheckingStatus(false);
+    }
+  };
+
+  const handleSimulateSettlement = async () => {
+    if (!transactionId) return;
+    setSimulating(true);
+    try {
+      const res = await api.wallet.simulateTopUpSettlement({ transaction_id: transactionId });
+      setSimulating(false);
+      if (res.status === 'success') {
+        setIsSuccess(true);
+      } else {
+        Alert.alert('Error', res.message || 'Gagal memverifikasi simulasi pembayaran.');
+      }
+    } catch (err: any) {
+      setSimulating(false);
+      Alert.alert('Error', err.message || 'Gagal memproses simulasi.');
+    }
+  };
 
   const handleQuickSelect = (amt: string) => {
     setAmount(amt);
@@ -208,61 +265,97 @@ export default function TopUpScreen() {
         <Modal visible={showPayModal} transparent animationType="slide">
           <View style={styles.modalOverlay}>
             <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
-              <View style={styles.modalHeader}>
-                <Ionicons name="shield-checkmark" size={24} color={theme.primary} />
-                <ThemedText type="smallBold" style={{ marginLeft: 8 }}>
-                  {t('topup.secureGateway')}
-                </ThemedText>
-              </View>
-              <ThemedText style={{ color: theme.textSecondary, marginBottom: Spacing.three }}>
-                {t('topup.processedBy')}
-              </ThemedText>
-
-              <Card style={[styles.summaryCard, { backgroundColor: theme.background }]} bordered>
-                <View style={styles.summaryItem}>
-                  <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('topup.orderId')}</ThemedText>
-                  <ThemedText type="code">{transactionId}</ThemedText>
-                </View>
-                <View style={styles.summaryItem}>
-                  <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('topup.totalAmount')}</ThemedText>
-                  <ThemedText type="smallBold">
-                    {`Rp ${amount ? parseInt(amount).toLocaleString('id-ID') : '0'}`}
+              {isSuccess ? (
+                <View style={{ alignItems: 'center', paddingVertical: Spacing.four }}>
+                  <View style={[styles.successBadge, { backgroundColor: theme.success + '20' }]}>
+                    <Ionicons name="checkmark-circle" size={64} color={theme.success} />
+                  </View>
+                  <ThemedText type="smallBold" style={{ fontSize: 20, marginTop: 12, textAlign: 'center' }}>
+                    Pembayaran Berhasil! 🎉
                   </ThemedText>
+                  <ThemedText style={{ color: theme.textSecondary, textAlign: 'center', marginTop: 8 }}>
+                    Top Up sebesar <ThemedText type="smallBold" style={{ color: theme.success }}>Rp {amount ? parseInt(amount).toLocaleString('id-ID') : '0'}</ThemedText> telah berhasil ditambahkan ke saldo dompet Anda.
+                  </ThemedText>
+
+                  <Button
+                    title="Selesai & Ke Dashboard"
+                    variant="primary"
+                    onPress={() => {
+                      setShowPayModal(false);
+                      setIsSuccess(false);
+                      router.replace('/(tabs)');
+                    }}
+                    style={{ marginTop: Spacing.four, width: '100%' }}
+                  />
                 </View>
-              </Card>
+              ) : (
+                <>
+                  <View style={styles.modalHeader}>
+                    <Ionicons name="shield-checkmark" size={24} color={theme.primary} />
+                    <ThemedText type="smallBold" style={{ marginLeft: 8 }}>
+                      {t('topup.secureGateway')}
+                    </ThemedText>
+                  </View>
+                  <ThemedText style={{ color: theme.textSecondary, marginBottom: Spacing.three }}>
+                    {t('topup.processedBy')}
+                  </ThemedText>
 
-              {/* Midtrans Sandbox Simulation Banner */}
-              <View style={[styles.simBanner, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '40' }]}>
-                <Ionicons name="information-circle-outline" size={20} color={theme.primary} />
-                <ThemedText type="small" style={{ color: theme.text, flex: 1, marginLeft: 8 }}>
-                  Mode Simulasi Sandbox: Gunakan <ThemedText type="smallBold" style={{ color: theme.primary }}>Midtrans Payment Simulator</ThemedText> untuk menyelesaikan pembayaran tanpa uang sungguhan.
-                </ThemedText>
-              </View>
+                  <Card style={[styles.summaryCard, { backgroundColor: theme.background }]} bordered>
+                    <View style={styles.summaryItem}>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('topup.orderId')}</ThemedText>
+                      <ThemedText type="code">{transactionId}</ThemedText>
+                    </View>
+                    <View style={styles.summaryItem}>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('topup.totalAmount')}</ThemedText>
+                      <ThemedText type="smallBold">
+                        {`Rp ${amount ? parseInt(amount).toLocaleString('id-ID') : '0'}`}
+                      </ThemedText>
+                    </View>
+                  </Card>
 
-              <TouchableOpacity
-                onPress={() => Linking.openURL('https://simulator.sandbox.midtrans.com/')}
-                style={[styles.simulatorBtn, { borderColor: theme.primary }]}
-              >
-                <Ionicons name="flask-outline" size={18} color={theme.primary} />
-                <ThemedText type="smallBold" style={{ color: theme.primary, marginLeft: 6 }}>
-                  Buka Midtrans Payment Simulator 🧪
-                </ThemedText>
-              </TouchableOpacity>
+                  {/* Midtrans Sandbox Simulation Banner */}
+                  <View style={[styles.simBanner, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '40' }]}>
+                    <Ionicons name="information-circle-outline" size={20} color={theme.primary} />
+                    <ThemedText type="small" style={{ color: theme.text, flex: 1, marginLeft: 8 }}>
+                      Mode Simulasi Sandbox: Setelah bayar di simulator, klik <ThemedText type="smallBold" style={{ color: theme.primary }}>Verifikasi Pembayaran</ThemedText> di bawah.
+                    </ThemedText>
+                  </View>
 
-              <View style={styles.modalButtons}>
-                <Button
-                  title={t('common.cancel')}
-                  variant="ghost"
-                  onPress={() => setShowPayModal(false)}
-                  style={{ flex: 1 }}
-                />
-                <Button
-                  title={t('topup.openPaymentPage')}
-                  variant="primary"
-                  onPress={handleOpenPaymentPage}
-                  style={{ flex: 1.5 }}
-                />
-              </View>
+                  {/* Instant Verification Button */}
+                  <Button
+                    title="Verifikasi Pembayaran Simulasi ⚡"
+                    variant="primary"
+                    loading={simulating}
+                    onPress={handleSimulateSettlement}
+                    style={{ marginBottom: Spacing.two }}
+                  />
+
+                  <TouchableOpacity
+                    onPress={() => Linking.openURL('https://simulator.sandbox.midtrans.com/')}
+                    style={[styles.simulatorBtn, { borderColor: theme.primary }]}
+                  >
+                    <Ionicons name="flask-outline" size={18} color={theme.primary} />
+                    <ThemedText type="smallBold" style={{ color: theme.primary, marginLeft: 6 }}>
+                      Buka Midtrans Payment Simulator 🧪
+                    </ThemedText>
+                  </TouchableOpacity>
+
+                  <View style={styles.modalButtons}>
+                    <Button
+                      title={t('common.cancel')}
+                      variant="ghost"
+                      onPress={() => setShowPayModal(false)}
+                      style={{ flex: 1 }}
+                    />
+                    <Button
+                      title={t('topup.openPaymentPage')}
+                      variant="secondary"
+                      onPress={handleOpenPaymentPage}
+                      style={{ flex: 1.5 }}
+                    />
+                  </View>
+                </>
+              )}
             </View>
           </View>
         </Modal>
@@ -387,5 +480,12 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderStyle: 'dashed',
     marginBottom: Spacing.two,
+  },
+  successBadge: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

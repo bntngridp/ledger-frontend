@@ -173,6 +173,18 @@ export const api = {
         body: JSON.stringify(payload),
       });
     },
+    async checkTopUpStatus(payload: { transaction_id: string }) {
+      return request('/topup/status', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    async simulateTopUpSettlement(payload: { transaction_id: string }) {
+      return request('/topup/simulate-settlement', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
     async initiateTransfer(payload: { destination_user_id: string; asset_symbol: string; amount: number; notes?: string }) {
       return request('/transfer', {
         method: 'POST',
