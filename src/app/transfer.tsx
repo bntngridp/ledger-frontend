@@ -21,6 +21,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
+import { PinVerificationModal } from '@/components/ui/pin-modal';
 
 export default function TransferScreen() {
   const router = useRouter();
@@ -100,7 +101,16 @@ export default function TransferScreen() {
     setShowReviewModal(true);
   };
 
-  const handleConfirmTransfer = async () => {
+  // PIN Verification State
+  const [isPinModalVisible, setIsPinModalVisible] = useState(false);
+
+  const handleConfirmTransfer = () => {
+    setShowReviewModal(false);
+    setIsPinModalVisible(true);
+  };
+
+  const executeConfirmTransfer = async () => {
+    setIsPinModalVisible(false);
     const val = parseFloat(amount);
     setLoading(true);
     setError('');
@@ -296,6 +306,15 @@ export default function TransferScreen() {
             </View>
           </View>
         </Modal>
+
+        {/* 6-Digit Transaction PIN Verification Modal */}
+        <PinVerificationModal
+          visible={isPinModalVisible}
+          onClose={() => setIsPinModalVisible(false)}
+          onSuccess={executeConfirmTransfer}
+          title="PIN Transfer P2P"
+          subtitle={`Konfirmasi transfer ${amount} ${selectedAsset} ke ${recipientId}`}
+        />
       </SafeAreaView>
     </ThemedView>
   );

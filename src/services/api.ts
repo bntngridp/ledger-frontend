@@ -141,6 +141,18 @@ export const api = {
         body: JSON.stringify(payload),
       });
     },
+    async verifyPin(pin: string) {
+      return request('/auth/pin/verify', {
+        method: 'POST',
+        body: JSON.stringify({ pin }),
+      });
+    },
+    async setupPin(pin: string) {
+      return request('/auth/pin/setup', {
+        method: 'POST',
+        body: JSON.stringify({ pin }),
+      });
+    },
   },
 
   wallet: {

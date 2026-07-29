@@ -20,6 +20,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
+import { PinVerificationModal } from '@/components/ui/pin-modal';
 
 export default function WithdrawScreen() {
   const router = useRouter();
@@ -130,7 +131,16 @@ export default function WithdrawScreen() {
     setShowReviewModal(true);
   };
 
-  const handleConfirmWithdraw = async () => {
+  // PIN Verification State
+  const [isPinModalVisible, setIsPinModalVisible] = useState(false);
+
+  const handleConfirmWithdraw = () => {
+    setShowReviewModal(false);
+    setIsPinModalVisible(true);
+  };
+
+  const executeConfirmWithdraw = async () => {
+    setIsPinModalVisible(false);
     const val = parseFloat(amount);
 
     // Revalidate before submission
@@ -453,6 +463,15 @@ export default function WithdrawScreen() {
             </View>
           </TouchableOpacity>
         </Modal>
+
+        {/* 6-Digit Transaction PIN Verification Modal */}
+        <PinVerificationModal
+          visible={isPinModalVisible}
+          onClose={() => setIsPinModalVisible(false)}
+          onSuccess={executeConfirmWithdraw}
+          title="PIN Penarikan Rekening"
+          subtitle={`Konfirmasi penarikan Rp ${parseFloat(amount || '0').toLocaleString('id-ID')} ke ${selectedBank?.name || ''} (${accountNumber})`}
+        />
       </SafeAreaView>
     </ThemedView>
   );

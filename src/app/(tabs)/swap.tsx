@@ -19,6 +19,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
+import { PinVerificationModal } from '@/components/ui/pin-modal';
 
 export default function SwapScreen() {
   const theme = useTheme();
@@ -149,7 +150,16 @@ export default function SwapScreen() {
     setShowReviewModal(true);
   };
 
-  const handleConfirmSwap = async () => {
+  // PIN Verification State
+  const [isPinModalVisible, setIsPinModalVisible] = useState(false);
+
+  const handleConfirmSwap = () => {
+    setShowReviewModal(false);
+    setIsPinModalVisible(true);
+  };
+
+  const executeConfirmSwap = async () => {
+    setIsPinModalVisible(false);
     const val = parseFloat(fromAmount);
     setIsSwapping(true);
     setError('');
@@ -452,6 +462,15 @@ export default function SwapScreen() {
             </View>
           </TouchableOpacity>
         </Modal>
+
+        {/* 6-Digit Transaction PIN Verification Modal */}
+        <PinVerificationModal
+          visible={isPinModalVisible}
+          onClose={() => setIsPinModalVisible(false)}
+          onSuccess={executeConfirmSwap}
+          title="PIN Konfirmasi Swap"
+          subtitle={`Konfirmasi Tukar Aset ${fromAmount} ${fromAsset} ke ${toAmount} ${toAsset}`}
+        />
       </SafeAreaView>
     </ThemedView>
   );

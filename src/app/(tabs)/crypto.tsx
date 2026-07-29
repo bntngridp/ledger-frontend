@@ -25,6 +25,7 @@ import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
 import { OctopusLoader } from '@/components/ui/octopus-loader';
 import { QrScannerModal } from '@/components/qr-scanner-modal';
+import { PinVerificationModal } from '@/components/ui/pin-modal';
 
 export default function CryptoScreen() {
   const theme = useTheme();
@@ -136,7 +137,17 @@ export default function CryptoScreen() {
     }
   };
 
-  const handleSendCrypto = async () => {
+  // PIN Verification State
+  const [isPinModalVisible, setIsPinModalVisible] = useState(false);
+
+  const handleSendCrypto = () => {
+    const val = parseFloat(amount);
+    if (!recipientAddress || isNaN(val) || val <= 0) return;
+    setIsPinModalVisible(true);
+  };
+
+  const executeWithdrawCrypto = async () => {
+    setIsPinModalVisible(false);
     const val = parseFloat(amount);
     if (!recipientAddress || isNaN(val) || val <= 0) return;
     
@@ -437,6 +448,15 @@ export default function CryptoScreen() {
           visible={isQrModalVisible}
           onClose={() => setIsQrModalVisible(false)}
           onScanSuccess={handleSelectScannedAddress}
+        />
+
+        {/* 6-Digit Transaction PIN Verification Modal */}
+        <PinVerificationModal
+          visible={isPinModalVisible}
+          onClose={() => setIsPinModalVisible(false)}
+          onSuccess={executeWithdrawCrypto}
+          title="PIN Penarikan Crypto"
+          subtitle={`Konfirmasi penarikan ${amount} ${sendAsset} ke ${recipientAddress ? recipientAddress.slice(0, 10) + '...' : ''}`}
         />
       </SafeAreaView>
     </ThemedView>
