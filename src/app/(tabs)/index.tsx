@@ -1219,6 +1219,7 @@ const styles = StyleSheet.create({
   },
   leftColumn: {
     flex: 3,
+    minWidth: 0,
     gap: 24,
   },
   overviewCard: {
@@ -1351,7 +1352,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   rightColumn: {
-    flex: 1,
+    width: 300,
+    flexShrink: 0,
   },
   assetsSidebar: {
     padding: 20,

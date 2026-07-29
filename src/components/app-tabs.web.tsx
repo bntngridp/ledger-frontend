@@ -237,10 +237,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: '100%',
     width: '100%',
+    overflow: 'hidden',
   },
   tabSlot: {
     flex: 1,
     height: '100%',
+    minWidth: 0,
   },
   mobileTabsContainer: {
     flexDirection: 'column',
@@ -271,6 +273,8 @@ const styles = StyleSheet.create({
   },
   tabListContainer: {
     width: 260,
+    flexShrink: 0,
+    zIndex: 10,
     height: '100%',
     padding: Spacing.four,
     borderRightWidth: 1.5,
