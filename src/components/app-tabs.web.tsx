@@ -62,6 +62,9 @@ export default function AppTabs() {
               <TabTrigger name="crypto" href="/crypto" asChild>
                 <TabButton icon="key-outline">{t('common.crypto')}</TabButton>
               </TabTrigger>
+              <TabTrigger name="profile" href="/profile" asChild>
+                <TabButton icon="person-outline">Profil</TabButton>
+              </TabTrigger>
             </CustomTabList>
           </TabList>
           <TabSlot style={styles.tabSlot} />
@@ -87,6 +90,9 @@ export default function AppTabs() {
           </TabTrigger>
           <TabTrigger name="crypto" href="/crypto" asChild>
             <MobileTabButton icon="key-outline">{t('common.crypto')}</MobileTabButton>
+          </TabTrigger>
+          <TabTrigger name="profile" href="/profile" asChild>
+            <MobileTabButton icon="person-outline">Profil</MobileTabButton>
           </TabTrigger>
         </MobileTabList>
       </TabList>
@@ -226,12 +232,13 @@ export function CustomTabList(props: TabListProps) {
 
         {/* Profile Link at the Bottom */}
         <TouchableOpacity
-          onPress={() => router.push('/settings')}
+          onPress={() => router.push('/profile')}
           style={[
             styles.profileButton, 
             isCollapsed && styles.profileButtonCollapsed, 
             { borderTopColor: theme.border }
           ]}
+          id="sidebar-profile-btn"
         >
           <View style={[styles.profileAvatar, { backgroundColor: theme.primary }]}>
             <ThemedText type="code" style={styles.avatarText}>
@@ -243,7 +250,7 @@ export function CustomTabList(props: TabListProps) {
               <View style={styles.profileTextWrapper}>
                 <ThemedText type="smallBold" numberOfLines={1}>{userName}</ThemedText>
                 <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
-                  {t('settings.settingsTitle')}
+                  Profil & Keamanan
                 </ThemedText>
               </View>
               <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />

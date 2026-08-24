@@ -470,7 +470,7 @@ export default function WithdrawScreen() {
           onClose={() => setIsPinModalVisible(false)}
           onSuccess={executeConfirmWithdraw}
           title="PIN Penarikan Rekening"
-          subtitle={`Konfirmasi penarikan Rp ${parseFloat(amount || '0').toLocaleString('id-ID')} ke ${selectedBank?.name || ''} (${accountNumber})`}
+          subtitle={`Konfirmasi penarikan Rp ${parseFloat(amount || '0').toLocaleString('id-ID')} ke ${SUPPORTED_CHANNELS.find((b: any) => b.code === bankCode)?.name || bankCode.toUpperCase()} (${accountNumber})`}
         />
       </SafeAreaView>
     </ThemedView>

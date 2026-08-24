@@ -181,6 +181,11 @@ export const api = {
         body: JSON.stringify(payload),
       });
     },
+    async getMe() {
+      return request('/auth/me', {
+        method: 'GET',
+      });
+    },
   },
 
   wallet: {
@@ -264,6 +269,17 @@ export const api = {
       amount: number;
     }) {
       return request('/crypto/withdraw', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    },
+    async simulateCryptoDeposit(payload: {
+      asset_symbol: string;
+      amount: number;
+      tx_hash?: string;
+      notes?: string;
+    }) {
+      return request('/crypto/simulate-deposit', {
         method: 'POST',
         body: JSON.stringify(payload),
       });

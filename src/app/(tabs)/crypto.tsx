@@ -382,7 +382,6 @@ export default function CryptoScreen() {
                           onPress={handleScanQr}
                           style={[styles.inputActionIcon, { backgroundColor: theme.primary + '15' }]}
                           id="crypto-scan-qr-btn"
-                          title="Scan QR Code"
                         >
                           <Ionicons name="qr-code-outline" size={18} color={theme.primary} />
                         </TouchableOpacity>
@@ -391,7 +390,6 @@ export default function CryptoScreen() {
                           onPress={handlePasteAddress}
                           style={styles.inputActionIcon}
                           id="crypto-paste-addr-btn"
-                          title="Paste Clipboard"
                         >
                           <Ionicons name="clipboard-outline" size={18} color={theme.textSecondary} />
                         </TouchableOpacity>
