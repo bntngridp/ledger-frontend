@@ -148,13 +148,13 @@ export default function TransferScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton} id="transfer-back-btn">
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
           <ThemedText type="smallBold" style={styles.headerTitle}>
             {t('transfer.sendTitle')}
           </ThemedText>
-          <View style={{ width: 32 }} />
+          <View style={styles.headerRightPlaceholder} />
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -323,12 +323,11 @@ export default function TransferScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
   },
   safeArea: {
     flex: 1,
     maxWidth: MaxContentWidth,
+    alignSelf: 'center',
     width: '100%',
   },
   header: {
@@ -339,15 +338,23 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
   },
   backButton: {
-    padding: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
+    textAlign: 'center',
+  },
+  headerRightPlaceholder: {
+    width: 36,
   },
   scrollContent: {
     paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.five,
+    paddingBottom: Spacing.six,
   },
   assetSection: {
     marginVertical: Spacing.two,

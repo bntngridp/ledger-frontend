@@ -166,21 +166,21 @@ export default function ChangePasswordScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea}>
         {/* Header Bar */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
+          <TouchableOpacity onPress={handleBack} style={styles.backBtn} id="change-pw-back-btn">
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
           <ThemedText type="smallBold" style={styles.headerTitle}>
             {t('auth.changePasswordTitle')}
           </ThemedText>
-          <View style={{ width: 32 }} />
+          <View style={styles.headerRightPlaceholder} />
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.cardWrapper}>
-            <Card style={{ backgroundColor: theme.backgroundElement, padding: Spacing.four }}>
+            <Card style={styles.cardBox} bordered>
               {/* Header Icon & Title */}
               <View style={styles.cardHeader}>
                 <View style={[styles.iconCircle, { backgroundColor: theme.primary + '18' }]}>
@@ -351,6 +351,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  safeArea: {
+    flex: 1,
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+    width: '100%',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -359,21 +365,31 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
   },
   backBtn: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  headerRightPlaceholder: {
+    width: 36,
   },
   scrollContent: {
-    padding: Spacing.four,
+    paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.six,
     alignItems: 'center',
   },
   cardWrapper: {
     width: '100%',
-    maxWidth: MaxContentWidth,
+  },
+  cardBox: {
+    padding: Spacing.five,
+    borderRadius: 20,
   },
   cardHeader: {
     alignItems: 'center',

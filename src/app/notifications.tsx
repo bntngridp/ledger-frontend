@@ -209,9 +209,9 @@ export default function NotificationsScreen() {
     <ThemedView style={styles.root}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* Header */}
-        <View style={[styles.header, { borderBottomColor: theme.border }]}>
+        <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} style={styles.backBtn} id="notif-back-btn">
-            <Ionicons name="arrow-back" size={22} color={theme.text} />
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <ThemedText type="smallBold" style={styles.headerTitle}>
@@ -225,7 +225,7 @@ export default function NotificationsScreen() {
               </View>
             )}
           </View>
-          {unreadCount > 0 && (
+          {unreadCount > 0 ? (
             <TouchableOpacity
               onPress={handleMarkAllAsRead}
               disabled={markingAll}
@@ -240,6 +240,8 @@ export default function NotificationsScreen() {
                 </ThemedText>
               )}
             </TouchableOpacity>
+          ) : (
+            <View style={styles.headerRightPlaceholder} />
           )}
         </View>
 
@@ -389,28 +391,40 @@ export default function NotificationsScreen() {
 // ─── Styles ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  safeArea: { flex: 1 },
+  safeArea: {
+    flex: 1,
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+    width: '100%',
+  },
 
   // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: Spacing.four,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingVertical: Spacing.three,
   },
   backBtn: {
-    padding: 4,
-    marginRight: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerCenter: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  headerRightPlaceholder: {
+    width: 36,
   },
   badge: {
     borderRadius: 10,

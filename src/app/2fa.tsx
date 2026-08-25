@@ -196,13 +196,13 @@ export default function TwoFactorScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton} id="twofa-back-btn">
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
           <ThemedText type="smallBold" style={styles.headerTitle}>
             {t('twofa.title')}
           </ThemedText>
-          <View style={{ width: 32 }} />
+          <View style={styles.headerRightPlaceholder} />
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -280,90 +280,92 @@ export default function TwoFactorScreen() {
               </ThemedText>
             </View>
           ) : (
-            <View style={styles.body}>
-              <ThemedText style={[styles.instruction, { color: theme.textSecondary }]}>
-                {t('twofa.scanQr')}
-              </ThemedText>
-
-              {/* QR Code Container */}
-              <View style={[styles.qrContainer, { borderColor: theme.border, backgroundColor: '#ffffff' }]}>
-                {qrCodeUrl ? (
-                  <QRCode value={qrCodeUrl} size={160} />
-                ) : (
-                  <Ionicons name="qr-code-outline" size={160} color="#000000" />
-                )}
-              </View>
-
-              {/* Secret Key Box */}
-              <View style={styles.secretSection}>
-                <ThemedText type="code" style={[styles.sectionLabel, { color: theme.textSecondary }]}>
-                  {t('twofa.secretKey')}
+            <Card style={styles.cardBox} bordered>
+              <View style={styles.body}>
+                <ThemedText style={[styles.instruction, { color: theme.textSecondary }]}>
+                  {t('twofa.scanQr')}
                 </ThemedText>
-                <View style={[styles.secretRow, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-                  <ThemedText type="code" style={styles.secretText}>
-                    {secret}
+
+                {/* QR Code Container */}
+                <View style={[styles.qrContainer, { borderColor: theme.border, backgroundColor: '#ffffff' }]}>
+                  {qrCodeUrl ? (
+                    <QRCode value={qrCodeUrl} size={160} />
+                  ) : (
+                    <Ionicons name="qr-code-outline" size={160} color="#000000" />
+                  )}
+                </View>
+
+                {/* Secret Key Box */}
+                <View style={styles.secretSection}>
+                  <ThemedText type="code" style={[styles.sectionLabel, { color: theme.textSecondary }]}>
+                    {t('twofa.secretKey')}
                   </ThemedText>
-                  <TouchableOpacity onPress={handleCopySecret} style={styles.copyBtn}>
-                    <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={theme.primary} />
-                  </TouchableOpacity>
+                  <View style={[styles.secretRow, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                    <ThemedText type="code" numberOfLines={1} ellipsizeMode="middle" style={styles.secretText}>
+                      {secret}
+                    </ThemedText>
+                    <TouchableOpacity onPress={handleCopySecret} style={styles.copyBtn} id="twofa-copy-secret-btn">
+                      <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={theme.primary} />
+                    </TouchableOpacity>
+                  </View>
+                  <ThemedText type="small" style={[styles.secretHint, { color: theme.textSecondary }]}>
+                    {t('twofa.manualKeyHint')}
+                  </ThemedText>
                 </View>
-                <ThemedText type="small" style={[styles.secretHint, { color: theme.textSecondary }]}>
-                  {t('twofa.manualKeyHint')}
-                </ThemedText>
-              </View>
 
-              {/* Verification Code Box */}
-              <View style={styles.verificationSection}>
-                <ThemedText type="smallBold" style={[styles.otpLabel, { color: theme.textSecondary }]}>
-                  {t('twofa.enterCode')}
-                </ThemedText>
-                <ThemedText type="small" style={[styles.otpDesc, { color: theme.textSecondary }]}>
-                  {t('twofa.codeHint')}
-                </ThemedText>
+                {/* Verification Code Box */}
+                <View style={styles.verificationSection}>
+                  <ThemedText type="smallBold" style={[styles.otpLabel, { color: theme.textSecondary }]}>
+                    {t('twofa.enterCode')}
+                  </ThemedText>
+                  <ThemedText type="small" style={[styles.otpDesc, { color: theme.textSecondary }]}>
+                    {t('twofa.codeHint')}
+                  </ThemedText>
 
-                {/* 6 box digit input */}
-                <View style={styles.otpInputRow}>
-                  {otp.map((digit, idx) => (
-                    <TextInput
-                      key={idx}
-                      ref={(ref) => {
-                        inputRefs.current[idx] = ref;
-                      }}
-                      style={[
-                        styles.otpBox,
-                        {
-                          backgroundColor: theme.backgroundElement,
-                          borderColor: digit ? theme.primary : theme.border,
-                          color: theme.text,
-                        },
-                      ]}
-                      value={digit}
-                      onChangeText={(text) => handleOtpChange(text, idx)}
-                      onKeyPress={(e) => handleKeyPress(e, idx)}
-                      keyboardType="numeric"
-                      maxLength={6}
-                      selectTextOnFocus
-                      textAlign="center"
-                    />
-                  ))}
+                  {/* 6 box digit input */}
+                  <View style={styles.otpInputRow}>
+                    {otp.map((digit, idx) => (
+                      <TextInput
+                        key={idx}
+                        ref={(ref) => {
+                          inputRefs.current[idx] = ref;
+                        }}
+                        style={[
+                          styles.otpBox,
+                          {
+                            backgroundColor: theme.background,
+                            borderColor: digit ? theme.primary : theme.border,
+                            color: theme.text,
+                          },
+                        ]}
+                        value={digit}
+                        onChangeText={(text) => handleOtpChange(text, idx)}
+                        onKeyPress={(e) => handleKeyPress(e, idx)}
+                        keyboardType="numeric"
+                        maxLength={6}
+                        selectTextOnFocus
+                        textAlign="center"
+                      />
+                    ))}
+                  </View>
                 </View>
+
+                {error ? (
+                  <ThemedText style={{ color: theme.danger, marginBottom: Spacing.two, fontWeight: '500' }}>
+                    {error}
+                  </ThemedText>
+                ) : null}
+
+                <Button
+                  title={t('twofa.verifyBtn')}
+                  variant="primary"
+                  disabled={!isOtpComplete}
+                  loading={loading}
+                  onPress={handleVerify2FA}
+                  style={styles.submitBtn}
+                />
               </View>
-
-              {error ? (
-                <ThemedText style={{ color: theme.danger, marginBottom: Spacing.two, fontWeight: '500' }}>
-                  {error}
-                </ThemedText>
-              ) : null}
-
-              <Button
-                title={t('twofa.verifyBtn')}
-                variant="primary"
-                disabled={!isOtpComplete}
-                loading={loading}
-                onPress={handleVerify2FA}
-                style={styles.submitBtn}
-              />
-            </View>
+            </Card>
           )}
         </ScrollView>
       </SafeAreaView>
@@ -374,12 +376,11 @@ export default function TwoFactorScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
   },
   safeArea: {
     flex: 1,
     maxWidth: MaxContentWidth,
+    alignSelf: 'center',
     width: '100%',
   },
   header: {
@@ -390,15 +391,28 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.three,
   },
   backButton: {
-    padding: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
+    textAlign: 'center',
+  },
+  headerRightPlaceholder: {
+    width: 36,
   },
   scrollContent: {
     paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.five,
+    paddingBottom: Spacing.six,
+  },
+  cardBox: {
+    padding: Spacing.five,
+    borderRadius: 20,
+    width: '100%',
   },
   body: {
     alignItems: 'center',
@@ -433,19 +447,23 @@ const styles = StyleSheet.create({
   secretRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 52,
+    justifyContent: 'space-between',
+    minHeight: 48,
     borderRadius: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderWidth: 1.5,
+    gap: 8,
   },
   secretText: {
     flex: 1,
-    fontSize: 16,
-    letterSpacing: 2,
+    minWidth: 0,
+    fontSize: 11,
+    letterSpacing: 0,
     fontWeight: '700',
   },
   copyBtn: {
-    padding: 4,
+    padding: 6,
   },
   secretHint: {
     fontSize: 12,

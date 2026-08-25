@@ -433,12 +433,11 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
   },
   safeArea: {
     flex: 1,
     maxWidth: MaxContentWidth,
+    alignSelf: 'center',
     width: '100%',
   },
   header: {
@@ -446,13 +445,15 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   backButton: {
-    alignSelf: 'flex-start',
-    padding: 8,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
     paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.five,
+    paddingBottom: Spacing.six,
   },
   formContainer: {
     marginTop: Spacing.three,
