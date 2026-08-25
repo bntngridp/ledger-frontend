@@ -43,12 +43,13 @@ test.describe('Two Accounts End-to-End Deposit & Transfer/Withdraw Simulation', 
     });
 
     // 4. Deposit 200 USDT to User 1
+    const randTxHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
     await request.post('http://localhost:7070/api/v1/crypto/simulate-deposit', {
       headers: { Authorization: `Bearer ${user1Token}` },
       data: {
         asset_symbol: 'USDT',
         amount: 200,
-        tx_hash: '0x' + Array.from({ length: 64 }, () => '1').join(''),
+        tx_hash: randTxHash,
         notes: 'Deposit to user 1',
       },
     });
@@ -110,6 +111,18 @@ test.describe('Two Accounts End-to-End Deposit & Transfer/Withdraw Simulation', 
     await doneBtn.click();
     await page.waitForTimeout(500);
 
-    console.log('✅ PASS: User 1 successfully sent crypto to User 2 address!');
+    // Verify User 2 now receives the 50 USDT balance on UI
+    await page.evaluate((tok) => {
+      localStorage.setItem('auth_token', tok);
+    }, user2Token);
+    await page.goto('/crypto');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
+
+    // Verify User 2 sees 50.00 USDT
+    const user2BalanceText = page.getByText('Saldo: 50.00 USDT');
+    await expect(user2BalanceText).toBeVisible({ timeout: 5000 });
+
+    console.log('✅ PASS: User 1 sent 50 USDT and User 2 received 50.00 USDT instantly!');
   });
 });
