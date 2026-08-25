@@ -5,9 +5,12 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -20,10 +23,15 @@ import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
 import { PinVerificationModal } from '@/components/ui/pin-modal';
+import {
+  TransactionResultModal,
+  TransactionResultDetails,
+} from '@/components/ui/transaction-result-modal';
 
 export default function SwapScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
+  const router = useRouter();
 
   // Swap states
   const [fromAsset, setFromAsset] = useState('IDR');
@@ -41,26 +49,25 @@ export default function SwapScreen() {
     USDC: 0,
   });
 
-  const swapFeePercentage = 0.005; // 0.5%
+  const swapFeePercentage = 0.005; // 0.5% platform fee
 
-  // Modal Review & Asset Selection states
+  // Modal Review, PIN, & Asset Selection states
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showAssetModal, setShowAssetModal] = useState<'from' | 'to' | null>(null);
+  const [isPinModalVisible, setIsPinModalVisible] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
-  const [swapSuccess, setSwapSuccess] = useState(false);
+  const [resultModalData, setResultModalData] = useState<TransactionResultDetails | null>(null);
 
   const availableAssets = ['IDR', 'USDT', 'USDC'];
 
   const handleSelectAsset = (asset: string) => {
     if (showAssetModal === 'from') {
       if (asset === toAsset) {
-        // Swap them if user picks the asset that is currently 'to'
         setToAsset(fromAsset);
       }
       setFromAsset(asset);
     } else if (showAssetModal === 'to') {
       if (asset === fromAsset) {
-        // Swap them if user picks the asset that is currently 'from'
         setFromAsset(toAsset);
       }
       setToAsset(asset);
@@ -95,45 +102,41 @@ export default function SwapScreen() {
     try {
       const response = await api.wallet.getExchangeRate(fromAsset, toAsset);
       if (response.status === 'success' && response.data) {
-        // Handle rate payload from backend
-        // In backend, exchange_rate response typically has rate in data.rate or data.exchange_rate
         const liveRate = parseFloat(response.data.rate || response.data.exchange_rate || 1);
         setRate(liveRate);
       } else {
-        setError(response.message || 'Failed to fetch exchange rate');
+        setError(response.message || 'Gagal memuat kurs nilai tukar');
       }
     } catch (err: any) {
-      setError(err.message || 'Error fetching rate');
+      setError(err.message || 'Terjadi kesalahan saat memuat kurs');
     } finally {
       setLoadingRate(false);
     }
   };
 
   useEffect(() => {
-    (async () => {
-      await loadBalances();
-    })();
+    loadBalances();
   }, []);
 
   useEffect(() => {
-    (async () => {
-      await fetchRate();
-    })();
+    fetchRate();
   }, [fromAsset, toAsset]);
 
-  // Live calculation effect - Intentionally updating derived state based on dependencies
+  // Live calculation effect for destination amount after 0.5% fee
   useEffect(() => {
     const val = parseFloat(fromAmount);
     if (isNaN(val) || val <= 0 || loadingRate) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setToAmount('');
       return;
     }
 
-    // Apply fee deduction on output amount
     const calculated = val * rate;
     const netAmount = calculated * (1 - swapFeePercentage);
-    setToAmount(netAmount.toFixed(toAsset === 'IDR' ? 2 : 6));
+    if (toAsset === 'IDR') {
+      setToAmount(netAmount.toFixed(2));
+    } else {
+      setToAmount(netAmount.toFixed(6));
+    }
   }, [fromAmount, rate, loadingRate, toAsset]);
 
   const handleFlip = () => {
@@ -144,16 +147,24 @@ export default function SwapScreen() {
     setToAmount('');
   };
 
+  const handleApplyPercentage = (pct: number) => {
+    const currentBal = balances[fromAsset] || 0;
+    if (currentBal <= 0) return;
+    const computed = currentBal * pct;
+    if (fromAsset === 'IDR') {
+      setFromAmount(Math.floor(computed).toString());
+    } else {
+      setFromAmount(computed.toFixed(4));
+    }
+  };
+
   const handleInitiateSwap = () => {
     if (!fromAmount || parseFloat(fromAmount) <= 0) return;
     setError('');
     setShowReviewModal(true);
   };
 
-  // PIN Verification State
-  const [isPinModalVisible, setIsPinModalVisible] = useState(false);
-
-  const handleConfirmSwap = () => {
+  const handleProceedToPin = () => {
     setShowReviewModal(false);
     setIsPinModalVisible(true);
   };
@@ -172,34 +183,62 @@ export default function SwapScreen() {
       });
 
       if (response.status === 'success') {
-        setSwapSuccess(true);
-        await loadBalances(); // Refresh balances
-        setTimeout(() => {
-          setSwapSuccess(false);
-          setShowReviewModal(false);
-          setFromAmount('');
-          setToAmount('');
-        }, 2000);
+        await loadBalances();
+        const txId = response.data?.transaction_id || `SWAP-${Date.now().toString().slice(-6)}`;
+        setResultModalData({
+          title: 'Penukaran Aset Berhasil!',
+          type: 'swap',
+          status: 'success',
+          amount: `${toAmount}`,
+          asset: toAsset,
+          recipientOrAddress: `Saldo Dompet ${toAsset}`,
+          txHash: txId,
+          notes: `Tukar ${parseFloat(fromAmount).toLocaleString('id-ID')} ${fromAsset} ke ${toAmount} ${toAsset} (Biaya: 0.5%)`,
+          timestamp: new Date().toLocaleString('id-ID'),
+        });
+        setFromAmount('');
+        setToAmount('');
       } else {
-        setIsSwapping(false);
-        setError(response.message || 'Swap transaction failed');
+        setResultModalData({
+          title: 'Penukaran Aset Gagal',
+          type: 'swap',
+          status: 'failed',
+          errorMessage: response.message || 'Transaksi penukaran gagal diproses.',
+          notes: `Gagal menukar ${fromAmount} ${fromAsset} ke ${toAsset}`,
+        });
       }
     } catch (err: any) {
+      setResultModalData({
+        title: 'Penukaran Aset Gagal',
+        type: 'swap',
+        status: 'failed',
+        errorMessage: err.message || 'Terjadi kesalahan sistem saat melakukan swap.',
+        notes: `Gagal menukar ${fromAmount} ${fromAsset} ke ${toAsset}`,
+      });
+    } finally {
       setIsSwapping(false);
-      setError(err.message || 'An error occurred during swap');
     }
   };
 
   // Verification checks
-  const isInsufficient = parseFloat(fromAmount) > balances[fromAsset];
-  const canSwap = fromAmount && parseFloat(fromAmount) > 0 && !isInsufficient && !loadingRate;
+  const isInsufficient = parseFloat(fromAmount) > (balances[fromAsset] || 0);
+  const canSwap =
+    Boolean(fromAmount) &&
+    parseFloat(fromAmount) > 0 &&
+    !isInsufficient &&
+    !loadingRate &&
+    !isSwapping;
+
+  const feeAmount = fromAmount
+    ? (parseFloat(fromAmount) * swapFeePercentage).toFixed(fromAsset === 'IDR' ? 2 : 4)
+    : '0';
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <ThemedText type="subtitle" style={styles.title}>
-            {t('swap.swapTitle')}
+            {t('swap.swapTitle') || 'Tukar Aset (Swap)'}
           </ThemedText>
         </View>
 
@@ -210,7 +249,7 @@ export default function SwapScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="stats-chart" size={16} color={theme.primary} />
                 <ThemedText type="smallBold" style={{ marginLeft: 6 }}>
-                  {t('swap.liveRates')}
+                  {t('swap.liveRates') || 'Kurs Real-Time'}
                 </ThemedText>
               </View>
               <View style={[styles.liveBadge, { backgroundColor: theme.success + '1A' }]}>
@@ -220,10 +259,12 @@ export default function SwapScreen() {
             </View>
             <View style={styles.rateGrid}>
               <View>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('swap.currentRate')}</ThemedText>
-                <ThemedText type="smallBold">
+                <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                  {t('swap.currentRate') || 'Nilai Tukar Saat Ini'}
+                </ThemedText>
+                <ThemedText type="smallBold" style={{ marginTop: 2 }}>
                   {loadingRate
-                    ? t('swap.loadingRate')
+                    ? (t('swap.loadingRate') || 'Memuat kurs...')
                     : rate < 0.01
                     ? `1 ${fromAsset} = ${rate.toFixed(6)} ${toAsset} (1 ${toAsset} ≈ Rp ${(1 / rate).toLocaleString('id-ID', { maximumFractionDigits: 0 })})`
                     : `1 ${fromAsset} = ${rate.toLocaleString('id-ID', { maximumFractionDigits: 4 })} ${toAsset}`}
@@ -238,10 +279,10 @@ export default function SwapScreen() {
             <Card style={styles.calcCard} bordered>
               <View style={styles.cardHeader}>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  {t('swap.payFrom')}
+                  {t('swap.payFrom') || 'Bayar Dari'}
                 </ThemedText>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  {t('swap.balance')}: {balances[fromAsset]?.toLocaleString('id-ID')} {fromAsset}
+                  {t('swap.balance') || 'Saldo'}: {balances[fromAsset]?.toLocaleString('id-ID')} {fromAsset}
                 </ThemedText>
               </View>
               <View style={styles.inputRow}>
@@ -252,6 +293,7 @@ export default function SwapScreen() {
                   keyboardType="numeric"
                   containerStyle={{ flex: 1, marginBottom: 0 }}
                   style={styles.amountInput}
+                  id="swap-from-amount-input"
                 />
                 <TouchableOpacity
                   onPress={() => setShowAssetModal('from')}
@@ -263,6 +305,28 @@ export default function SwapScreen() {
                   <Ionicons name="chevron-down" size={16} color={theme.textSecondary} style={{ marginLeft: 4 }} />
                 </TouchableOpacity>
               </View>
+
+              {/* Quick Percentages */}
+              <View style={styles.percentRow}>
+                {[0.25, 0.5, 0.75, 1].map((pct, idx) => {
+                  const label = pct === 1 ? 'MAX' : `${pct * 100}%`;
+                  return (
+                    <TouchableOpacity
+                      key={label}
+                      onPress={() => handleApplyPercentage(pct)}
+                      style={[
+                        styles.percentChip,
+                        { backgroundColor: theme.backgroundSelected, borderColor: theme.border },
+                      ]}
+                      id={`swap-chip-${pct === 1 ? '100' : pct * 100}`}
+                    >
+                      <ThemedText type="small" style={{ fontSize: 11, fontWeight: '700', color: theme.primary }}>
+                        {label}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </Card>
 
             {/* FLIP BUTTON */}
@@ -270,6 +334,8 @@ export default function SwapScreen() {
               <TouchableOpacity
                 onPress={handleFlip}
                 style={[styles.flipBtn, { backgroundColor: theme.primary }]}
+                id="swap-flip-btn"
+                accessibilityLabel="Tukar Arah Equity"
               >
                 <Ionicons name="swap-vertical" size={24} color="#ffffff" />
               </TouchableOpacity>
@@ -279,10 +345,10 @@ export default function SwapScreen() {
             <Card style={styles.calcCard} bordered>
               <View style={styles.cardHeader}>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  {t('swap.receiveTo')}
+                  {t('swap.receiveTo') || 'Terima Ke'}
                 </ThemedText>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  {t('swap.balance')}: {balances[toAsset]?.toLocaleString('id-ID')} {toAsset}
+                  {t('swap.balance') || 'Saldo'}: {balances[toAsset]?.toLocaleString('id-ID')} {toAsset}
                 </ThemedText>
               </View>
               <View style={styles.inputRow}>
@@ -292,6 +358,7 @@ export default function SwapScreen() {
                   editable={false}
                   containerStyle={{ flex: 1, marginBottom: 0 }}
                   style={styles.amountInput}
+                  id="swap-to-amount-input"
                 />
                 <TouchableOpacity
                   onPress={() => setShowAssetModal('to')}
@@ -310,10 +377,10 @@ export default function SwapScreen() {
               <View style={styles.feeBreakdown}>
                 <View style={styles.feeRow}>
                   <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                    {t('swap.swapFee')}
+                    {t('swap.swapFee') || 'Biaya Penukaran (0.5%)'}
                   </ThemedText>
                   <ThemedText type="code">
-                    {(parseFloat(fromAmount) * swapFeePercentage).toFixed(4)} {fromAsset}
+                    {feeAmount} {fromAsset}
                   </ThemedText>
                 </View>
               </View>
@@ -321,7 +388,7 @@ export default function SwapScreen() {
 
             {isInsufficient && (
               <ThemedText style={[styles.errorText, { color: theme.danger }]}>
-                {t('swap.insufficientBalance')}
+                {t('swap.insufficientBalance') || 'Saldo tidak mencukupi untuk penukaran ini.'}
               </ThemedText>
             )}
 
@@ -332,98 +399,174 @@ export default function SwapScreen() {
             ) : null}
 
             <Button
-              title={t('swap.performSwap')}
+              title={t('swap.performSwap') || 'Tukar Sekarang'}
               variant="primary"
               disabled={!canSwap}
               onPress={handleInitiateSwap}
               style={styles.actionBtn}
+              id="swap-submit-btn"
             />
           </View>
         </ScrollView>
 
-        {/* Swap Review Modal / Bottom Sheet */}
-        <Modal visible={showReviewModal} transparent animationType="slide">
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
-              {!swapSuccess ? (
-                <>
-                  <ThemedText type="subtitle" style={styles.modalTitle}>
-                    {t('swap.confirmSwap')}
-                  </ThemedText>
-                  <ThemedText style={[styles.modalDesc, { color: theme.textSecondary }]}>
-                    {t('swap.reviewDetails')}
-                  </ThemedText>
-
-                  <Card style={[styles.summaryCard, { backgroundColor: theme.background }]} bordered>
-                    <View style={styles.summaryItem}>
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('swap.youSell')}</ThemedText>
-                      <ThemedText type="smallBold">{fromAmount} {fromAsset}</ThemedText>
-                    </View>
-                    <View style={[styles.summaryDivider, { backgroundColor: theme.border }]} />
-                    <View style={styles.summaryItem}>
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('swap.youGet')}</ThemedText>
-                      <ThemedText type="smallBold" style={{ color: theme.success }}>
-                        {toAmount} {toAsset}
-                      </ThemedText>
-                    </View>
-                    <View style={styles.summaryItem}>
-                      <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('swap.exchangeRate')}</ThemedText>
-                      <ThemedText type="code">
-                        1 {fromAsset} = {rate.toLocaleString('id-ID', { maximumFractionDigits: 6 })} {toAsset}
-                      </ThemedText>
-                    </View>
-                  </Card>
-
-                  {error ? (
-                    <ThemedText style={{ color: theme.danger, marginBottom: Spacing.two, fontWeight: '500' }}>
-                      {error}
+        {/* 1. Swap Review Confirmation Modal */}
+        <Modal
+          visible={showReviewModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowReviewModal(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowReviewModal(false)}
+          >
+            <View
+              style={[styles.modalCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}
+              onStartShouldSetResponder={() => true}
+            >
+              {/* Header */}
+              <View style={styles.modalHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={[styles.headerIconCircle, { backgroundColor: theme.primary + '18' }]}>
+                    <Ionicons name="swap-horizontal" size={20} color={theme.primary} />
+                  </View>
+                  <View>
+                    <ThemedText type="subtitle" style={styles.modalTitle}>
+                      Konfirmasi Penukaran Aset
                     </ThemedText>
-                  ) : null}
+                    <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                      Periksa rincian konversi equity Anda
+                    </ThemedText>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setShowReviewModal(false)}
+                  id="swap-review-close-btn"
+                  accessibilityLabel="Tutup modal konfirmasi"
+                >
+                  <Ionicons name="close" size={22} color={theme.text} />
+                </TouchableOpacity>
+              </View>
 
-                  <View style={styles.modalButtons}>
-                    <Button
-                      title={t('common.cancel')}
-                      variant="ghost"
-                      onPress={() => setShowReviewModal(false)}
-                      style={{ flex: 1 }}
-                    />
-                    <Button
-                      title={t('swap.confirmSwap')}
-                      variant="primary"
-                      loading={isSwapping}
-                      onPress={handleConfirmSwap}
-                      style={{ flex: 1.5 }}
-                    />
+              {/* Conversion Flow Display */}
+              <View style={[styles.conversionFlowBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                {/* FROM BOX */}
+                <View style={styles.flowRow}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <AssetIcon symbol={fromAsset} size={28} />
+                    <View>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                        Bayar / Diberikan
+                      </ThemedText>
+                      <ThemedText type="smallBold" style={{ fontSize: 16 }}>
+                        {fromAmount} {fromAsset}
+                      </ThemedText>
+                    </View>
                   </View>
-                </>
-              ) : (
-                <View style={styles.successState}>
-                  <View style={[styles.successIconContainer, { backgroundColor: theme.success + '20' }]}>
-                    <Ionicons name="checkmark-circle" size={56} color={theme.success} />
+                  <View style={[styles.assetBadge, { backgroundColor: theme.backgroundSelected }]}>
+                    <ThemedText type="smallBold" style={{ fontSize: 12 }}>
+                      {fromAsset}
+                    </ThemedText>
                   </View>
-                  <ThemedText type="subtitle" style={{ marginTop: Spacing.three }}>
-                    {t('swap.swapSuccess')}
+                </View>
+
+                {/* FLOW ARROW & RATE PILL */}
+                <View style={styles.flowDividerWrapper}>
+                  <View style={[styles.flowLine, { backgroundColor: theme.border }]} />
+                  <View style={[styles.ratePill, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+                    <Ionicons name="arrow-down" size={14} color={theme.primary} />
+                    <ThemedText type="small" style={{ fontSize: 11, fontWeight: '700', color: theme.textSecondary }}>
+                      1 {fromAsset} ≈ {rate < 0.01 ? rate.toFixed(6) : rate.toLocaleString('id-ID', { maximumFractionDigits: 4 })} {toAsset}
+                    </ThemedText>
+                  </View>
+                  <View style={[styles.flowLine, { backgroundColor: theme.border }]} />
+                </View>
+
+                {/* TO BOX */}
+                <View style={styles.flowRow}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <AssetIcon symbol={toAsset} size={28} />
+                    <View>
+                      <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                        Terima / Didapatkan
+                      </ThemedText>
+                      <ThemedText type="smallBold" style={{ fontSize: 16, color: theme.success }}>
+                        +{toAmount} {toAsset}
+                      </ThemedText>
+                    </View>
+                  </View>
+                  <View style={[styles.assetBadge, { backgroundColor: theme.success + '18' }]}>
+                    <ThemedText type="smallBold" style={{ fontSize: 12, color: theme.success }}>
+                      {toAsset}
+                    </ThemedText>
+                  </View>
+                </View>
+              </View>
+
+              {/* Detailed Breakdown Card */}
+              <Card style={[styles.summaryCard, { backgroundColor: theme.background }]} bordered>
+                <View style={styles.summaryItem}>
+                  <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                    Kurs Nilai Tukar
                   </ThemedText>
-                  <ThemedText style={{ color: theme.textSecondary, marginTop: Spacing.one }}>
-                    {t('swap.swapSuccessDesc')}
+                  <ThemedText type="code" style={{ fontSize: 12 }}>
+                    1 {fromAsset} = {rate.toLocaleString('id-ID', { maximumFractionDigits: 6 })} {toAsset}
                   </ThemedText>
                 </View>
-              )}
+                <View style={[styles.summaryDivider, { backgroundColor: theme.border }]} />
+                <View style={styles.summaryItem}>
+                  <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                    Biaya Platform (0.5%)
+                  </ThemedText>
+                  <ThemedText type="smallBold" style={{ fontSize: 12 }}>
+                    {feeAmount} {fromAsset}
+                  </ThemedText>
+                </View>
+                <View style={[styles.summaryDivider, { backgroundColor: theme.border }]} />
+                <View style={styles.summaryItem}>
+                  <ThemedText type="small" style={{ color: theme.textSecondary }}>
+                    Kecepatan Eksekusi
+                  </ThemedText>
+                  <ThemedText type="smallBold" style={{ fontSize: 12, color: theme.primary }}>
+                    Instan (Internal Ledger)
+                  </ThemedText>
+                </View>
+              </Card>
+
+              {/* Action Buttons */}
+              <View style={styles.modalButtons}>
+                <Button
+                  title={t('common.cancel') || 'Batal'}
+                  variant="ghost"
+                  onPress={() => setShowReviewModal(false)}
+                  style={{ flex: 1 }}
+                  id="swap-review-cancel-btn"
+                />
+                <Button
+                  title="Konfirmasi & Lanjutkan"
+                  variant="primary"
+                  loading={isSwapping}
+                  onPress={handleProceedToPin}
+                  style={{ flex: 1.6 }}
+                  id="swap-review-confirm-btn"
+                />
+              </View>
             </View>
-          </View>
+          </TouchableOpacity>
         </Modal>
 
-        {/* Asset Selection Modal */}
+        {/* 2. Asset Selection Modal */}
         <Modal visible={showAssetModal !== null} transparent animationType="fade">
           <TouchableOpacity
             style={styles.modalOverlay}
             activeOpacity={1}
             onPress={() => setShowAssetModal(null)}
           >
-            <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement }]}>
+            <View style={[styles.modalCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <ThemedText type="smallBold" style={{ fontSize: 16 }}>
-                  {showAssetModal === 'from' ? t('swap.payFrom') : t('swap.receiveTo')}
+                  {showAssetModal === 'from' ? (t('swap.payFrom') || 'Pilih Aset Asal') : (t('swap.receiveTo') || 'Pilih Aset Tujuan')}
                 </ThemedText>
                 <TouchableOpacity onPress={() => setShowAssetModal(null)}>
                   <Ionicons name="close" size={22} color={theme.text} />
@@ -443,6 +586,7 @@ export default function SwapScreen() {
                         borderColor: isSelected ? theme.primary : theme.border,
                       },
                     ]}
+                    id={`swap-asset-option-${asset}`}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <AssetIcon symbol={asset} size={32} containerStyle={{ marginRight: 12 }} />
@@ -463,7 +607,7 @@ export default function SwapScreen() {
           </TouchableOpacity>
         </Modal>
 
-        {/* 6-Digit Transaction PIN Verification Modal */}
+        {/* 3. 6-Digit Transaction PIN & Biometric Verification Modal */}
         <PinVerificationModal
           visible={isPinModalVisible}
           onClose={() => setIsPinModalVisible(false)}
@@ -471,11 +615,21 @@ export default function SwapScreen() {
           title="PIN Konfirmasi Swap"
           subtitle={`Konfirmasi Tukar Aset ${fromAmount} ${fromAsset} ke ${toAmount} ${toAsset}`}
         />
+
+        {/* 4. Sleek Transaction Result Modal */}
+        <TransactionResultModal
+          visible={resultModalData !== null}
+          onClose={() => setResultModalData(null)}
+          result={resultModalData}
+          onViewHistory={() => {
+            setResultModalData(null);
+            router.push('/history');
+          }}
+        />
       </SafeAreaView>
     </ThemedView>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -555,6 +709,19 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
   },
+  percentRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+  },
+  percentChip: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
   assetSelector: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -599,42 +766,100 @@ const styles = StyleSheet.create({
     marginTop: Spacing.three,
   },
   modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    ...Platform.select({
+      web: {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+      } as any,
+      default: {
+        flex: 1,
+      },
+    }),
+    backgroundColor: 'rgba(0, 0, 0, 0.70)',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: Spacing.four,
-    paddingBottom: Spacing.five,
+    zIndex: 99999,
   },
-  assetItemRow: {
+  modalCard: {
+    width: '100%',
+    maxWidth: 440,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: Spacing.four,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+  modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    marginBottom: 10,
+    marginBottom: Spacing.three,
+  },
+  headerIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
-    marginBottom: 4,
   },
-  modalDesc: {
-    fontSize: 14,
-    marginBottom: Spacing.two,
+  conversionFlowBox: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: Spacing.three,
+    marginVertical: Spacing.two,
+  },
+  flowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  assetBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  flowDividerWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+    gap: 8,
+  },
+  flowLine: {
+    flex: 1,
+    height: 1,
+  },
+  ratePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
   },
   summaryCard: {
     padding: Spacing.three,
     marginVertical: Spacing.two,
+    borderRadius: 14,
   },
   summaryItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: Spacing.one,
+    alignItems: 'center',
+    paddingVertical: 3,
   },
   summaryDivider: {
     height: 1,
@@ -646,15 +871,13 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     marginTop: Spacing.three,
   },
-  successState: {
+  assetItemRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.five,
-  },
-  successIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 10,
   },
 });
