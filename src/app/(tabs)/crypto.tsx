@@ -7,7 +7,8 @@ import {
   Clipboard,
   ActivityIndicator,
   Alert,
-  Modal,
+  Platform,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +27,10 @@ import { api } from '@/services/api';
 import { OctopusLoader } from '@/components/ui/octopus-loader';
 import { QrScannerModal } from '@/components/qr-scanner-modal';
 import { PinVerificationModal } from '@/components/ui/pin-modal';
+import {
+  TransactionResultModal,
+  TransactionResultDetails,
+} from '@/components/ui/transaction-result-modal';
 
 export default function CryptoScreen() {
   const theme = useTheme();
@@ -45,12 +50,50 @@ export default function CryptoScreen() {
   const [recipientAddress, setRecipientAddress] = useState('');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
   // QR Scanner Modal State
   const [isQrModalVisible, setIsQrModalVisible] = useState(false);
   const [scannedToast, setScannedToast] = useState(false);
+
+  // Simulation state on Deposit
+  const [simAmount, setSimAmount] = useState<string>('50');
+  const [simulatingDeposit, setSimulatingDeposit] = useState<boolean>(false);
+
+  // Live Toast Notification
+  const [toastMessage, setToastMessage] = useState<{
+    title: string;
+    description: string;
+    type: 'success' | 'error' | 'info';
+  } | null>(null);
+  const [toastAnim] = useState(new Animated.Value(0));
+
+  const showNotificationToast = (
+    title: string,
+    description: string,
+    type: 'success' | 'error' | 'info' = 'success'
+  ) => {
+    setToastMessage({ title, description, type });
+    Animated.sequence([
+      Animated.timing(toastAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+      Animated.delay(3500),
+      Animated.timing(toastAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+    ]).start(() => {
+      setToastMessage(null);
+    });
+  };
+
+  // Transaction Result Modal State (for both Deposit & Withdraw animations)
+  const [txResult, setTxResult] = useState<TransactionResultDetails | null>(null);
+  const [isResultModalVisible, setIsResultModalVisible] = useState(false);
 
   const handleScanQr = () => {
     setIsQrModalVisible(true);
@@ -61,6 +104,11 @@ export default function CryptoScreen() {
     setIsQrModalVisible(false);
     setScannedToast(true);
     setTimeout(() => setScannedToast(false), 2500);
+    showNotificationToast(
+      'Alamat QR Terpindai',
+      `Berhasil mendeteksi alamat: ${scannedAddr.slice(0, 10)}...${scannedAddr.slice(-6)}`,
+      'info'
+    );
   };
 
   // Available balances
@@ -93,10 +141,10 @@ export default function CryptoScreen() {
       if (response.status === 'success' && response.data) {
         setDepositAddress(response.data.address || '');
       } else {
-        setError(response.message || 'Failed to fetch deposit address');
+        setError(response.message || 'Gagal memuat alamat setoran');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      setError(err.message || 'Terjadi kesalahan');
     } finally {
       setLoadingAddress(false);
     }
@@ -118,22 +166,105 @@ export default function CryptoScreen() {
 
   const handleCopyAddress = () => {
     if (depositAddress) {
-      Clipboard.setString(depositAddress);
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(depositAddress);
+      } else {
+        Clipboard.setString(depositAddress);
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      showNotificationToast(
+        'Alamat Disalin',
+        'Alamat setoran Polygon Amoy berhasil disalin ke papan klip.',
+        'info'
+      );
     }
   };
 
   const handlePasteAddress = async () => {
     try {
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          setRecipientAddress(text.trim());
+          return;
+        }
+      }
       const text = await Clipboard.getString();
       if (text) {
         setRecipientAddress(text.trim());
       } else {
-        Alert.alert('Info', 'Clipboard is empty');
+        Alert.alert('Info', 'Clipboard kosong');
       }
     } catch {
-      Alert.alert('Error', 'Failed to paste address');
+      Alert.alert('Error', 'Gagal menempelkan alamat dari clipboard');
+    }
+  };
+
+  // Deposit Simulation Handler
+  const handleSimulateDeposit = async (amtVal?: string) => {
+    const valStr = amtVal || simAmount;
+    const numAmt = parseFloat(valStr);
+    if (isNaN(numAmt) || numAmt <= 0) {
+      Alert.alert('Jumlah Tidak Valid', 'Masukkan jumlah setoran simulasi yang valid.');
+      return;
+    }
+
+    setSimulatingDeposit(true);
+    setError('');
+
+    // Random testnet tx hash
+    const fakeHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+
+    try {
+      const res = await api.wallet.simulateCryptoDeposit({
+        asset_symbol: selectedAsset,
+        amount: numAmt,
+        tx_hash: fakeHash,
+        notes: `Simulasi Setoran ${selectedAsset} Testnet`,
+      });
+
+      setSimulatingDeposit(false);
+
+      if (res.status === 'success') {
+        await loadBalances();
+        setTxResult({
+          title: 'Konfirmasi Setoran Crypto',
+          type: 'deposit',
+          status: 'success',
+          amount: numAmt.toFixed(2),
+          asset: selectedAsset,
+          recipientOrAddress: depositAddress,
+          txHash: fakeHash,
+        });
+        setIsResultModalVisible(true);
+        showNotificationToast(
+          'Setoran Berhasil Diterima',
+          `+${numAmt.toFixed(2)} ${selectedAsset} telah dikreditkan ke saldo dompet Anda!`,
+          'success'
+        );
+      } else {
+        setTxResult({
+          title: 'Setoran Gagal',
+          type: 'deposit',
+          status: 'failed',
+          amount: numAmt.toFixed(2),
+          asset: selectedAsset,
+          errorMessage: res.message || 'Gagal memproses simulasi setoran.',
+        });
+        setIsResultModalVisible(true);
+      }
+    } catch (err: any) {
+      setSimulatingDeposit(false);
+      setTxResult({
+        title: 'Setoran Gagal',
+        type: 'deposit',
+        status: 'failed',
+        amount: numAmt.toFixed(2),
+        asset: selectedAsset,
+        errorMessage: err?.message || 'Koneksi jaringan terputus saat memproses setoran.',
+      });
+      setIsResultModalVisible(true);
     }
   };
 
@@ -150,32 +281,73 @@ export default function CryptoScreen() {
     setIsPinModalVisible(false);
     const val = parseFloat(amount);
     if (!recipientAddress || isNaN(val) || val <= 0) return;
-    
+
     setLoading(true);
     setError('');
 
+    // Generate simulated tx hash
+    const withdrawHash = '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+
     try {
       const response = await api.wallet.withdrawCrypto({
-        asset: sendAsset,
-        recipient_address: recipientAddress,
+        asset_symbol: sendAsset,
+        network: 'polygon_amoy',
+        to_address: recipientAddress,
         amount: val,
+        notes: `Penarikan ${val} ${sendAsset}`,
       });
       setLoading(false);
 
-       if (response.status === 'success') {
-         setSuccess(true);
-         await loadBalances(); // Refresh balances
-         setTimeout(() => {
-           setSuccess(false);
-           setRecipientAddress('');
-           setAmount('');
-         }, 2000);
+      if (response.status === 'success') {
+        await loadBalances();
+        setTimeout(() => {
+          setTxResult({
+            title: 'Konfirmasi Penarikan Crypto',
+            type: 'withdraw',
+            status: 'success',
+            amount: val.toFixed(2),
+            asset: sendAsset,
+            recipientOrAddress: recipientAddress,
+            txHash: withdrawHash,
+          });
+          setIsResultModalVisible(true);
+        }, 150);
+
+        showNotificationToast(
+          'Penarikan Diproses',
+          `-${val.toFixed(2)} ${sendAsset} berhasil dikirim ke ${recipientAddress.slice(0, 8)}...`,
+          'success'
+        );
+        setRecipientAddress('');
+        setAmount('');
       } else {
-        setError(response.message || 'Crypto withdrawal failed');
+        setTimeout(() => {
+          setTxResult({
+            title: 'Penarikan Gagal',
+            type: 'withdraw',
+            status: 'failed',
+            amount: val.toFixed(2),
+            asset: sendAsset,
+            recipientOrAddress: recipientAddress,
+            errorMessage: response.message || 'Penarikan crypto gagal diproses oleh sistem.',
+          });
+          setIsResultModalVisible(true);
+        }, 150);
       }
     } catch (err: any) {
       setLoading(false);
-      setError(err.message || 'An error occurred');
+      setTimeout(() => {
+        setTxResult({
+          title: 'Penarikan Gagal',
+          type: 'withdraw',
+          status: 'failed',
+          amount: val.toFixed(2),
+          asset: sendAsset,
+          recipientOrAddress: recipientAddress,
+          errorMessage: err?.message || 'Terjadi kesalahan jaringan saat mengirim transaksi.',
+        });
+        setIsResultModalVisible(true);
+      }, 150);
     }
   };
 
@@ -186,6 +358,77 @@ export default function CryptoScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        {/* Floating Live Notification Toast */}
+        {toastMessage && (
+          <Animated.View
+            style={[
+              styles.floatingToast,
+              {
+                backgroundColor: theme.backgroundElement,
+                borderColor:
+                  toastMessage.type === 'success'
+                    ? theme.success
+                    : toastMessage.type === 'error'
+                    ? theme.danger
+                    : theme.primary,
+                opacity: toastAnim,
+                transform: [
+                  {
+                    translateY: toastAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-30, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.toastIconCircle,
+                {
+                  backgroundColor:
+                    (toastMessage.type === 'success'
+                      ? theme.success
+                      : toastMessage.type === 'error'
+                      ? theme.danger
+                      : theme.primary) + '20',
+                },
+              ]}
+            >
+              <Ionicons
+                name={
+                  toastMessage.type === 'success'
+                    ? 'checkmark-circle'
+                    : toastMessage.type === 'error'
+                    ? 'alert-circle'
+                    : 'information-circle'
+                }
+                size={18}
+                color={
+                  toastMessage.type === 'success'
+                    ? theme.success
+                    : toastMessage.type === 'error'
+                    ? theme.danger
+                    : theme.primary
+                }
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <ThemedText type="smallBold" style={{ fontSize: 12 }}>
+                {toastMessage.title}
+              </ThemedText>
+              <ThemedText
+                type="small"
+                style={{ color: theme.textSecondary, fontSize: 11, marginTop: 1 }}
+                numberOfLines={2}
+              >
+                {toastMessage.description}
+              </ThemedText>
+            </View>
+          </Animated.View>
+        )}
+
         <View style={styles.header}>
           <ThemedText type="subtitle" style={styles.title}>
             {t('crypto.cryptoTitle')}
@@ -199,6 +442,7 @@ export default function CryptoScreen() {
                 styles.subTab,
                 activeSubTab === 'receive' && { backgroundColor: theme.backgroundSelected },
               ]}
+              id="crypto-tab-receive-btn"
             >
               <ThemedText
                 type="smallBold"
@@ -213,6 +457,7 @@ export default function CryptoScreen() {
                 styles.subTab,
                 activeSubTab === 'send' && { backgroundColor: theme.backgroundSelected },
               ]}
+              id="crypto-tab-send-btn"
             >
               <ThemedText
                 type="smallBold"
@@ -246,15 +491,20 @@ export default function CryptoScreen() {
                       id={`crypto-deposit-asset-${asset.toLowerCase()}-btn`}
                     >
                       <AssetIcon symbol={asset} size={20} containerStyle={{ marginRight: 8 }} />
-                      <ThemedText
-                        style={{
-                          color: isSelected ? theme.primary : theme.textSecondary,
-                          fontWeight: '700',
-                          fontSize: 13,
-                        }}
-                      >
-                        {asset}
-                      </ThemedText>
+                      <View>
+                        <ThemedText
+                          style={{
+                            color: isSelected ? theme.primary : theme.textSecondary,
+                            fontWeight: '700',
+                            fontSize: 13,
+                          }}
+                        >
+                          {asset}
+                        </ThemedText>
+                        <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
+                          Saldo: {balances[asset as 'USDT' | 'USDC']?.toFixed(2)} {asset}
+                        </ThemedText>
+                      </View>
                     </TouchableOpacity>
                   );
                 })}
@@ -262,7 +512,12 @@ export default function CryptoScreen() {
 
               {/* QR Code Container */}
               <Card style={styles.qrCard} bordered>
-                <View style={[styles.networkBadge, { backgroundColor: theme.warning + '15', flexDirection: 'row', alignItems: 'center' }]}>
+                <View
+                  style={[
+                    styles.networkBadge,
+                    { backgroundColor: theme.warning + '15', borderColor: theme.warning + '40', borderWidth: 1 },
+                  ]}
+                >
                   <AssetIcon symbol="Polygon" size={16} containerStyle={{ marginRight: 6 }} />
                   <ThemedText type="code" style={{ color: theme.warning, fontWeight: '700' }}>
                     POLYGON AMOY TESTNET
@@ -281,7 +536,7 @@ export default function CryptoScreen() {
                 </View>
 
                 {depositAddress ? (
-                  <ThemedText type="code" style={styles.addressText}>
+                  <ThemedText type="code" style={styles.addressText} id="crypto-deposit-address-text">
                     {depositAddress.substring(0, 10)}...{depositAddress.substring(depositAddress.length - 8)}
                   </ThemedText>
                 ) : (
@@ -296,11 +551,84 @@ export default function CryptoScreen() {
                   disabled={!depositAddress || loadingAddress}
                   onPress={handleCopyAddress}
                   style={styles.copyBtn}
+                  id="crypto-copy-address-btn"
+                />
+              </Card>
+
+              {/* Simulation Faucet / Quick Deposit Card */}
+              <Card
+                bordered
+                style={[
+                  styles.simulationCard,
+                  { backgroundColor: theme.backgroundElement, borderColor: theme.primary + '40' },
+                ]}
+              >
+                <View style={styles.simCardHeader}>
+                  <View style={[styles.simIconBox, { backgroundColor: theme.primary + '18' }]}>
+                    <Ionicons name="flash" size={18} color={theme.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <ThemedText type="smallBold">Simulasi Setoran Testnet (Faucet)</ThemedText>
+                    <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 11, marginTop: 1 }}>
+                      Kreditkan saldo instan untuk menguji alur crypto & verifikasi
+                    </ThemedText>
+                  </View>
+                </View>
+
+                {/* Quick amount chips */}
+                <View style={styles.quickChipRow}>
+                  {['10', '50', '100', '250'].map((chip) => {
+                    const isSelected = simAmount === chip;
+                    return (
+                      <TouchableOpacity
+                        key={chip}
+                        onPress={() => setSimAmount(chip)}
+                        style={[
+                          styles.chipBtn,
+                          {
+                            backgroundColor: isSelected ? theme.primary + '20' : theme.background,
+                            borderColor: isSelected ? theme.primary : theme.border,
+                          },
+                        ]}
+                        id={`crypto-sim-chip-${chip}`}
+                      >
+                        <ThemedText
+                          type="code"
+                          style={{
+                            color: isSelected ? theme.primary : theme.text,
+                            fontWeight: isSelected ? '700' : '500',
+                            fontSize: 12,
+                          }}
+                        >
+                          +{chip} {selectedAsset}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <Button
+                  title={
+                    simulatingDeposit
+                      ? 'Memproses Simulasi...'
+                      : `Simulasikan Setoran +${simAmount} ${selectedAsset}`
+                  }
+                  variant="primary"
+                  loading={simulatingDeposit}
+                  onPress={() => handleSimulateDeposit()}
+                  style={{ marginTop: Spacing.two }}
+                  id="crypto-simulate-deposit-btn"
                 />
               </Card>
 
               {/* Warning card */}
-              <Card style={[styles.warningCard, { backgroundColor: theme.warning + '10', borderColor: theme.warning }]} bordered>
+              <Card
+                style={[
+                  styles.warningCard,
+                  { backgroundColor: theme.warning + '10', borderColor: theme.warning },
+                ]}
+                bordered
+              >
                 <Ionicons name="warning-outline" size={20} color={theme.warning} />
                 <ThemedText type="small" style={{ color: theme.warning, marginLeft: 8, flex: 1 }}>
                   {t('crypto.depositWarning')}
@@ -310,135 +638,141 @@ export default function CryptoScreen() {
           ) : (
             <View style={styles.tabContent}>
               <Card bordered style={{ padding: Spacing.four, borderRadius: 24 }}>
-                {success ? (
-                  <View style={{ alignItems: 'center', paddingVertical: Spacing.four }}>
-
-                    <Ionicons name="checkmark-circle-outline" size={64} color={theme.success} />
-                    <ThemedText type="subtitle" style={{ marginTop: Spacing.two }}>
-                      {t('crypto.sendSuccess')}
-                    </ThemedText>
-                    <ThemedText style={{ color: theme.textSecondary, textAlign: 'center', marginTop: 4 }}>
-                      {t('crypto.sendSuccessDesc')}
-                    </ThemedText>
-                  </View>
-                ) : (
-                  <>
-                    {/* Send Asset Selector */}
-                    <View style={styles.selectorRow}>
-                      {['USDT', 'USDC'].map((asset) => {
-                        const isSelected = sendAsset === asset;
-                        return (
-                          <TouchableOpacity
-                            key={asset}
-                            onPress={() => setSendAsset(asset as any)}
-                            style={[
-                              styles.selectorBadge,
-                              {
-                                backgroundColor: isSelected ? theme.primary + '15' : theme.backgroundElement,
-                                borderColor: isSelected ? theme.primary : theme.border,
-                                borderWidth: isSelected ? 2 : 1,
-                              },
-                            ]}
-                            id={`crypto-send-asset-${asset.toLowerCase()}-btn`}
+                {/* Send Asset Selector */}
+                <View style={styles.selectorRow}>
+                  {['USDT', 'USDC'].map((asset) => {
+                    const isSelected = sendAsset === asset;
+                    return (
+                      <TouchableOpacity
+                        key={asset}
+                        onPress={() => setSendAsset(asset as any)}
+                        style={[
+                          styles.selectorBadge,
+                          {
+                            backgroundColor: isSelected ? theme.primary + '15' : theme.backgroundElement,
+                            borderColor: isSelected ? theme.primary : theme.border,
+                            borderWidth: isSelected ? 2 : 1,
+                          },
+                        ]}
+                        id={`crypto-send-asset-${asset.toLowerCase()}-btn`}
+                      >
+                        <AssetIcon symbol={asset} size={20} containerStyle={{ marginRight: 8 }} />
+                        <View>
+                          <ThemedText
+                            style={{
+                              color: isSelected ? theme.primary : theme.textSecondary,
+                              fontWeight: '700',
+                              fontSize: 13,
+                            }}
                           >
-                            <AssetIcon symbol={asset} size={20} containerStyle={{ marginRight: 8 }} />
-                            <ThemedText
-                              style={{
-                                color: isSelected ? theme.primary : theme.textSecondary,
-                                fontWeight: '700',
-                                fontSize: 13,
-                              }}
-                            >
-                              {asset}
-                            </ThemedText>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
+                            {asset}
+                          </ThemedText>
+                          <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
+                            Tersedia: {balances[asset as 'USDT' | 'USDC']?.toFixed(2)} {asset}
+                          </ThemedText>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
 
-
-                  {/* Toast Feedback for Scanned Address */}
-                  {scannedToast && (
-                    <View style={[styles.scannedToast, { backgroundColor: theme.success + '20', borderColor: theme.success }]}>
-                      <Ionicons name="checkmark-circle" size={18} color={theme.success} />
-                      <ThemedText type="smallBold" style={{ color: theme.success, marginLeft: 6, fontSize: 12 }}>
-                        Alamat Wallet berhasil di-scan
-                      </ThemedText>
-                    </View>
-                  )}
-
-                  {/* Recipient Address with Dual Actions: Scan QR & Paste */}
-                  <Input
-                    label={t('crypto.recipientAddress')}
-                    placeholder={t('crypto.recipientPlaceholder')}
-                    value={recipientAddress}
-                    onChangeText={setRecipientAddress}
-                    error={isAddressInvalid ? t('crypto.invalidAddress') : undefined}
-                    iconLeft="wallet-outline"
-                    autoCapitalize="none"
-                    rightComponent={
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                        <TouchableOpacity
-                          onPress={handleScanQr}
-                          style={[styles.inputActionIcon, { backgroundColor: theme.primary + '15' }]}
-                          id="crypto-scan-qr-btn"
-                        >
-                          <Ionicons name="qr-code-outline" size={18} color={theme.primary} />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          onPress={handlePasteAddress}
-                          style={styles.inputActionIcon}
-                          id="crypto-paste-addr-btn"
-                        >
-                          <Ionicons name="clipboard-outline" size={18} color={theme.textSecondary} />
-                        </TouchableOpacity>
-                      </View>
-                    }
-                  />
-
-                  {/* Amount Input */}
-                  <View style={styles.amountWrapper}>
-                    <Input
-                      label={`${t('crypto.withdrawAmount')} (${sendAsset})`}
-                      placeholder="0.00"
-                      value={amount}
-                      onChangeText={(text) => setAmount(text.replace(/[^0-9.]/g, ''))}
-                      error={isAmountInvalid ? t('crypto.insufficientBalance') : undefined}
-                      keyboardType="numeric"
-                      iconLeft="logo-usd"
-                    />
-                    <TouchableOpacity
-                      style={[styles.maxBtn, { backgroundColor: theme.backgroundSelected }]}
-                      onPress={() => setAmount(balances[sendAsset].toString())}
-                    >
-                      <ThemedText type="code" style={{ fontWeight: '700' }}>MAX</ThemedText>
-                    </TouchableOpacity>
-                  </View>
-                  <ThemedText type="small" style={[styles.balanceHint, { color: theme.textSecondary }]}>
-                    {t('crypto.availableBalance')}: {balances[sendAsset]?.toLocaleString('id-ID')} {sendAsset}
-                  </ThemedText>
-
-                  {error ? (
-                    <ThemedText style={{ color: theme.danger, marginVertical: Spacing.two, fontWeight: '500', textAlign: 'center' }}>
-                      {error}
+                {/* Toast Feedback for Scanned Address */}
+                {scannedToast && (
+                  <View
+                    style={[
+                      styles.scannedToast,
+                      { backgroundColor: theme.success + '20', borderColor: theme.success },
+                    ]}
+                  >
+                    <Ionicons name="checkmark-circle" size={18} color={theme.success} />
+                    <ThemedText type="smallBold" style={{ color: theme.success, marginLeft: 6, fontSize: 12 }}>
+                      Alamat Wallet berhasil di-scan
                     </ThemedText>
-                  ) : null}
+                  </View>
+                )}
 
-                  <Button
-                    title={t('crypto.submitWithdrawal')}
-                    variant="primary"
-                    disabled={!canSend}
-                    loading={loading}
-                    onPress={handleSendCrypto}
-                    style={styles.sendBtn}
+                {/* Recipient Address with Dual Actions: Scan QR & Paste */}
+                <Input
+                  label={t('crypto.recipientAddress')}
+                  placeholder={t('crypto.recipientPlaceholder')}
+                  value={recipientAddress}
+                  onChangeText={setRecipientAddress}
+                  error={isAddressInvalid ? t('crypto.invalidAddress') : undefined}
+                  iconLeft="wallet-outline"
+                  autoCapitalize="none"
+                  rightComponent={
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <TouchableOpacity
+                        onPress={handleScanQr}
+                        style={[styles.inputActionIcon, { backgroundColor: theme.primary + '15' }]}
+                        id="crypto-scan-qr-btn"
+                        accessibilityLabel="Scan QR Code"
+                      >
+                        <Ionicons name="qr-code-outline" size={18} color={theme.primary} />
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={handlePasteAddress}
+                        style={styles.inputActionIcon}
+                        id="crypto-paste-addr-btn"
+                        accessibilityLabel="Paste Alamat"
+                      >
+                        <Ionicons name="clipboard-outline" size={18} color={theme.textSecondary} />
+                      </TouchableOpacity>
+                    </View>
+                  }
+                />
+
+                {/* Amount Input */}
+                <View style={styles.amountWrapper}>
+                  <Input
+                    label={`${t('crypto.withdrawAmount')} (${sendAsset})`}
+                    placeholder="0.00"
+                    value={amount}
+                    onChangeText={(text) => setAmount(text.replace(/[^0-9.]/g, ''))}
+                    error={isAmountInvalid ? t('crypto.insufficientBalance') : undefined}
+                    keyboardType="numeric"
+                    iconLeft="logo-usd"
                   />
-                </>
-              )}
-            </Card>
-          </View>
-        )}
+                  <TouchableOpacity
+                    style={[styles.maxBtn, { backgroundColor: theme.backgroundSelected }]}
+                    onPress={() => setAmount(balances[sendAsset].toString())}
+                    id="crypto-max-amount-btn"
+                  >
+                    <ThemedText type="code" style={{ fontWeight: '700' }}>
+                      MAX
+                    </ThemedText>
+                  </TouchableOpacity>
+                </View>
+                <ThemedText type="small" style={[styles.balanceHint, { color: theme.textSecondary }]}>
+                  {t('crypto.availableBalance')}: {balances[sendAsset]?.toLocaleString('id-ID')} {sendAsset}
+                </ThemedText>
 
+                {error ? (
+                  <ThemedText
+                    style={{
+                      color: theme.danger,
+                      marginVertical: Spacing.two,
+                      fontWeight: '500',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {error}
+                  </ThemedText>
+                ) : null}
+
+                <Button
+                  title={t('crypto.submitWithdrawal')}
+                  variant="primary"
+                  disabled={!canSend}
+                  loading={loading}
+                  onPress={handleSendCrypto}
+                  style={styles.sendBtn}
+                  id="crypto-submit-withdraw-btn"
+                />
+              </Card>
+            </View>
+          )}
         </ScrollView>
 
         {/* Real Camera & Image File QR Scanner Modal */}
@@ -454,7 +788,17 @@ export default function CryptoScreen() {
           onClose={() => setIsPinModalVisible(false)}
           onSuccess={executeWithdrawCrypto}
           title="PIN Penarikan Crypto"
-          subtitle={`Konfirmasi penarikan ${amount} ${sendAsset} ke ${recipientAddress ? recipientAddress.slice(0, 10) + '...' : ''}`}
+          subtitle={`Konfirmasi penarikan ${amount} ${sendAsset} ke ${
+            recipientAddress ? recipientAddress.slice(0, 10) + '...' : ''
+          }`}
+        />
+
+        {/* Transaction Result & Confirmation Animation Modal */}
+        <TransactionResultModal
+          visible={isResultModalVisible}
+          onClose={() => setIsResultModalVisible(false)}
+          result={txResult}
+          onRetry={txResult?.type === 'withdraw' ? handleSendCrypto : undefined}
         />
       </SafeAreaView>
     </ThemedView>
@@ -508,12 +852,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.three,
   },
   selectorBadge: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 14,
-    borderWidth: 1.5,
   },
   qrCard: {
     alignItems: 'center',
@@ -521,7 +865,9 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   networkBadge: {
-    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 5,
     paddingHorizontal: 12,
     borderRadius: 8,
     marginBottom: Spacing.three,
@@ -545,6 +891,37 @@ const styles = StyleSheet.create({
   copyBtn: {
     width: '100%',
   },
+  simulationCard: {
+    padding: Spacing.four,
+    borderRadius: 20,
+    marginTop: Spacing.three,
+  },
+  simCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: Spacing.two,
+  },
+  simIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quickChipRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginVertical: Spacing.two,
+  },
+  chipBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   warningCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -559,7 +936,7 @@ const styles = StyleSheet.create({
   maxBtn: {
     position: 'absolute',
     right: 12,
-    top: 30, // Aligns max button inside the input element structure
+    top: 30,
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 6,
@@ -571,17 +948,6 @@ const styles = StyleSheet.create({
   },
   sendBtn: {
     marginTop: Spacing.three,
-  },
-  successState: {
-    alignItems: 'center',
-    paddingVertical: Spacing.five,
-  },
-  successIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   inputActionIcon: {
     padding: 6,
@@ -598,67 +964,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 12,
   },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  qrModalCard: {
-    width: '100%',
-    maxWidth: 440,
-    borderRadius: 24,
-    padding: 20,
-  },
-  qrModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  qrHeaderIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeBtn: {
-    padding: 6,
-  },
-  viewfinderBox: {
-    width: '100%',
-    height: 180,
-    borderRadius: 16,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  viewfinderFrame: {
-    width: 140,
-    height: 140,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  demoAddressRow: {
+  floatingToast: {
+    position: 'absolute',
+    top: 12,
+    left: Spacing.four,
+    right: Spacing.four,
+    zIndex: 999,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
     gap: 10,
+    padding: Spacing.three,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  qrDemoIcon: {
+  toastIconCircle: {
     width: 32,
     height: 32,
-    borderRadius: 8,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },

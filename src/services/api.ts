@@ -279,13 +279,21 @@ export const api = {
       });
     },
     async withdrawCrypto(payload: {
-      asset: string;
-      recipient_address: string;
+      asset_symbol: string;
+      network?: string;
+      to_address: string;
       amount: number;
+      notes?: string;
     }) {
       return request('/crypto/withdraw', {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          asset_symbol: payload.asset_symbol,
+          network: payload.network || 'polygon_amoy',
+          to_address: payload.to_address,
+          amount: payload.amount,
+          notes: payload.notes || 'Crypto Withdrawal',
+        }),
       });
     },
     async simulateCryptoDeposit(payload: {
