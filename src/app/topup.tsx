@@ -271,7 +271,7 @@ export default function TopUpScreen() {
                     <Ionicons name="checkmark-circle" size={64} color={theme.success} />
                   </View>
                   <ThemedText type="smallBold" style={{ fontSize: 20, marginTop: 12, textAlign: 'center' }}>
-                    Pembayaran Berhasil! 🎉
+                    Pembayaran Berhasil
                   </ThemedText>
                   <ThemedText style={{ color: theme.textSecondary, textAlign: 'center', marginTop: 8 }}>
                     Top Up sebesar <ThemedText type="smallBold" style={{ color: theme.success }}>Rp {amount ? parseInt(amount).toLocaleString('id-ID') : '0'}</ThemedText> telah berhasil ditambahkan ke saldo dompet Anda.
@@ -323,7 +323,7 @@ export default function TopUpScreen() {
 
                   {/* Instant Verification Button */}
                   <Button
-                    title="Verifikasi Pembayaran Simulasi ⚡"
+                    title="Verifikasi Pembayaran Simulasi"
                     variant="primary"
                     loading={simulating}
                     onPress={handleSimulateSettlement}
@@ -336,7 +336,7 @@ export default function TopUpScreen() {
                   >
                     <Ionicons name="flask-outline" size={18} color={theme.primary} />
                     <ThemedText type="smallBold" style={{ color: theme.primary, marginLeft: 6 }}>
-                      Buka Midtrans Payment Simulator 🧪
+                      Buka Midtrans Payment Simulator
                     </ThemedText>
                   </TouchableOpacity>
 

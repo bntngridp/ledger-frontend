@@ -272,7 +272,7 @@ export default function CryptoScreen() {
                 {/* QR Code Graphic */}
                 <View style={[styles.qrMock, { borderColor: theme.border, backgroundColor: '#ffffff' }]}>
                   {loadingAddress ? (
-                    <OctopusLoader size="small" message="Swimming to generate address... 🐙" />
+                    <OctopusLoader size="small" message="Menyiapkan alamat setoran..." />
                   ) : depositAddress ? (
                     <QRCode value={depositAddress} size={180} />
                   ) : (
@@ -362,7 +362,7 @@ export default function CryptoScreen() {
                     <View style={[styles.scannedToast, { backgroundColor: theme.success + '20', borderColor: theme.success }]}>
                       <Ionicons name="checkmark-circle" size={18} color={theme.success} />
                       <ThemedText type="smallBold" style={{ color: theme.success, marginLeft: 6, fontSize: 12 }}>
-                        Alamat Wallet berhasil di-scan! ✨
+                        Alamat Wallet berhasil di-scan
                       </ThemedText>
                     </View>
                   )}

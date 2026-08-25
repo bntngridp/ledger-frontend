@@ -22,10 +22,10 @@ import { useTranslation } from '@/hooks/use-translation';
 import { API_BASE_URL } from '@/services/api';
 
 const LANGUAGES = [
-  { code: 'en', label: 'English', flag: '🇺🇸', shortName: 'EN' },
-  { code: 'id', label: 'Bahasa Indonesia', flag: '🇮🇩', shortName: 'ID' },
-  { code: 'es', label: 'Español', flag: '🇪🇸', shortName: 'ES' },
-  { code: 'ar', label: 'العربية', flag: '🇸🇦', shortName: 'AR' },
+  { code: 'en', label: 'English', shortName: 'EN' },
+  { code: 'id', label: 'Bahasa Indonesia', shortName: 'ID' },
+  { code: 'es', label: 'Español', shortName: 'ES' },
+  { code: 'ar', label: 'العربية', shortName: 'AR' },
 ] as const;
 
 export default function WelcomeScreen() {
@@ -123,7 +123,9 @@ export default function WelcomeScreen() {
                         }}
                         testID={`lang-option-${lang.code}`}
                       >
-                        <ThemedText style={styles.langFlagText}>{lang.flag}</ThemedText>
+                        <View style={styles.langCodeBadge}>
+                          <ThemedText style={styles.langCodeBadgeText}>{lang.shortName}</ThemedText>
+                        </View>
                         <ThemedText
                           style={[
                             styles.langItemText,
@@ -155,12 +157,15 @@ export default function WelcomeScreen() {
             {/* Feature Badges / Chips */}
             <View style={styles.badgesRow}>
               <View style={styles.featureBadge}>
+                <Ionicons name="paper-plane-outline" size={14} color="#FFFFFF" style={{ marginRight: 6 }} />
                 <ThemedText style={styles.badgeText}>{t('welcome.badgeTransfer')}</ThemedText>
               </View>
               <View style={styles.featureBadge}>
+                <Ionicons name="shield-checkmark-outline" size={14} color="#FFFFFF" style={{ marginRight: 6 }} />
                 <ThemedText style={styles.badgeText}>{t('welcome.badgeSecurity')}</ThemedText>
               </View>
               <View style={styles.featureBadge}>
+                <Ionicons name="swap-horizontal-outline" size={14} color="#FFFFFF" style={{ marginRight: 6 }} />
                 <ThemedText style={styles.badgeText}>{t('welcome.badgeSwap')}</ThemedText>
               </View>
             </View>
@@ -338,8 +343,20 @@ const styles = StyleSheet.create({
   langDropdownItemSelected: {
     backgroundColor: 'rgba(255, 255, 255, 0.14)',
   },
-  langFlagText: {
-    fontSize: 16,
+  langCodeBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    minWidth: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  langCodeBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   langItemText: {
     flex: 1,
@@ -398,6 +415,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   featureBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.14)',
     paddingHorizontal: 16,
     paddingVertical: 10,

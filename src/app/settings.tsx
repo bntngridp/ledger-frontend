@@ -123,7 +123,7 @@ export default function SettingsScreen() {
       const result = await registerBiometric(userIdBytes, username, email);
       if (result.success) {
         setBiometricRegistered(true);
-        setBiometricStatus('✓ Fingerprint berhasil didaftarkan!');
+        setBiometricStatus('Fingerprint berhasil didaftarkan');
       } else {
         setBiometricStatus(result.error || 'Gagal mendaftarkan fingerprint');
       }
@@ -391,7 +391,7 @@ export default function SettingsScreen() {
                       <Ionicons name="finger-print" size={20} color={biometricRegistered ? theme.success : theme.text} />
                       <View>
                         <ThemedText type="smallBold" style={[styles.settingsLabel, biometricRegistered && { color: theme.success }]}>
-                          {biometricRegistered ? '✓ Fingerprint Terdaftar' : 'Daftarkan Fingerprint'}
+                          {biometricRegistered ? 'Fingerprint Terdaftar' : 'Daftarkan Fingerprint'}
                         </ThemedText>
                         {biometricStatus ? (
                           <ThemedText type="small" style={{ color: biometricRegistered ? theme.success : theme.danger, fontSize: 10, marginTop: 2 }}>

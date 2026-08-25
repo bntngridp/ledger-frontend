@@ -44,9 +44,9 @@ export const ar: TranslationKeys = {
     createAccount: 'إنشاء حساب جديد',
     logIn: 'تسجيل الدخول',
     continueWithGoogle: 'المتابعة باستخدام Google',
-    badgeTransfer: '💸  تحويل فوري',
-    badgeSecurity: '🔒  محمي بـ 2FA',
-    badgeSwap: '🔄  تبديل العملات الرقمية',
+    badgeTransfer: 'تحويل فوري',
+    badgeSecurity: 'محمي بـ 2FA',
+    badgeSwap: 'تبديل العملات الرقمية',
     legalDisclaimer: 'بمتابعتك، فإنك توافق على الشروط وسياسة الخصوصية الخاصة بنا.',
   },
 

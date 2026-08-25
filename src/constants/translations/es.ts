@@ -44,9 +44,9 @@ export const es: TranslationKeys = {
     createAccount: 'Crear cuenta nueva',
     logIn: 'Iniciar sesión',
     continueWithGoogle: 'Continuar con Google',
-    badgeTransfer: '💸  Transferencia instantánea',
-    badgeSecurity: '🔒  Protegido con 2FA',
-    badgeSwap: '🔄  Intercambio crypto',
+    badgeTransfer: 'Transferencia instantánea',
+    badgeSecurity: 'Protegido con 2FA',
+    badgeSwap: 'Intercambio crypto',
     legalDisclaimer: 'Al continuar, aceptas nuestros Términos y Política de privacidad.',
   },
 

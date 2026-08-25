@@ -34,7 +34,7 @@ export default function Index() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <OctopusLoader size="large" message="Swimming into Ledger... 🐙🌊" />
+      <OctopusLoader size="large" message="Memuat Ledger..." />
     </View>
   );
 }

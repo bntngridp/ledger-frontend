@@ -430,7 +430,7 @@ export default function DashboardScreen() {
         <TouchableOpacity onPress={() => router.push('/settings')} activeOpacity={0.7}>
           <ThemedText style={{ color: theme.textSecondary }}>{t('dashboard.welcomeBack')}</ThemedText>
           <ThemedText type="smallBold" style={styles.username}>
-            {username} 👋
+            {username}
           </ThemedText>
         </TouchableOpacity>
         <View style={styles.headerActions}>
@@ -996,7 +996,7 @@ export default function DashboardScreen() {
       <SafeAreaView style={styles.safeArea}>
         {loading ? (
           <View style={styles.loadingContainer}>
-            <OctopusLoader size="large" message={t('dashboard.syncingData') || 'Swimming through your ledger... 🐙🌊'} />
+            <OctopusLoader size="large" message={t('dashboard.syncingData') || 'Memuat data ledger...'} />
           </View>
         ) : error ? (
           <View style={styles.errorContainer}>

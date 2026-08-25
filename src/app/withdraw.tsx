@@ -400,9 +400,12 @@ export default function WithdrawScreen() {
               </View>
 
               <ScrollView showsVerticalScrollIndicator={false}>
-                <ThemedText type="smallBold" style={{ color: theme.textSecondary, marginBottom: 8 }}>
-                  🏦 BANK TRANSFER (IDR)
-                </ThemedText>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 6 }}>
+                  <Ionicons name="business-outline" size={14} color={theme.textSecondary} />
+                  <ThemedText type="smallBold" style={{ color: theme.textSecondary }}>
+                    BANK TRANSFER (IDR)
+                  </ThemedText>
+                </View>
                 {SUPPORTED_CHANNELS.filter((c) => c.category === 'bank').map((channel) => {
                   const isSelected = channel.code === bankCode;
                   return (
@@ -430,9 +433,12 @@ export default function WithdrawScreen() {
                   );
                 })}
 
-                <ThemedText type="smallBold" style={{ color: theme.textSecondary, marginTop: 16, marginBottom: 8 }}>
-                  📱 E-WALLET (IDR)
-                </ThemedText>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 8, gap: 6 }}>
+                  <Ionicons name="phone-portrait-outline" size={14} color={theme.textSecondary} />
+                  <ThemedText type="smallBold" style={{ color: theme.textSecondary }}>
+                    E-WALLET (IDR)
+                  </ThemedText>
+                </View>
                 {SUPPORTED_CHANNELS.filter((c) => c.category === 'ewallet').map((channel) => {
                   const isSelected = channel.code === bankCode;
                   return (

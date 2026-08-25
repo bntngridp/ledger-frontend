@@ -246,7 +246,7 @@ export default function NotificationsScreen() {
         {/* Content */}
         {loading ? (
           <View style={styles.centerState}>
-            <OctopusLoader size="large" message="Swimming to fetch notifications... 🐙🔔" />
+            <OctopusLoader size="large" message="Memuat notifikasi..." />
           </View>
         ) : error ? (
           <View style={styles.centerState}>

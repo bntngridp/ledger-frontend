@@ -257,7 +257,7 @@ export default function HistoryScreen() {
         {/* Transaction list */}
         {loading ? (
           <View style={styles.loadingContainer}>
-            <OctopusLoader size="large" message="Swimming through transaction history... 🐙📜" />
+            <OctopusLoader size="large" message="Memuat riwayat transaksi..." />
           </View>
         ) : error ? (
           <View style={styles.errorContainer}>

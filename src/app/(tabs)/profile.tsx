@@ -180,7 +180,7 @@ export default function ProfileScreen() {
       const result = await registerBiometric(userIdBytes, profile.username, profile.email);
       if (result.success) {
         setBiometricRegistered(true);
-        setBiometricMessage('✓ Fingerprint berhasil didaftarkan!');
+        setBiometricMessage('Fingerprint berhasil didaftarkan');
         loadProfileData();
       } else {
         setBiometricMessage(result.error || 'Pendaftaran sidik jari gagal');
@@ -203,7 +203,7 @@ export default function ProfileScreen() {
     try {
       const res = await api.auth.setupPin(newPin);
       if (res.status === 'success') {
-        setPinMessage('✓ PIN transaksi berhasil diperbarui');
+        setPinMessage('PIN transaksi berhasil diperbarui');
         setNewPin('');
         setTimeout(() => {
           setShowPinModal(false);

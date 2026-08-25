@@ -44,9 +44,9 @@ export const id: TranslationKeys = {
     createAccount: 'Buat Akun Baru',
     logIn: 'Masuk Akun',
     continueWithGoogle: 'Lanjutkan dengan Google',
-    badgeTransfer: '💸  Transfer Instan',
-    badgeSecurity: '🔒  Dilindungi 2FA',
-    badgeSwap: '🔄  Tukar Crypto',
+    badgeTransfer: 'Transfer Instan',
+    badgeSecurity: 'Dilindungi 2FA',
+    badgeSwap: 'Tukar Crypto',
     legalDisclaimer: 'Dengan melanjutkan, Anda menyetujui Syarat & Kebijakan Privasi kami.',
   },
 

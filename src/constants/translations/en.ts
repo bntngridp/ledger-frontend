@@ -42,9 +42,9 @@ export const en = {
     createAccount: 'Create Account',
     logIn: 'Log In',
     continueWithGoogle: 'Continue with Google',
-    badgeTransfer: '💸  Instant Transfer',
-    badgeSecurity: '🔒  2FA Protected',
-    badgeSwap: '🔄  Crypto Swap',
+    badgeTransfer: 'Instant Transfer',
+    badgeSecurity: '2FA Protected',
+    badgeSwap: 'Crypto Swap',
     legalDisclaimer: 'By continuing, you agree to our Terms & Privacy Policy.',
   },
 
