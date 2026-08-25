@@ -284,7 +284,7 @@ export const ar: TranslationKeys = {
 
   // Settings Screen
   settings: {
-    settingsTitle: 'الملف الشخصي والإعدادات',
+    settingsTitle: 'إعدادات التطبيق',
     profileSection: 'معلومات الملف الشخصي',
     securitySection: 'الأمان',
     securityTwoFactor: 'التحقق الثنائي (2FA)',

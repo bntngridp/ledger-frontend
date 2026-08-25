@@ -284,7 +284,7 @@ export const es: TranslationKeys = {
 
   // Settings Screen
   settings: {
-    settingsTitle: 'Perfil y Ajustes',
+    settingsTitle: 'Configuración de la aplicación',
     profileSection: 'INFORMACIÓN DEL PERFIL',
     securitySection: 'SEGURIDAD',
     securityTwoFactor: 'Autenticación de Dos Factores (2FA)',

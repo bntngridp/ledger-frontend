@@ -284,7 +284,7 @@ export const id: TranslationKeys = {
 
   // Settings Screen
   settings: {
-    settingsTitle: 'Profil & Pengaturan',
+    settingsTitle: 'Pengaturan Aplikasi',
     profileSection: 'INFORMASI PROFIL',
     securitySection: 'KEAMANAN',
     securityTwoFactor: 'Autentikasi Dua-Faktor (2FA)',

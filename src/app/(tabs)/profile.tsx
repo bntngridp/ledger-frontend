@@ -379,7 +379,8 @@ export default function ProfileScreen() {
                   {/* Two-Factor Authentication (2FA) Row */}
                   <TouchableOpacity
                     style={styles.actionRow}
-                    onPress={() => router.push('/settings')}
+                    onPress={() => router.push('/2fa')}
+                    id="profile-2fa-row-btn"
                   >
                     <View style={styles.actionRowLeft}>
                       <View style={[styles.iconCircle, { backgroundColor: '#3B82F615' }]}>

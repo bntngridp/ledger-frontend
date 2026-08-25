@@ -282,7 +282,7 @@ export const en = {
 
   // Settings Screen
   settings: {
-    settingsTitle: 'Profile & Settings',
+    settingsTitle: 'App Settings',
     profileSection: 'PROFILE INFORMATION',
     securitySection: 'SECURITY',
     securityTwoFactor: 'Two-Factor Authentication (2FA)',
