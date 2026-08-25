@@ -29,6 +29,7 @@ import {
   registerBiometric,
 } from '@/hooks/use-biometric';
 import { BiometricManagementModal } from '@/components/ui/biometric-modal';
+import { RecoveryCodesModal } from '@/components/ui/recovery-codes-modal';
 
 interface UserProfileData {
   user_id: string;
@@ -79,6 +80,7 @@ export default function ProfileScreen() {
 
   // PIN Setup modal states
   const [showPinModal, setShowPinModal] = useState<boolean>(false);
+  const [showRecoveryModal, setShowRecoveryModal] = useState<boolean>(false);
   const [newPin, setNewPin] = useState<string>('');
   const [pinLoading, setPinLoading] = useState<boolean>(false);
   const [pinMessage, setPinMessage] = useState<string>('');
@@ -418,6 +420,38 @@ export default function ProfileScreen() {
                       <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
                     </View>
                   </TouchableOpacity>
+
+                  {profile?.two_factor_enabled && (
+                    <>
+                      <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />
+                      {/* Recovery Codes Row */}
+                      <TouchableOpacity
+                        style={styles.actionRow}
+                        onPress={() => setShowRecoveryModal(true)}
+                        id="profile-recovery-codes-row-btn"
+                      >
+                        <View style={styles.actionRowLeft}>
+                          <View style={[styles.iconCircle, { backgroundColor: '#F59E0B15' }]}>
+                            <Ionicons name="key-outline" size={18} color="#F59E0B" />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <ThemedText type="smallBold">Kode Pemulihan Cadangan</ThemedText>
+                            <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
+                              16 Kode darurat jika kehilangan authenticator
+                            </ThemedText>
+                          </View>
+                        </View>
+                        <View style={styles.actionRowRight}>
+                          <View style={[styles.statusPill, { backgroundColor: '#F59E0B20' }]}>
+                            <ThemedText type="code" style={{ color: '#F59E0B', fontSize: 10, fontWeight: '700' }}>
+                              Lihat & Atur
+                            </ThemedText>
+                          </View>
+                          <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
+                        </View>
+                      </TouchableOpacity>
+                    </>
+                  )}
 
                   <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />
 
@@ -779,6 +813,10 @@ export default function ProfileScreen() {
           }}
         />
       )}
+      <RecoveryCodesModal
+        visible={showRecoveryModal}
+        onClose={() => setShowRecoveryModal(false)}
+      />
     </SafeAreaView>
   );
 }

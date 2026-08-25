@@ -125,6 +125,16 @@ export const api = {
         method: 'POST',
       });
     },
+    async get2FARecoveryCodes() {
+      return request('/auth/2fa/recovery-codes', {
+        method: 'GET',
+      });
+    },
+    async regenerate2FARecoveryCodes() {
+      return request('/auth/2fa/recovery-codes/regenerate', {
+        method: 'POST',
+      });
+    },
     async sendChangePasswordEmailOTP() {
       return request('/auth/password/email-otp/send', {
         method: 'POST',

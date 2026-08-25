@@ -41,6 +41,8 @@ export default function LoginScreen() {
   const [requires2FA, setRequires2FA] = useState(false);
   const [preAuthToken, setPreAuthToken] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [useRecoveryCode, setUseRecoveryCode] = useState(false);
+  const [recoveryCodeInput, setRecoveryCodeInput] = useState('');
   const inputRefs = React.useRef<Array<any>>([]);
 
   // Handle URL redirect query parameters for Google OAuth and registration redirect
@@ -117,8 +119,9 @@ export default function LoginScreen() {
   };
 
   const verifyLogin2FADirect = async (codeStr: string) => {
-    if (codeStr.length !== 6) {
-      setErrors({ otp: 'Code must be 6 digits' });
+    const trimmed = codeStr.trim();
+    if (!trimmed) {
+      setErrors({ otp: 'Masukkan kode verifikasi atau kode pemulihan' });
       return;
     }
     setLoading(true);
@@ -127,7 +130,7 @@ export default function LoginScreen() {
     try {
       const response = await api.auth.verify2FALogin({
         pre_auth_token: preAuthToken,
-        code: codeStr,
+        code: trimmed,
       });
       setLoading(false);
 
@@ -135,11 +138,11 @@ export default function LoginScreen() {
         await storage.setItem('auth_token', response.data.token);
         router.replace('/(tabs)');
       } else {
-        setErrors({ otp: response.message || 'Verification failed' });
+        setErrors({ otp: response.message || 'Verifikasi 2FA gagal' });
       }
     } catch (err: any) {
       setLoading(false);
-      setErrors({ otp: err.message || 'Verification failed' });
+      setErrors({ otp: err.message || 'Verifikasi 2FA gagal' });
     }
   };
 
@@ -274,6 +277,7 @@ export default function LoginScreen() {
                 loading={loading}
                 onPress={handleLogin}
                 style={styles.submitBtn}
+                id="login-submit-btn"
               />
 
               <View style={styles.dividerContainer}>
@@ -312,38 +316,63 @@ export default function LoginScreen() {
           ) : (
             <View style={styles.formContainer}>
               <ThemedText type="subtitle" style={styles.title}>
-                {t('auth.twoFactorVerification')}
+                {useRecoveryCode ? 'Kode Pemulihan Cadangan' : t('auth.twoFactorVerification')}
               </ThemedText>
               <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
-                {t('auth.twoFactorSubtitle')}
+                {useRecoveryCode
+                  ? 'Masukkan salah satu dari 16 kode pemulihan cadangan Anda (format: xxxxx-xxxxx) jika kehilangan akses aplikasi Authenticator.'
+                  : t('auth.twoFactorSubtitle')}
               </ThemedText>
 
-              {/* 6 box digit input */}
-              <View style={styles.otpInputRow}>
-                {otp.map((digit, idx) => (
+              {!useRecoveryCode ? (
+                /* 6 box digit input */
+                <View style={styles.otpInputRow}>
+                  {otp.map((digit, idx) => (
+                    <TextInput
+                      key={idx}
+                      ref={(ref: any) => {
+                        inputRefs.current[idx] = ref;
+                      }}
+                      style={[
+                        styles.otpBox,
+                        {
+                          backgroundColor: theme.backgroundElement,
+                          borderColor: digit ? theme.primary : theme.border,
+                          color: theme.text,
+                        },
+                      ]}
+                      value={digit}
+                      onChangeText={(text: string) => handleOtpChange(text, idx)}
+                      onKeyPress={(e: any) => handleKeyPress(e, idx)}
+                      keyboardType="numeric"
+                      maxLength={6}
+                      selectTextOnFocus
+                      textAlign="center"
+                    />
+                  ))}
+                </View>
+              ) : (
+                /* Recovery Code Text Input */
+                <View style={{ width: '100%', marginVertical: Spacing.two }}>
                   <TextInput
-                    key={idx}
-                    ref={(ref: any) => {
-                      inputRefs.current[idx] = ref;
-                    }}
                     style={[
-                      styles.otpBox,
+                      styles.recoveryInput,
                       {
                         backgroundColor: theme.backgroundElement,
-                        borderColor: digit ? theme.primary : theme.border,
+                        borderColor: theme.border,
                         color: theme.text,
                       },
                     ]}
-                    value={digit}
-                    onChangeText={(text: string) => handleOtpChange(text, idx)}
-                    onKeyPress={(e: any) => handleKeyPress(e, idx)}
-                    keyboardType="numeric"
-                    maxLength={6}
-                    selectTextOnFocus
-                    textAlign="center"
+                    placeholder="Contoh: 464bd-14bf3"
+                    placeholderTextColor={theme.textSecondary}
+                    value={recoveryCodeInput}
+                    onChangeText={setRecoveryCodeInput}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    id="input-recovery-code"
                   />
-                ))}
-              </View>
+                </View>
+              )}
 
               {errors.otp ? (
                 <ThemedText style={{ color: theme.danger, marginTop: Spacing.two, fontWeight: '500' }}>
@@ -352,21 +381,44 @@ export default function LoginScreen() {
               ) : null}
 
               <Button
-                title={t('auth.verifyCode')}
+                title={useRecoveryCode ? 'Verifikasi Kode Cadangan' : t('auth.verifyCode')}
                 variant="primary"
                 loading={loading}
-                onPress={handleVerify2FA}
+                onPress={() => {
+                  if (useRecoveryCode) {
+                    verifyLogin2FADirect(recoveryCodeInput);
+                  } else {
+                    handleVerify2FA();
+                  }
+                }}
                 style={styles.submitBtn}
+                id="btn-verify-2fa-login"
               />
 
               <TouchableOpacity
                 onPress={() => {
+                  setUseRecoveryCode(!useRecoveryCode);
+                  setErrors({});
+                }}
+                style={[styles.footerLink, { marginTop: 14 }]}
+                id="btn-toggle-recovery-mode"
+              >
+                <ThemedText type="smallBold" style={{ color: theme.primary, textAlign: 'center' }}>
+                  {useRecoveryCode
+                    ? 'Gunakan Aplikasi Authenticator (TOTP)'
+                    : 'Gunakan Kode Pemulihan Cadangan (Recovery Code)'}
+                </ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
                   setRequires2FA(false);
+                  setUseRecoveryCode(false);
                   setOtp(['', '', '', '', '', '']);
                 }}
                 style={styles.footerLink}
               >
-                <ThemedText type="smallBold" style={{ color: theme.primary }}>
+                <ThemedText type="small" style={{ color: theme.textSecondary }}>
                   {t('auth.backToLogin')}
                 </ThemedText>
               </TouchableOpacity>
@@ -465,5 +517,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingVertical: 0,
     lineHeight: Platform.OS === 'web' ? 52 : undefined,
+  },
+  recoveryInput: {
+    width: '100%',
+    height: 52,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    letterSpacing: 1.5,
+    textAlign: 'center',
   },
 });
