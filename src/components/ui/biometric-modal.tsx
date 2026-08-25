@@ -80,8 +80,11 @@ export function BiometricManagementModal({
     setMessage('');
 
     try {
-      const userIdBytes = new TextEncoder().encode(user.userId);
-      const result = await registerBiometric(userIdBytes, user.username, user.email);
+      const uid = user?.userId || 'user-uuid';
+      const uname = user?.username || 'User';
+      const uemail = user?.email || 'user@ledger.io';
+      const userIdBytes = new TextEncoder().encode(uid);
+      const result = await registerBiometric(userIdBytes, uname, uemail);
 
       if (result.success) {
         setRegistered(true);
