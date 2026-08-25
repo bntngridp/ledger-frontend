@@ -6,12 +6,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ThemedText } from '../themed-text';
-import { Card } from './card';
 import { useTheme } from '@/hooks/use-theme';
+import { Spacing } from '@/constants/theme';
 import { api } from '@/services/api';
 import {
   isBiometricSupported,
@@ -40,18 +41,36 @@ export function PinVerificationModal({
   const [error, setError] = useState<string>('');
   const [biometricAvailable, setBiometricAvailable] = useState<boolean>(false);
   const [biometricLoading, setBiometricLoading] = useState<boolean>(false);
+  const [pulseAnim] = useState(new Animated.Value(1));
 
-  // Clear state when modal opens/closes
+  // Clear state when modal opens/closes & trigger pulse animation
   useEffect(() => {
     if (visible) {
       setPin('');
       setError('');
       setLoading(false);
       setBiometricLoading(false);
+
       // Check if biometric is available & registered on this device
       isBiometricSupported().then((supported) => {
         setBiometricAvailable(supported && isBiometricRegistered());
       });
+
+      // Pulse animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.1,
+            duration: 1000,
+            useNativeDriver: Platform.OS !== 'web',
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: Platform.OS !== 'web',
+          }),
+        ])
+      ).start();
     }
   }, [visible]);
 
@@ -104,6 +123,25 @@ export function PinVerificationModal({
     }
   };
 
+  const handleBiometricAuth = async () => {
+    setBiometricLoading(true);
+    setError('');
+
+    try {
+      const result = await verifyBiometric();
+      if (result.success) {
+        setBiometricLoading(false);
+        onSuccess();
+      } else {
+        setBiometricLoading(false);
+        setError(result.error || 'Verifikasi biometrik gagal atau dibatalkan');
+      }
+    } catch (err: any) {
+      setBiometricLoading(false);
+      setError(err?.message || 'Gagal memverifikasi biometrik');
+    }
+  };
+
   // Keyboard listener for Web
   useEffect(() => {
     if (!visible || Platform.OS !== 'web') return;
@@ -131,28 +169,56 @@ export function PinVerificationModal({
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.modalBackdrop}>
-        <Card
+      <TouchableOpacity
+        style={styles.overlay}
+        activeOpacity={1}
+        onPress={onClose}
+      >
+        <View
           style={[
-            styles.pinModalCard,
+            styles.modalCard,
             { backgroundColor: theme.backgroundElement, borderColor: theme.border },
           ]}
-          bordered
+          onStartShouldSetResponder={() => true}
         >
           {/* Header */}
           <View style={styles.header}>
-            <View style={[styles.lockIconBox, { backgroundColor: theme.primary + '20' }]}>
-              <Ionicons name="lock-closed" size={24} color={theme.primary} />
-            </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn} id="pin-modal-close-btn">
-              <Ionicons name="close" size={20} color={theme.textSecondary} />
+            <ThemedText type="smallBold" style={styles.title}>
+              {title}
+            </ThemedText>
+            <TouchableOpacity onPress={onClose} id="pin-modal-close-btn">
+              <Ionicons name="close" size={20} color={theme.text} />
             </TouchableOpacity>
           </View>
 
-          <ThemedText type="subtitle" style={styles.titleText}>
-            {title}
-          </ThemedText>
-          <ThemedText type="code" style={[styles.subtitleText, { color: theme.textSecondary }]}>
+          {/* Central Animated Pulse Graphic */}
+          <View style={styles.graphicContainer}>
+            <Animated.View
+              style={[
+                styles.pulseRing,
+                {
+                  borderColor: error ? theme.danger : theme.primary,
+                  transform: [{ scale: pulseAnim }],
+                },
+              ]}
+            />
+            <View
+              style={[
+                styles.iconCircle,
+                {
+                  backgroundColor: (error ? theme.danger : theme.primary) + '18',
+                },
+              ]}
+            >
+              <Ionicons
+                name={error ? 'alert-circle-outline' : 'keypad'}
+                size={36}
+                color={error ? theme.danger : theme.primary}
+              />
+            </View>
+          </View>
+
+          <ThemedText style={[styles.description, { color: theme.textSecondary }]}>
             {subtitle}
           </ThemedText>
 
@@ -179,7 +245,7 @@ export function PinVerificationModal({
             })}
           </View>
 
-          {/* Error / Loading Feedback */}
+          {/* Feedback / Alert */}
           <View style={styles.feedbackContainer}>
             {loading ? (
               <View style={styles.loadingRow}>
@@ -214,7 +280,7 @@ export function PinVerificationModal({
                       <TouchableOpacity
                         key={key}
                         onPress={handleClear}
-                        style={[styles.keyBtn, { backgroundColor: theme.background }]}
+                        style={[styles.keyBtn, { backgroundColor: theme.background, borderColor: theme.border }]}
                         disabled={loading}
                         id="pin-key-clear"
                       >
@@ -229,7 +295,7 @@ export function PinVerificationModal({
                       <TouchableOpacity
                         key={key}
                         onPress={handleBackspace}
-                        style={[styles.keyBtn, { backgroundColor: theme.background }]}
+                        style={[styles.keyBtn, { backgroundColor: theme.background, borderColor: theme.border }]}
                         disabled={loading}
                         id="pin-key-del"
                       >
@@ -255,27 +321,16 @@ export function PinVerificationModal({
             ))}
           </View>
 
-          {/* Biometric Fingerprint Button */}
+          {/* Biometric Shortcut Button (if available) */}
           {biometricAvailable && (
             <TouchableOpacity
-              onPress={async () => {
-                setBiometricLoading(true);
-                setError('');
-                const result = await verifyBiometric();
-                setBiometricLoading(false);
-                if (result.success) {
-                  onSuccess();
-                } else {
-                  setError(result.error || 'Verifikasi biometrik gagal');
-                }
-              }}
+              onPress={handleBiometricAuth}
               disabled={loading || biometricLoading}
               style={[
                 styles.biometricBtn,
                 {
-                  backgroundColor: theme.primary + '15',
-                  borderColor: theme.primary + '40',
-                  opacity: (loading || biometricLoading) ? 0.5 : 1,
+                  backgroundColor: theme.primary + '12',
+                  borderColor: theme.primary + '30',
                 },
               ]}
               id="pin-biometric-btn"
@@ -283,7 +338,7 @@ export function PinVerificationModal({
               {biometricLoading ? (
                 <ActivityIndicator size="small" color={theme.primary} />
               ) : (
-                <Ionicons name="finger-print" size={22} color={theme.primary} />
+                <Ionicons name="finger-print" size={20} color={theme.primary} />
               )}
               <ThemedText
                 type="smallBold"
@@ -293,59 +348,78 @@ export function PinVerificationModal({
               </ThemedText>
             </TouchableOpacity>
           )}
-        </Card>
-      </View>
+        </View>
+      </TouchableOpacity>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  modalBackdrop: {
+  overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.65)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: Spacing.four,
   },
-  pinModalCard: {
+  modalCard: {
     width: '100%',
-    maxWidth: 380,
-    borderRadius: 24,
-    padding: 24,
+    maxWidth: 400,
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: Spacing.five,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
   },
   header: {
     width: '100%',
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: Spacing.two,
   },
-  lockIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+  title: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  graphicContainer: {
+    width: 80,
+    height: 80,
+    alignItems: 'center',
     justifyContent: 'center',
+    marginVertical: Spacing.two,
+    position: 'relative',
+  },
+  pulseRing: {
+    position: 'absolute',
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 1.5,
+    opacity: 0.5,
+  },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  closeBtn: {
-    padding: 6,
-  },
-  titleText: {
-    fontSize: 18,
-    fontWeight: '800',
+  description: {
     textAlign: 'center',
-  },
-  subtitleText: {
-    fontSize: 11,
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 20,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: Spacing.three,
+    paddingHorizontal: Spacing.two,
   },
   dotsContainer: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   pinDot: {
     width: 14,
@@ -354,10 +428,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   feedbackContainer: {
-    height: 32,
+    height: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   loadingRow: {
     flexDirection: 'row',
@@ -365,16 +439,16 @@ const styles = StyleSheet.create({
   },
   keypadGrid: {
     width: '100%',
-    gap: 10,
+    gap: 8,
   },
   keypadRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 8,
   },
   keyBtn: {
     flex: 1,
-    height: 52,
+    height: 50,
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
@@ -385,9 +459,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    paddingVertical: 13,
+    paddingVertical: 12,
     borderRadius: 14,
     borderWidth: 1,
-    marginTop: 12,
+    marginTop: 10,
   },
 });

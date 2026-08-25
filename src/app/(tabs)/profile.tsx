@@ -9,6 +9,7 @@ import {
   TextInput,
   Platform,
   RefreshControl,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -85,6 +86,26 @@ export default function ProfileScreen() {
   const [pinLoading, setPinLoading] = useState<boolean>(false);
   const [pinMessage, setPinMessage] = useState<string>('');
   const [pinError, setPinError] = useState<string>('');
+  const [pinPulseAnim] = useState(new Animated.Value(1));
+
+  useEffect(() => {
+    if (showPinModal) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pinPulseAnim, {
+            toValue: 1.1,
+            duration: 1000,
+            useNativeDriver: Platform.OS !== 'web',
+          }),
+          Animated.timing(pinPulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: Platform.OS !== 'web',
+          }),
+        ])
+      ).start();
+    }
+  }, [showPinModal]);
 
   const loadProfileData = async () => {
     try {
@@ -730,15 +751,76 @@ export default function ProfileScreen() {
       </Modal>
 
       {/* PIN Setup Modal */}
-      <Modal visible={showPinModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <Card style={[styles.modalCard, { backgroundColor: theme.backgroundElement }]} bordered>
-            <View style={[styles.modalIconWrapper, { backgroundColor: theme.primary + '15' }]}>
-              <Ionicons name="keypad" size={28} color={theme.primary} />
+      <Modal
+        visible={showPinModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowPinModal(false);
+          setNewPin('');
+          setPinError('');
+        }}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => {
+            setShowPinModal(false);
+            setNewPin('');
+            setPinError('');
+          }}
+        >
+          <View
+            style={[
+              styles.modalCard,
+              { backgroundColor: theme.backgroundElement, borderColor: theme.border },
+            ]}
+            onStartShouldSetResponder={() => true}
+          >
+            {/* Header */}
+            <View style={styles.modalHeader}>
+              <ThemedText type="smallBold" style={styles.modalTitleHeader}>
+                Atur PIN Transaksi
+              </ThemedText>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowPinModal(false);
+                  setNewPin('');
+                  setPinError('');
+                }}
+                id="pin-setup-modal-close-btn"
+              >
+                <Ionicons name="close" size={20} color={theme.text} />
+              </TouchableOpacity>
             </View>
-            <ThemedText type="subtitle" style={styles.modalTitle}>
-              Atur PIN Transaksi Baru
-            </ThemedText>
+
+            {/* Central Animated Pulse Graphic */}
+            <View style={styles.graphicContainer}>
+              <Animated.View
+                style={[
+                  styles.pulseRing,
+                  {
+                    borderColor: pinError ? theme.danger : theme.primary,
+                    transform: [{ scale: pinPulseAnim }],
+                  },
+                ]}
+              />
+              <View
+                style={[
+                  styles.iconCircleLg,
+                  {
+                    backgroundColor: (pinError ? theme.danger : theme.primary) + '18',
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={pinError ? 'alert-circle-outline' : 'keypad'}
+                  size={36}
+                  color={pinError ? theme.danger : theme.primary}
+                />
+              </View>
+            </View>
+
             <ThemedText style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
               Masukkan 6 digit angka untuk PIN keamanan transaksi Anda.
             </ThemedText>
@@ -763,20 +845,36 @@ export default function ProfileScreen() {
             />
 
             {pinError ? (
-              <ThemedText type="small" style={{ color: theme.danger, marginTop: 6, textAlign: 'center' }}>
-                {pinError}
-              </ThemedText>
+              <View
+                style={[
+                  styles.alertBox,
+                  { backgroundColor: theme.danger + '15', borderColor: theme.danger },
+                ]}
+              >
+                <Ionicons name="alert-circle-outline" size={16} color={theme.danger} />
+                <ThemedText type="small" style={{ color: theme.danger, flex: 1, fontSize: 12 }}>
+                  {pinError}
+                </ThemedText>
+              </View>
             ) : null}
 
             {pinMessage ? (
-              <ThemedText type="small" style={{ color: theme.success, marginTop: 6, textAlign: 'center' }}>
-                {pinMessage}
-              </ThemedText>
+              <View
+                style={[
+                  styles.alertBox,
+                  { backgroundColor: theme.success + '15', borderColor: theme.success },
+                ]}
+              >
+                <Ionicons name="checkmark-circle-outline" size={16} color={theme.success} />
+                <ThemedText type="smallBold" style={{ color: theme.success, flex: 1, fontSize: 12 }}>
+                  {pinMessage}
+                </ThemedText>
+              </View>
             ) : null}
 
-            <View style={[styles.modalBtnRow, { marginTop: 16 }]}>
+            <View style={[styles.modalBtnRow, { marginTop: Spacing.four }]}>
               <Button
-                title="Tutup"
+                title="Batal"
                 variant="ghost"
                 onPress={() => {
                   setShowPinModal(false);
@@ -795,8 +893,8 @@ export default function ProfileScreen() {
                 id="save-new-pin-btn"
               />
             </View>
-          </Card>
-        </View>
+          </View>
+        </TouchableOpacity>
       </Modal>
       {profile && (
         <BiometricManagementModal
@@ -1064,16 +1162,57 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: Spacing.four,
   },
   modalCard: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: 400,
+    borderRadius: 20,
+    borderWidth: 1,
     padding: Spacing.five,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.two,
+  },
+  modalTitleHeader: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  graphicContainer: {
+    width: 80,
+    height: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: Spacing.two,
+    position: 'relative',
+  },
+  pulseRing: {
+    position: 'absolute',
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 1.5,
+    opacity: 0.5,
+  },
+  iconCircleLg: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalIconWrapper: {
     width: 56,
@@ -1094,6 +1233,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     marginBottom: Spacing.four,
+    paddingHorizontal: Spacing.two,
+  },
+  alertBox: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: Spacing.two,
   },
   modalBtnRow: {
     flexDirection: 'row',

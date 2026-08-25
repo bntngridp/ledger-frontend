@@ -6,6 +6,7 @@ import {
   Modal,
   ActivityIndicator,
   Animated,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -62,12 +63,12 @@ export function BiometricManagementModal({
           Animated.timing(pulseAnim, {
             toValue: 1.1,
             duration: 1000,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
           }),
           Animated.timing(pulseAnim, {
             toValue: 1,
             duration: 1000,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
           }),
         ])
       ).start();
@@ -166,7 +167,7 @@ export function BiometricManagementModal({
             <ThemedText type="smallBold" style={styles.title}>
               Sidik Jari & Biometrik
             </ThemedText>
-            <TouchableOpacity onPress={onClose} id="biometric-modal-close-btn">
+            <TouchableOpacity onPress={onClose} id="biometric-modal-close-btn" accessibilityLabel="biometric-modal-close-btn">
               <Ionicons name="close" size={20} color={theme.text} />
             </TouchableOpacity>
           </View>
