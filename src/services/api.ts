@@ -181,6 +181,11 @@ export const api = {
         body: JSON.stringify(payload),
       });
     },
+    async disableBiometric() {
+      return request('/auth/biometric', {
+        method: 'DELETE',
+      });
+    },
     async getMe() {
       return request('/auth/me', {
         method: 'GET',

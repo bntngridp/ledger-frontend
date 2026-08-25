@@ -28,6 +28,7 @@ import {
   isBiometricRegistered,
   registerBiometric,
 } from '@/hooks/use-biometric';
+import { BiometricManagementModal } from '@/components/ui/biometric-modal';
 
 interface UserProfileData {
   user_id: string;
@@ -67,7 +68,8 @@ export default function ProfileScreen() {
   const [copiedWalletId, setCopiedWalletId] = useState<boolean>(false);
 
   // Biometric states
-  const [biometricSupported, setBiometricSupported] = useState<boolean>(false);
+  const [showBiometricModal, setShowBiometricModal] = useState<boolean>(false);
+  const [biometricSupported, setBiometricSupported] = useState<boolean>(true);
   const [biometricRegistered, setBiometricRegistered] = useState<boolean>(false);
   const [biometricLoading, setBiometricLoading] = useState<boolean>(false);
   const [biometricMessage, setBiometricMessage] = useState<string>('');
@@ -447,57 +449,46 @@ export default function ProfileScreen() {
                   </TouchableOpacity>
 
                   {/* Fingerprint / WebAuthn Biometric Row */}
-                  {biometricSupported && (
-                    <>
-                      <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />
-                      <TouchableOpacity
-                        style={styles.actionRow}
-                        onPress={handleRegisterBiometric}
-                        disabled={biometricLoading}
-                        id="profile-biometric-row-btn"
+                  <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />
+                  <TouchableOpacity
+                    style={styles.actionRow}
+                    onPress={() => setShowBiometricModal(true)}
+                    id="profile-biometric-row-btn"
+                  >
+                    <View style={styles.actionRowLeft}>
+                      <View style={[styles.iconCircle, { backgroundColor: '#8B5CF615' }]}>
+                        <Ionicons name="finger-print" size={18} color="#8B5CF6" />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <ThemedText type="smallBold">Sidik Jari / Biometrik</ThemedText>
+                        <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
+                          {biometricRegistered ? 'Aktif & Terdaftar pada perangkat' : 'Touch ID, Face ID & Windows Hello'}
+                        </ThemedText>
+                      </View>
+                    </View>
+                    <View style={styles.actionRowRight}>
+                      <View
+                        style={[
+                          styles.statusPill,
+                          {
+                            backgroundColor: biometricRegistered ? theme.success + '20' : theme.primary + '20',
+                          },
+                        ]}
                       >
-                        <View style={styles.actionRowLeft}>
-                          <View style={[styles.iconCircle, { backgroundColor: '#8B5CF615' }]}>
-                            <Ionicons name="finger-print" size={18} color="#8B5CF6" />
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <ThemedText type="smallBold">Sidik Jari / Biometrik</ThemedText>
-                            <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
-                              {biometricMessage || (biometricRegistered ? 'Terdaftar pada perangkat ini' : 'Ketuk untuk mendaftarkan Touch ID/Hello')}
-                            </ThemedText>
-                          </View>
-                        </View>
-                        <View style={styles.actionRowRight}>
-                          {biometricLoading ? (
-                            <ActivityIndicator size="small" color={theme.primary} />
-                          ) : (
-                            <>
-                              <View
-                                style={[
-                                  styles.statusPill,
-                                  {
-                                    backgroundColor: biometricRegistered ? theme.success + '20' : theme.primary + '20',
-                                  },
-                                ]}
-                              >
-                                <ThemedText
-                                  type="code"
-                                  style={{
-                                    color: biometricRegistered ? theme.success : theme.primary,
-                                    fontSize: 10,
-                                    fontWeight: '700',
-                                  }}
-                                >
-                                  {biometricRegistered ? 'Terdaftar' : 'Daftarkan'}
-                                </ThemedText>
-                              </View>
-                              <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
-                            </>
-                          )}
-                        </View>
-                      </TouchableOpacity>
-                    </>
-                  )}
+                        <ThemedText
+                          type="code"
+                          style={{
+                            color: biometricRegistered ? theme.success : theme.primary,
+                            fontSize: 10,
+                            fontWeight: '700',
+                          }}
+                        >
+                          {biometricRegistered ? 'Aktif' : 'Atur'}
+                        </ThemedText>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
+                    </View>
+                  </TouchableOpacity>
 
                   <View style={[styles.rowDivider, { backgroundColor: theme.border }]} />
 
@@ -773,6 +764,21 @@ export default function ProfileScreen() {
           </Card>
         </View>
       </Modal>
+      {profile && (
+        <BiometricManagementModal
+          visible={showBiometricModal}
+          onClose={() => setShowBiometricModal(false)}
+          user={{
+            userId: profile.user_id,
+            username: profile.username,
+            email: profile.email,
+          }}
+          onSuccess={() => {
+            loadProfileData();
+            setBiometricRegistered(isBiometricRegistered() || !!profile.biometric_enabled);
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
