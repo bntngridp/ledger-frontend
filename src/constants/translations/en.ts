@@ -324,6 +324,15 @@ export const en = {
     typeSystem: 'System',
     loadError: 'Failed to load notifications',
     allCaughtUp: 'All caught up!',
+    selectAll: 'Select All',
+    deselectAll: 'Deselect All',
+    deleteSelected: 'Delete Selected',
+    deleteAll: 'Delete All',
+    deleteAllConfirm: 'Are you sure you want to delete all notifications?',
+    deleteSelectedConfirm: 'Delete selected notifications?',
+    filterAll: 'All',
+    filterUnread: 'Unread',
+    selectedCount: 'selected',
   },
 };
 

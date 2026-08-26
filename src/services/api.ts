@@ -329,5 +329,14 @@ export const api = {
     async deleteNotification(notificationId: string) {
       return request(`/notifications/${notificationId}`, { method: 'DELETE' });
     },
+    async deleteAllNotifications() {
+      return request('/notifications/all', { method: 'DELETE' });
+    },
+    async deleteBulkNotifications(notificationIds: string[]) {
+      return request('/notifications/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ notification_ids: notificationIds }),
+      });
+    },
   },
 };
