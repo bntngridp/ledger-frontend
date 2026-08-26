@@ -28,6 +28,13 @@ import {
   TransactionResultDetails,
 } from '@/components/ui/transaction-result-modal';
 
+// Clean number formatter that strips unnecessary trailing zeros (e.g. 90 instead of 90.0000)
+function cleanNumberString(val: number, maxDecimals: number = 6): string {
+  if (isNaN(val) || val === 0) return '0';
+  const fixed = val.toFixed(maxDecimals);
+  return parseFloat(fixed).toString();
+}
+
 export default function SwapScreen() {
   const theme = useTheme();
   const { t } = useTranslation();
@@ -133,9 +140,9 @@ export default function SwapScreen() {
     const calculated = val * rate;
     const netAmount = calculated * (1 - swapFeePercentage);
     if (toAsset === 'IDR') {
-      setToAmount(netAmount.toFixed(2));
+      setToAmount(cleanNumberString(netAmount, 2));
     } else {
-      setToAmount(netAmount.toFixed(6));
+      setToAmount(cleanNumberString(netAmount, 6));
     }
   }, [fromAmount, rate, loadingRate, toAsset]);
 
@@ -150,11 +157,12 @@ export default function SwapScreen() {
   const handleApplyPercentage = (pct: number) => {
     const currentBal = balances[fromAsset] || 0;
     if (currentBal <= 0) return;
-    const computed = currentBal * pct;
-    if (fromAsset === 'IDR') {
-      setFromAmount(Math.floor(computed).toString());
+    if (pct === 1) {
+      // For MAX (100%), take the clean balance without unnecessary trailing zeroes
+      setFromAmount(cleanNumberString(currentBal, fromAsset === 'IDR' ? 0 : 6));
     } else {
-      setFromAmount(computed.toFixed(4));
+      const computed = currentBal * pct;
+      setFromAmount(cleanNumberString(computed, fromAsset === 'IDR' ? 0 : 4));
     }
   };
 
@@ -230,7 +238,7 @@ export default function SwapScreen() {
     !isSwapping;
 
   const feeAmount = fromAmount
-    ? (parseFloat(fromAmount) * swapFeePercentage).toFixed(fromAsset === 'IDR' ? 2 : 4)
+    ? cleanNumberString(parseFloat(fromAmount) * swapFeePercentage, fromAsset === 'IDR' ? 2 : 4)
     : '0';
 
   return (
