@@ -50,3 +50,4 @@ AGENTS.md
 # Playwright test outputs
 test-results/
 playwright-report/
+tests/screenshots/
