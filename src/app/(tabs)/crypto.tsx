@@ -502,7 +502,7 @@ export default function CryptoScreen() {
                           {asset}
                         </ThemedText>
                         <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
-                          Saldo: {balances[asset as 'USDT' | 'USDC']?.toFixed(2)} {asset}
+                          {t('swap.balance') || 'Saldo'}: {balances[asset as 'USDT' | 'USDC']?.toFixed(2)} {asset}
                         </ThemedText>
                       </View>
                     </TouchableOpacity>
@@ -668,7 +668,7 @@ export default function CryptoScreen() {
                             {asset}
                           </ThemedText>
                           <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
-                            Tersedia: {balances[asset as 'USDT' | 'USDC']?.toFixed(2)} {asset}
+                            {t('crypto.availableBalance') || 'Tersedia'}: {balances[asset as 'USDT' | 'USDC']?.toFixed(2)} {asset}
                           </ThemedText>
                         </View>
                       </TouchableOpacity>
@@ -787,10 +787,8 @@ export default function CryptoScreen() {
           visible={isPinModalVisible}
           onClose={() => setIsPinModalVisible(false)}
           onSuccess={executeWithdrawCrypto}
-          title="PIN Penarikan Crypto"
-          subtitle={`Konfirmasi penarikan ${amount} ${sendAsset} ke ${
-            recipientAddress ? recipientAddress.slice(0, 10) + '...' : ''
-          }`}
+          title={t('pinModal.title') || 'PIN Transaksi'}
+          subtitle={`${t('crypto.withdrawTab')} ${amount} ${sendAsset}`}
         />
 
         {/* Transaction Result & Confirmation Animation Modal */}

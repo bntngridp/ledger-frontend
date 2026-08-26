@@ -392,7 +392,7 @@ export default function WithdrawScreen() {
             <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement, maxHeight: '80%' }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <ThemedText type="smallBold" style={{ fontSize: 16 }}>
-                  Pilih Bank / E-Wallet Tujuan
+                  {t('withdraw.selectDestination') || 'Pilih Bank / E-Wallet Tujuan'}
                 </ThemedText>
                 <TouchableOpacity onPress={() => setShowBankModal(false)}>
                   <Ionicons name="close" size={22} color={theme.text} />
@@ -475,8 +475,8 @@ export default function WithdrawScreen() {
           visible={isPinModalVisible}
           onClose={() => setIsPinModalVisible(false)}
           onSuccess={executeConfirmWithdraw}
-          title="PIN Penarikan Rekening"
-          subtitle={`Konfirmasi penarikan Rp ${parseFloat(amount || '0').toLocaleString('id-ID')} ke ${SUPPORTED_CHANNELS.find((b: any) => b.code === bankCode)?.name || bankCode.toUpperCase()} (${accountNumber})`}
+          title={t('pinModal.title') || 'PIN Transaksi'}
+          subtitle={`${t('withdraw.confirmWithdraw')} Rp ${parseFloat(amount || '0').toLocaleString('id-ID')} (${accountNumber})`}
         />
       </SafeAreaView>
     </ThemedView>

@@ -441,10 +441,10 @@ export default function SwapScreen() {
                   </View>
                   <View>
                     <ThemedText type="subtitle" style={styles.modalTitle}>
-                      Konfirmasi Penukaran Aset
+                      {t('swap.confirmSwap') || 'Konfirmasi Penukaran'}
                     </ThemedText>
                     <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                      Periksa rincian konversi equity Anda
+                      {t('swap.reviewDetails') || 'Periksa rincian konversi equity Anda'}
                     </ThemedText>
                   </View>
                 </View>
@@ -465,7 +465,7 @@ export default function SwapScreen() {
                     <AssetIcon symbol={fromAsset} size={28} />
                     <View>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                        Bayar / Diberikan
+                        {t('swap.youSell') || 'Anda Jual'}
                       </ThemedText>
                       <ThemedText type="smallBold" style={{ fontSize: 16 }}>
                         {fromAmount} {fromAsset}
@@ -497,7 +497,7 @@ export default function SwapScreen() {
                     <AssetIcon symbol={toAsset} size={28} />
                     <View>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                        Terima / Didapatkan
+                        {t('swap.youGet') || 'Anda Terima'}
                       </ThemedText>
                       <ThemedText type="smallBold" style={{ fontSize: 16, color: theme.success }}>
                         +{toAmount} {toAsset}
@@ -516,7 +516,7 @@ export default function SwapScreen() {
               <Card style={[styles.summaryCard, { backgroundColor: theme.background }]} bordered>
                 <View style={styles.summaryItem}>
                   <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                    Kurs Nilai Tukar
+                    {t('swap.exchangeRate') || 'Kurs Nilai Tukar'}
                   </ThemedText>
                   <ThemedText type="code" style={{ fontSize: 12 }}>
                     1 {fromAsset} = {rate.toLocaleString('id-ID', { maximumFractionDigits: 6 })} {toAsset}
@@ -525,19 +525,10 @@ export default function SwapScreen() {
                 <View style={[styles.summaryDivider, { backgroundColor: theme.border }]} />
                 <View style={styles.summaryItem}>
                   <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                    Biaya Platform (0.5%)
+                    {t('swap.swapFee') || 'Biaya Penukaran (0.5%)'}
                   </ThemedText>
                   <ThemedText type="smallBold" style={{ fontSize: 12 }}>
                     {feeAmount} {fromAsset}
-                  </ThemedText>
-                </View>
-                <View style={[styles.summaryDivider, { backgroundColor: theme.border }]} />
-                <View style={styles.summaryItem}>
-                  <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                    Kecepatan Eksekusi
-                  </ThemedText>
-                  <ThemedText type="smallBold" style={{ fontSize: 12, color: theme.primary }}>
-                    Instan (Internal Ledger)
                   </ThemedText>
                 </View>
               </Card>
@@ -552,7 +543,7 @@ export default function SwapScreen() {
                   id="swap-review-cancel-btn"
                 />
                 <Button
-                  title="Konfirmasi & Lanjutkan"
+                  title={t('common.confirm') || 'Konfirmasi'}
                   variant="primary"
                   loading={isSwapping}
                   onPress={handleProceedToPin}

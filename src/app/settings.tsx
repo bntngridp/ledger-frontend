@@ -112,13 +112,13 @@ export default function SettingsScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <ThemedText type="smallBold" style={{ color: theme.text }}>
-                  Profil & Keamanan Akun
+                  {t('profile.sidebarSubtitle') || 'Profil & Keamanan Akun'}
                 </ThemedText>
                 <ThemedText
                   type="small"
                   style={{ color: theme.textSecondary, fontSize: 12, marginTop: 2 }}
                 >
-                  Kelola PIN 6-digit, 2FA, biometrik, dan detail wallet Anda di Halaman Profil.
+                  {t('profile.pinSubtitle') || 'Kelola PIN 6-digit, 2FA, biometrik, dan detail wallet Anda di Halaman Profil.'}
                 </ThemedText>
               </View>
             </View>
@@ -132,7 +132,7 @@ export default function SettingsScreen() {
                 type="smallBold"
                 style={{ color: '#FFFFFF', fontSize: 11 }}
               >
-                Buka Profil
+                {t('common.profile') || 'Buka Profil'}
               </ThemedText>
               <Ionicons name="arrow-forward" size={12} color="#FFFFFF" />
             </View>
@@ -144,7 +144,7 @@ export default function SettingsScreen() {
               type="small"
               style={[styles.sectionTitle, { color: theme.textSecondary }]}
             >
-              TAMPILAN & TEMA
+              {t('settings.themeMode') || 'TAMPILAN & TEMA'}
             </ThemedText>
             <Card style={styles.settingsGroup} bordered>
               <TouchableOpacity
@@ -166,7 +166,7 @@ export default function SettingsScreen() {
                       type="small"
                       style={{ color: theme.textSecondary, fontSize: 11, marginTop: 1 }}
                     >
-                      Pilih tampilan gelap, terang, atau mengikuti sistem
+                      {t('settings.selectThemeDesc') || 'Pilih tampilan gelap, terang, atau mengikuti sistem'}
                     </ThemedText>
                   </View>
                 </View>
@@ -197,7 +197,7 @@ export default function SettingsScreen() {
               type="small"
               style={[styles.sectionTitle, { color: theme.textSecondary }]}
             >
-              BAHASA & WILAYAH
+              {t('settings.languagePreference') || 'BAHASA & WILAYAH'}
             </ThemedText>
             <Card style={styles.settingsGroup} bordered>
               <TouchableOpacity
@@ -219,7 +219,7 @@ export default function SettingsScreen() {
                       type="small"
                       style={{ color: theme.textSecondary, fontSize: 11, marginTop: 1 }}
                     >
-                      Bahasa tampilan seluruh menu dan transaksi
+                      {t('settings.selectLanguageDesc') || 'Bahasa tampilan seluruh menu dan transaksi'}
                     </ThemedText>
                   </View>
                 </View>
@@ -254,7 +254,7 @@ export default function SettingsScreen() {
               type="small"
               style={[styles.sectionTitle, { color: theme.textSecondary }]}
             >
-              PREFERENSI NOTIFIKASI
+              {t('notifications.title') || 'PREFERENSI NOTIFIKASI'}
             </ThemedText>
             <Card style={styles.settingsGroup} bordered>
               <View style={styles.settingsRow}>
@@ -266,13 +266,13 @@ export default function SettingsScreen() {
                   />
                   <View style={{ flex: 1 }}>
                     <ThemedText type="smallBold" style={styles.settingsLabel}>
-                      Notifikasi Dalam Aplikasi
+                      {t('settings.pushNotifications') || 'Notifikasi Push'}
                     </ThemedText>
                     <ThemedText
                       type="small"
                       style={{ color: theme.textSecondary, fontSize: 11, marginTop: 1 }}
                     >
-                      Pemberitahuan transfer, top up, dan deposit kripto
+                      {t('notifications.emptyDesc') || 'Pemberitahuan transfer, top up, dan deposit kripto'}
                     </ThemedText>
                   </View>
                 </View>
@@ -297,13 +297,13 @@ export default function SettingsScreen() {
                   />
                   <View style={{ flex: 1 }}>
                     <ThemedText type="smallBold" style={styles.settingsLabel}>
-                      Laporan & Bukti Email
+                      Email Alerts
                     </ThemedText>
                     <ThemedText
                       type="small"
                       style={{ color: theme.textSecondary, fontSize: 11, marginTop: 1 }}
                     >
-                      Kirim salinan ringkasan bukti transaksi ke email
+                      Security and transaction receipts via email
                     </ThemedText>
                   </View>
                 </View>
@@ -323,7 +323,7 @@ export default function SettingsScreen() {
               type="small"
               style={[styles.sectionTitle, { color: theme.textSecondary }]}
             >
-              INFORMASI APLIKASI
+              {t('settings.aboutSection') || 'INFORMASI APLIKASI'}
             </ThemedText>
             <Card style={styles.settingsGroup} bordered>
               <View style={styles.settingsRow}>
@@ -334,7 +334,7 @@ export default function SettingsScreen() {
                     color={theme.textSecondary}
                   />
                   <ThemedText type="smallBold" style={styles.settingsLabel}>
-                    Versi Aplikasi
+                    {t('settings.appVersionLabel') || 'Versi Aplikasi'}
                   </ThemedText>
                 </View>
                 <View style={[styles.statusChip, { backgroundColor: theme.backgroundElement }]}>
@@ -356,7 +356,7 @@ export default function SettingsScreen() {
                     color={theme.success}
                   />
                   <ThemedText type="smallBold" style={styles.settingsLabel}>
-                    Status Server & Koneksi
+                    API Server
                   </ThemedText>
                 </View>
                 <View style={[styles.statusChip, { backgroundColor: theme.success + '18' }]}>
@@ -383,14 +383,14 @@ export default function SettingsScreen() {
                     color={theme.textSecondary}
                   />
                   <ThemedText type="smallBold" style={styles.settingsLabel}>
-                    Bersihkan Cache Data Lokal
+                    Cache Storage
                   </ThemedText>
                 </View>
                 <ThemedText
                   type="small"
                   style={{ color: theme.primary, fontWeight: '600', fontSize: 12 }}
                 >
-                  {cacheCleared ? 'Membersihkan...' : 'Bersihkan'}
+                  {cacheCleared ? (t('common.loading') || 'Clearing...') : (t('common.done') || 'Clear')}
                 </ThemedText>
               </TouchableOpacity>
             </Card>

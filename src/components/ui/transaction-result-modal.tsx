@@ -14,6 +14,7 @@ import { ThemedText } from '../themed-text';
 import { Button } from './button';
 import { Card } from './card';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/hooks/use-translation';
 import { Spacing } from '@/constants/theme';
 
 export interface TransactionResultDetails {
@@ -45,6 +46,7 @@ export function TransactionResultModal({
   onViewHistory,
 }: TransactionResultModalProps) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const [copiedHash, setCopiedHash] = useState(false);
 
   // Pulse animation on graphic
@@ -101,15 +103,15 @@ export function TransactionResultModal({
   const getTypeText = () => {
     switch (result.type) {
       case 'deposit':
-        return 'Setoran Crypto (Deposit)';
+        return t('resultModal.depositType') || 'Setoran Crypto (Deposit)';
       case 'withdraw':
-        return 'Penarikan Crypto (Withdraw)';
+        return t('resultModal.withdrawType') || 'Penarikan Crypto (Withdraw)';
       case 'transfer':
-        return 'Transfer Aset';
+        return t('resultModal.transferType') || 'Transfer Aset';
       case 'swap':
-        return 'Penukaran Aset (Swap)';
+        return t('resultModal.swapType') || 'Penukaran Aset (Swap)';
       default:
-        return 'Transaksi';
+        return t('common.appName') || 'Transaksi';
     }
   };
 
@@ -206,10 +208,10 @@ export function TransactionResultModal({
               style={{ color: statusColor, fontSize: 12, textTransform: 'uppercase' }}
             >
               {isSuccess
-                ? 'Transaksi Berhasil'
+                ? (t('resultModal.successTitle') || 'Transaksi Berhasil')
                 : isFailed
-                ? 'Transaksi Gagal'
-                : 'Menunggu Konfirmasi Blockchain'}
+                ? (t('resultModal.failedTitle') || 'Transaksi Gagal')
+                : (t('resultModal.pendingTitle') || 'Menunggu Konfirmasi Blockchain')}
             </ThemedText>
           </View>
 
@@ -253,7 +255,7 @@ export function TransactionResultModal({
             >
               <View style={styles.detailRow}>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  Kategori
+                  {t('resultModal.category') || 'Kategori'}
                 </ThemedText>
                 <ThemedText type="smallBold">{getTypeText()}</ThemedText>
               </View>
@@ -263,7 +265,9 @@ export function TransactionResultModal({
                   <View style={[styles.divider, { backgroundColor: theme.border }]} />
                   <View style={styles.detailRow}>
                     <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                      {result.type === 'deposit' ? 'Alamat Setoran' : 'Alamat Tujuan'}
+                      {result.type === 'deposit'
+                        ? (t('resultModal.depositAddr') || 'Alamat Setoran')
+                        : (t('resultModal.targetAddr') || 'Alamat Tujuan')}
                     </ThemedText>
                     <ThemedText type="code" style={{ fontSize: 11, maxWidth: 160 }} numberOfLines={1}>
                       {result.recipientOrAddress.slice(0, 8)}...{result.recipientOrAddress.slice(-6)}
@@ -277,7 +281,7 @@ export function TransactionResultModal({
                   <View style={[styles.divider, { backgroundColor: theme.border }]} />
                   <View style={styles.detailRow}>
                     <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                      Tx Hash
+                      {t('resultModal.txHash') || 'Tx Hash'}
                     </ThemedText>
                     <TouchableOpacity
                       onPress={() => result.txHash && handleCopyHash(result.txHash)}
@@ -301,7 +305,7 @@ export function TransactionResultModal({
               <View style={[styles.divider, { backgroundColor: theme.border }]} />
               <View style={styles.detailRow}>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  Jaringan
+                  Network
                 </ThemedText>
                 <ThemedText type="code" style={{ fontSize: 11, color: theme.textSecondary }}>
                   Polygon Amoy Testnet
@@ -315,14 +319,14 @@ export function TransactionResultModal({
             {isFailed && onRetry ? (
               <>
                 <Button
-                  title="Tutup"
+                  title={t('common.cancel') || 'Tutup'}
                   variant="ghost"
                   onPress={onClose}
                   style={{ flex: 1 }}
                   id="result-modal-close-action-btn"
                 />
                 <Button
-                  title="Coba Lagi"
+                  title={t('resultModal.retry') || 'Coba Lagi'}
                   variant="primary"
                   onPress={onRetry}
                   style={{ flex: 1.5 }}
@@ -333,7 +337,7 @@ export function TransactionResultModal({
               <>
                 {onViewHistory && (
                   <Button
-                    title="Lihat Riwayat"
+                    title={t('resultModal.viewHistory') || 'Lihat Riwayat'}
                     variant="secondary"
                     onPress={onViewHistory}
                     style={{ flex: 1 }}
@@ -341,7 +345,7 @@ export function TransactionResultModal({
                   />
                 )}
                 <Button
-                  title="Selesai"
+                  title={t('resultModal.done') || 'Selesai'}
                   variant="primary"
                   onPress={onClose}
                   style={{ flex: 1.5 }}

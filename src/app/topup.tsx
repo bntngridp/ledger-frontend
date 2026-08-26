@@ -271,14 +271,14 @@ export default function TopUpScreen() {
                     <Ionicons name="checkmark-circle" size={64} color={theme.success} />
                   </View>
                   <ThemedText type="smallBold" style={{ fontSize: 20, marginTop: 12, textAlign: 'center' }}>
-                    Pembayaran Berhasil
+                    {t('topup.paymentSuccess') || 'Pembayaran Berhasil'}
                   </ThemedText>
                   <ThemedText style={{ color: theme.textSecondary, textAlign: 'center', marginTop: 8 }}>
-                    Top Up sebesar <ThemedText type="smallBold" style={{ color: theme.success }}>Rp {amount ? parseInt(amount).toLocaleString('id-ID') : '0'}</ThemedText> telah berhasil ditambahkan ke saldo dompet Anda.
+                    Top Up <ThemedText type="smallBold" style={{ color: theme.success }}>Rp {amount ? parseInt(amount).toLocaleString('id-ID') : '0'}</ThemedText> {t('topup.creditedToWallet') || 'telah berhasil ditambahkan ke saldo dompet Anda.'}
                   </ThemedText>
 
                   <Button
-                    title="Selesai & Ke Dashboard"
+                    title={t('common.done') || 'Selesai & Ke Dashboard'}
                     variant="primary"
                     onPress={() => {
                       setShowPayModal(false);
@@ -317,13 +317,13 @@ export default function TopUpScreen() {
                   <View style={[styles.simBanner, { backgroundColor: theme.primary + '15', borderColor: theme.primary + '40' }]}>
                     <Ionicons name="information-circle-outline" size={20} color={theme.primary} />
                     <ThemedText type="small" style={{ color: theme.text, flex: 1, marginLeft: 8 }}>
-                      Mode Simulasi Sandbox: Setelah bayar di simulator, klik <ThemedText type="smallBold" style={{ color: theme.primary }}>Verifikasi Pembayaran</ThemedText> di bawah.
+                      Sandbox Mode: After paying in the simulator, click <ThemedText type="smallBold" style={{ color: theme.primary }}>Verify Payment</ThemedText> below.
                     </ThemedText>
                   </View>
 
                   {/* Instant Verification Button */}
                   <Button
-                    title="Verifikasi Pembayaran Simulasi"
+                    title={t('topup.verifyPayment') || 'Verifikasi Pembayaran'}
                     variant="primary"
                     loading={simulating}
                     onPress={handleSimulateSettlement}
@@ -336,7 +336,7 @@ export default function TopUpScreen() {
                   >
                     <Ionicons name="flask-outline" size={18} color={theme.primary} />
                     <ThemedText type="smallBold" style={{ color: theme.primary, marginLeft: 6 }}>
-                      Buka Midtrans Payment Simulator
+                      Midtrans Payment Simulator
                     </ThemedText>
                   </TouchableOpacity>
 

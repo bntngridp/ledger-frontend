@@ -312,8 +312,8 @@ export default function TransferScreen() {
           visible={isPinModalVisible}
           onClose={() => setIsPinModalVisible(false)}
           onSuccess={executeConfirmTransfer}
-          title="PIN Transfer P2P"
-          subtitle={`Konfirmasi transfer ${amount} ${selectedAsset} ke ${recipientId}`}
+          title={t('pinModal.title') || 'PIN Transaksi'}
+          subtitle={`${t('transfer.confirmTransfer')} ${amount} ${selectedAsset}`}
         />
       </SafeAreaView>
     </ThemedView>

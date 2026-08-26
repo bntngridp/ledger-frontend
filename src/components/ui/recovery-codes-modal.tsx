@@ -14,6 +14,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/hooks/use-translation';
 import { Spacing } from '@/constants/theme';
 import { api } from '@/services/api';
 
@@ -24,6 +25,7 @@ interface RecoveryCodesModalProps {
 
 export function RecoveryCodesModal({ visible, onClose }: RecoveryCodesModalProps) {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   const [codes, setCodes] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -133,10 +135,10 @@ export function RecoveryCodesModal({ visible, onClose }: RecoveryCodesModalProps
               </View>
               <View>
                 <ThemedText type="smallBold" style={styles.title}>
-                  Kode Pemulihan Cadangan
+                  {t('profile.recoveryCodesTitle') || 'Kode Pemulihan Cadangan'}
                 </ThemedText>
                 <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 11 }}>
-                  2FA Backup Recovery Codes ({codes.length} Tersedia)
+                  2FA Backup Recovery Codes ({codes.length} Available)
                 </ThemedText>
               </View>
             </View>
@@ -150,7 +152,7 @@ export function RecoveryCodesModal({ visible, onClose }: RecoveryCodesModalProps
             type="small"
             style={[styles.description, { color: theme.textSecondary }]}
           >
-            Simpan kode-kode ini di tempat aman. Gunakan kode pemulihan sekali pakai ini jika Anda kehilangan akses ke aplikasi authenticator.
+            {t('auth.recoveryCodesSubtitle') || 'Simpan kode-kode ini di tempat aman. Gunakan kode pemulihan sekali pakai ini jika Anda kehilangan akses ke aplikasi authenticator.'}
           </ThemedText>
 
           {/* Feedback Alerts */}
@@ -186,7 +188,7 @@ export function RecoveryCodesModal({ visible, onClose }: RecoveryCodesModalProps
           <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
             {loading ? (
               <ThemedText style={{ color: theme.textSecondary, textAlign: 'center', marginVertical: 20 }}>
-                Memuat kode pemulihan...
+                {t('common.loading') || 'Memuat kode pemulihan...'}
               </ThemedText>
             ) : codes.length > 0 ? (
               <View style={styles.codesGrid}>
@@ -206,7 +208,7 @@ export function RecoveryCodesModal({ visible, onClose }: RecoveryCodesModalProps
               </View>
             ) : (
               <ThemedText style={{ color: theme.textSecondary, textAlign: 'center', marginVertical: 20 }}>
-                Tidak ada kode pemulihan yang tersimpan.
+                -
               </ThemedText>
             )}
           </ScrollView>
@@ -223,7 +225,7 @@ export function RecoveryCodesModal({ visible, onClose }: RecoveryCodesModalProps
                 color={theme.textSecondary}
               />
               <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: 6 }}>
-                {hidden ? 'Tampilkan' : 'Sembunyikan'}
+                {hidden ? 'Show' : 'Hide'}
               </ThemedText>
             </TouchableOpacity>
 
@@ -241,7 +243,7 @@ export function RecoveryCodesModal({ visible, onClose }: RecoveryCodesModalProps
                 type="smallBold"
                 style={{ color: copied ? theme.success : theme.primary, marginLeft: 6 }}
               >
-                {copied ? 'Tersalin!' : 'Salin Semua'}
+                {copied ? (t('common.copied') || 'Tersalin!') : (t('auth.copyAllCodes') || 'Salin Semua')}
               </ThemedText>
             </TouchableOpacity>
 
@@ -252,7 +254,7 @@ export function RecoveryCodesModal({ visible, onClose }: RecoveryCodesModalProps
             >
               <Ionicons name="download-outline" size={16} color={theme.primary} />
               <ThemedText type="smallBold" style={{ color: theme.primary, marginLeft: 6 }}>
-                Download .txt
+                Download (.txt)
               </ThemedText>
             </TouchableOpacity>
           </View>
@@ -260,7 +262,7 @@ export function RecoveryCodesModal({ visible, onClose }: RecoveryCodesModalProps
           {/* Footer Buttons */}
           <View style={styles.footerRow}>
             <Button
-              title="Buat Kode Baru (Regenerate)"
+              title={t('auth.regenerateCodes') || 'Regenerate'}
               variant="ghost"
               loading={regenerating}
               onPress={handleRegenerate}
@@ -268,7 +270,7 @@ export function RecoveryCodesModal({ visible, onClose }: RecoveryCodesModalProps
               id="btn-regenerate-recovery-codes"
             />
             <Button
-              title="Tutup"
+              title={t('common.done') || 'Tutup'}
               variant="secondary"
               onPress={onClose}
               style={{ flex: 1 }}

@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { ThemedText } from '../themed-text';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/hooks/use-translation';
 import { Spacing } from '@/constants/theme';
 import { api } from '@/services/api';
 import {
@@ -30,12 +31,15 @@ interface PinVerificationModalProps {
 
 export function PinVerificationModal({
   visible,
-  title = 'Verifikasi PIN Transaksi',
-  subtitle = 'Masukkan 6 digit PIN keamanan Anda',
+  title,
+  subtitle,
   onClose,
   onSuccess,
 }: PinVerificationModalProps) {
   const theme = useTheme();
+  const { t } = useTranslation();
+  const modalTitle = title || t('pinModal.verifyTitle') || 'Verifikasi PIN Transaksi';
+  const modalSubtitle = subtitle || t('pinModal.verifySubtitle') || 'Masukkan 6 digit PIN keamanan Anda';
   const [pin, setPin] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -184,7 +188,7 @@ export function PinVerificationModal({
           {/* Header */}
           <View style={styles.header}>
             <ThemedText type="smallBold" style={styles.title}>
-              {title}
+              {modalTitle}
             </ThemedText>
             <TouchableOpacity onPress={onClose} id="pin-modal-close-btn">
               <Ionicons name="close" size={20} color={theme.text} />
@@ -219,7 +223,7 @@ export function PinVerificationModal({
           </View>
 
           <ThemedText style={[styles.description, { color: theme.textSecondary }]}>
-            {subtitle}
+            {modalSubtitle}
           </ThemedText>
 
           {/* 6 Dots Indicator */}
@@ -251,7 +255,7 @@ export function PinVerificationModal({
               <View style={styles.loadingRow}>
                 <ActivityIndicator size="small" color={theme.primary} />
                 <ThemedText type="code" style={{ fontSize: 11, color: theme.primary, marginLeft: 8 }}>
-                  Memverifikasi PIN...
+                  {t('common.loading') || 'Memverifikasi PIN...'}
                 </ThemedText>
               </View>
             ) : error ? (
@@ -260,7 +264,7 @@ export function PinVerificationModal({
               </ThemedText>
             ) : (
               <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary, textAlign: 'center' }}>
-                Gunakan PIN default <ThemedText type="smallBold">123456</ThemedText> jika belum membuat PIN
+                {t('pinModal.enterPin') || 'Masukkan 6 digit PIN transaksi Anda'}
               </ThemedText>
             )}
           </View>
@@ -344,7 +348,7 @@ export function PinVerificationModal({
                 type="smallBold"
                 style={{ color: theme.primary, fontSize: 13, marginLeft: 8 }}
               >
-                {biometricLoading ? 'Memverifikasi...' : 'Gunakan Sidik Jari'}
+                {biometricLoading ? (t('common.loading') || 'Memverifikasi...') : (t('pinModal.useBiometrics') || 'Gunakan Biometrik')}
               </ThemedText>
             </TouchableOpacity>
           )}

@@ -417,8 +417,8 @@ export default function DashboardScreen() {
   };
 
   const getPortfolioTitle = () => {
-    if (activeAssetFilter === 'Fiat') return 'ESTIMASI SALDO FIAT (IDR)';
-    if (activeAssetFilter === 'Crypto') return 'ESTIMASI SALDO CRYPTO (IDR)';
+    if (activeAssetFilter === 'Fiat') return `${t('dashboard.filterFiat')} - ${t('dashboard.estimatedPortfolio')}`;
+    if (activeAssetFilter === 'Crypto') return `${t('dashboard.filterCrypto')} - ${t('dashboard.estimatedPortfolio')}`;
     return t('dashboard.estimatedPortfolio');
   };
 

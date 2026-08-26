@@ -96,7 +96,7 @@ test.describe.serial('Swap Equity Flow & Confirmation Modals', () => {
     await page.waitForTimeout(800);
 
     // 3. Verify Review Confirmation Modal is visible
-    const reviewTitle = page.getByText('Konfirmasi Penukaran Aset').first();
+    const reviewTitle = page.getByText('Konfirmasi Penukaran').or(page.getByText('Confirm Swap')).first();
     await expect(reviewTitle).toBeVisible();
 
     // Capture screenshot of Review Confirmation Modal
@@ -179,7 +179,7 @@ test.describe.serial('Swap Equity Flow & Confirmation Modals', () => {
     await page.waitForTimeout(800);
 
     // 5. Verify Review Modal
-    const reviewTitle = page.getByText('Konfirmasi Penukaran Aset').first();
+    const reviewTitle = page.getByText('Konfirmasi Penukaran').or(page.getByText('Confirm Swap')).first();
     await expect(reviewTitle).toBeVisible();
 
     // 6. Proceed to PIN

@@ -284,7 +284,7 @@ export default function ProfileScreen() {
       {/* Header Bar */}
       <ThemedView style={[styles.header, { borderBottomColor: theme.border }]}>
         <ThemedText type="subtitle" style={styles.headerTitle}>
-          Profil Pengguna
+          {t('profile.title') || 'Profil Pengguna'}
         </ThemedText>
         <TouchableOpacity
           onPress={() => router.push('/settings')}
@@ -306,7 +306,7 @@ export default function ProfileScreen() {
             <View style={styles.loadingWrapper}>
               <ActivityIndicator size="large" color={theme.primary} />
               <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: 12 }}>
-                Memuat data profil...
+                {t('profile.loading') || 'Memuat data profil...'}
               </ThemedText>
             </View>
           ) : (
@@ -330,7 +330,7 @@ export default function ProfileScreen() {
                       <View style={[styles.verifiedBadge, { backgroundColor: theme.success + '20', borderColor: theme.success + '50' }]}>
                         <Ionicons name="shield-checkmark" size={12} color={theme.success} />
                         <ThemedText type="code" style={[styles.verifiedBadgeText, { color: theme.success }]}>
-                          Verified Tier 1
+                          {t('profile.verifiedBadge') || 'Verified Tier 1'}
                         </ThemedText>
                       </View>
                     </View>
@@ -340,7 +340,7 @@ export default function ProfileScreen() {
                     <View style={styles.joinDateRow}>
                       <Ionicons name="calendar-outline" size={13} color={theme.textSecondary} />
                       <ThemedText type="code" style={[styles.joinDateText, { color: theme.textSecondary }]}>
-                        Bergabung {profile?.created_at ? formatDate(profile.created_at) : 'Agustus 2026'}
+                        {t('profile.joined') || 'Bergabung'} {profile?.created_at ? formatDate(profile.created_at) : '2026'}
                       </ThemedText>
                     </View>
                   </View>
@@ -353,7 +353,7 @@ export default function ProfileScreen() {
                   <View style={styles.metricHeader}>
                     <Ionicons name="wallet-outline" size={16} color={theme.primary} />
                     <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
-                      TOTAL ESTIMASI
+                      {t('profile.totalEstimated') || 'TOTAL ESTIMASI'}
                     </ThemedText>
                   </View>
                   <ThemedText type="subtitle" style={[styles.metricValue, { color: theme.text }]}>
@@ -365,11 +365,11 @@ export default function ProfileScreen() {
                   <View style={styles.metricHeader}>
                     <Ionicons name="pie-chart-outline" size={16} color="#8B5CF6" />
                     <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
-                      ASET AKTIF
+                      {t('profile.activeAssets') || 'ASET AKTIF'}
                     </ThemedText>
                   </View>
                   <ThemedText type="subtitle" style={[styles.metricValue, { color: theme.text }]}>
-                    {stats.assets_count} Aset
+                    {t('profile.assetsCount', { count: stats.assets_count }) || `${stats.assets_count} Aset`}
                   </ThemedText>
                 </Card>
 
@@ -377,7 +377,7 @@ export default function ProfileScreen() {
                   <View style={styles.metricHeader}>
                     <Ionicons name="swap-horizontal-outline" size={16} color={theme.success} />
                     <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
-                      TRANSAKSI
+                      {t('profile.transactions') || 'TRANSAKSI'}
                     </ThemedText>
                   </View>
                   <ThemedText type="subtitle" style={[styles.metricValue, { color: theme.text }]}>
@@ -390,12 +390,12 @@ export default function ProfileScreen() {
               <View style={styles.section}>
                 <View style={styles.sectionHeaderRow}>
                   <ThemedText type="small" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-                    PUSAT KEAMANAN (SECURITY CENTER)
+                    {t('profile.securityCenter') || 'PUSAT KEAMANAN'}
                   </ThemedText>
                   <View style={[styles.secureShieldBadge, { backgroundColor: theme.primary + '15' }]}>
                     <Ionicons name="lock-closed" size={12} color={theme.primary} />
                     <ThemedText type="code" style={{ color: theme.primary, fontSize: 10, fontWeight: '700' }}>
-                      Level Keamanan: Tinggi
+                      {t('profile.securityHigh') || 'Level Keamanan: Tinggi'}
                     </ThemedText>
                   </View>
                 </View>
@@ -412,9 +412,9 @@ export default function ProfileScreen() {
                         <Ionicons name="shield-checkmark" size={18} color="#3B82F6" />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <ThemedText type="smallBold">Autentikasi Dua Faktor (2FA)</ThemedText>
+                        <ThemedText type="smallBold">{t('profile.twoFactorTitle') || 'Autentikasi Dua Faktor (2FA)'}</ThemedText>
                         <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
-                          Proteksi TOTP Authenticator & OTP
+                          {t('profile.twoFactorSubtitle') || 'Proteksi TOTP Authenticator & OTP'}
                         </ThemedText>
                       </View>
                     </View>
@@ -435,7 +435,7 @@ export default function ProfileScreen() {
                             fontWeight: '700',
                           }}
                         >
-                          {profile?.two_factor_enabled ? 'Aktif' : 'Nonaktif'}
+                          {profile?.two_factor_enabled ? (t('profile.active') || 'Aktif') : (t('profile.inactive') || 'Nonaktif')}
                         </ThemedText>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
@@ -456,16 +456,16 @@ export default function ProfileScreen() {
                             <Ionicons name="key-outline" size={18} color="#F59E0B" />
                           </View>
                           <View style={{ flex: 1 }}>
-                            <ThemedText type="smallBold">Kode Pemulihan Cadangan</ThemedText>
+                            <ThemedText type="smallBold">{t('profile.recoveryCodesTitle') || 'Kode Pemulihan Cadangan'}</ThemedText>
                             <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
-                              16 Kode darurat jika kehilangan authenticator
+                              {t('profile.recoveryCodesSubtitle') || 'Lihat 8 kode cadangan untuk pemulihan darurat'}
                             </ThemedText>
                           </View>
                         </View>
                         <View style={styles.actionRowRight}>
                           <View style={[styles.statusPill, { backgroundColor: '#F59E0B20' }]}>
                             <ThemedText type="code" style={{ color: '#F59E0B', fontSize: 10, fontWeight: '700' }}>
-                              Lihat & Atur
+                              {t('common.viewAll') || 'Lihat'}
                             </ThemedText>
                           </View>
                           <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
@@ -487,16 +487,16 @@ export default function ProfileScreen() {
                         <Ionicons name="keypad" size={18} color="#10B981" />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <ThemedText type="smallBold">PIN Transaksi 6-Digit</ThemedText>
+                        <ThemedText type="smallBold">{t('profile.pinTitle') || 'PIN Transaksi (6-Digit)'}</ThemedText>
                         <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
-                          Verifikasi saat transfer & penarikan aset
+                          {t('profile.pinSubtitle') || 'Otorisasi keamanan untuk transfer, swap & penarikan'}
                         </ThemedText>
                       </View>
                     </View>
                     <View style={styles.actionRowRight}>
                       <View style={[styles.statusPill, { backgroundColor: theme.success + '20' }]}>
                         <ThemedText type="code" style={{ color: theme.success, fontSize: 10, fontWeight: '700' }}>
-                          {profile?.pin_enabled ? 'Tersetel' : 'Aktif'}
+                          {profile?.pin_enabled ? (t('profile.active') || 'Aktif') : (t('profile.setupPin') || 'Atur')}
                         </ThemedText>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
@@ -515,9 +515,9 @@ export default function ProfileScreen() {
                         <Ionicons name="finger-print" size={18} color="#8B5CF6" />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <ThemedText type="smallBold">Sidik Jari / Biometrik</ThemedText>
+                        <ThemedText type="smallBold">{t('profile.biometricTitle') || 'Biometrik / Passkey'}</ThemedText>
                         <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 11, marginTop: 1 }} numberOfLines={1}>
-                          {biometricRegistered ? 'Aktif & Terdaftar pada perangkat' : 'Touch ID, Face ID & Windows Hello'}
+                          {biometricRegistered ? (t('profile.biometricRegistered') || 'Tersedia & Terdaftar') : (t('profile.biometricSubtitle') || 'Touch ID / WebAuthn')}
                         </ThemedText>
                       </View>
                     </View>
@@ -538,7 +538,7 @@ export default function ProfileScreen() {
                             fontWeight: '700',
                           }}
                         >
-                          {biometricRegistered ? 'Aktif' : 'Atur'}
+                          {biometricRegistered ? (t('profile.active') || 'Aktif') : (t('profile.setupPin') || 'Atur')}
                         </ThemedText>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
@@ -558,9 +558,9 @@ export default function ProfileScreen() {
                         <Ionicons name="lock-closed-outline" size={18} color="#F59E0B" />
                       </View>
                       <View>
-                        <ThemedText type="smallBold">Ganti Kata Sandi</ThemedText>
+                        <ThemedText type="smallBold">{t('profile.changePasswordTitle') || 'Ubah Kata Sandi'}</ThemedText>
                         <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 11, marginTop: 1 }}>
-                          Perbarui kata sandi akun secara berkala
+                          {t('profile.changePasswordSubtitle') || 'Perbarui kata sandi akun secara berkala'}
                         </ThemedText>
                       </View>
                     </View>
@@ -572,7 +572,7 @@ export default function ProfileScreen() {
               {/* 4. Account & Wallet Identifiers Card */}
               <View style={styles.section}>
                 <ThemedText type="small" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-                  DETAIL AKUN & DOMPET
+                  {t('profile.accountInfo') || 'INFORMASI AKUN'}
                 </ThemedText>
 
                 <Card style={styles.sectionCard} bordered>
@@ -580,7 +580,7 @@ export default function ProfileScreen() {
                   <View style={styles.idRow}>
                     <View style={styles.idLabelGroup}>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                        User ID
+                        {t('profile.userIdLabel') || 'User ID'}
                       </ThemedText>
                       <ThemedText type="code" style={[styles.idValueText, { color: theme.text }]} numberOfLines={1}>
                         {profile?.user_id || '-'}
@@ -604,7 +604,7 @@ export default function ProfileScreen() {
                           marginLeft: 4,
                         }}
                       >
-                        {copiedUserId ? 'Tersalin' : 'Salin'}
+                        {copiedUserId ? (t('profile.copied') || 'Tersalin') : (t('common.save') || 'Salin')}
                       </ThemedText>
                     </TouchableOpacity>
                   </View>
@@ -616,7 +616,7 @@ export default function ProfileScreen() {
                       <View style={styles.idRow}>
                         <View style={styles.idLabelGroup}>
                           <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                            Wallet ID
+                            {t('profile.walletIdLabel') || 'Wallet ID'}
                           </ThemedText>
                           <ThemedText type="code" style={[styles.idValueText, { color: theme.text }]} numberOfLines={1}>
                             {profile.wallet_id}
@@ -640,7 +640,7 @@ export default function ProfileScreen() {
                               marginLeft: 4,
                             }}
                           >
-                            {copiedWalletId ? 'Tersalin' : 'Salin'}
+                            {copiedWalletId ? (t('profile.copied') || 'Tersalin') : (t('common.save') || 'Salin')}
                           </ThemedText>
                         </TouchableOpacity>
                       </View>
@@ -652,12 +652,12 @@ export default function ProfileScreen() {
                   {/* Status Row */}
                   <View style={styles.idRow}>
                     <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                      Status Akun
+                      Status
                     </ThemedText>
                     <View style={styles.activePillGroup}>
                       <View style={[styles.activeDot, { backgroundColor: theme.success }]} />
                       <ThemedText type="smallBold" style={{ color: theme.success, fontSize: 12 }}>
-                        Aktif & Terverifikasi
+                        {t('profile.active') || 'Aktif'}
                       </ThemedText>
                     </View>
                   </View>
@@ -667,7 +667,7 @@ export default function ProfileScreen() {
               {/* 5. Shortcuts & Preferences */}
               <View style={styles.section}>
                 <ThemedText type="small" style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-                  PENGATURAN & PREFERENSI
+                  {t('profile.preferencesSection') || 'PREFERENSI & PENGATURAN'}
                 </ThemedText>
 
                 <Card style={styles.sectionCard} bordered>
@@ -679,7 +679,7 @@ export default function ProfileScreen() {
                     <View style={styles.actionRowLeft}>
                       <Ionicons name="notifications-outline" size={20} color={theme.text} />
                       <ThemedText type="smallBold" style={styles.shortcutLabel}>
-                        Pusat Notifikasi
+                        {t('notifications.title') || 'Notifikasi'}
                       </ThemedText>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
@@ -695,7 +695,7 @@ export default function ProfileScreen() {
                     <View style={styles.actionRowLeft}>
                       <Ionicons name="color-palette-outline" size={20} color={theme.text} />
                       <ThemedText type="smallBold" style={styles.shortcutLabel}>
-                        Tema & Bahasa
+                        {t('profile.appSettings') || 'Pengaturan Aplikasi'}
                       </ThemedText>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
@@ -706,7 +706,7 @@ export default function ProfileScreen() {
               {/* 6. Logout Button */}
               <View style={styles.logoutWrapper}>
                 <Button
-                  title="Keluar dari Akun"
+                  title={t('profile.logoutBtn') || 'Keluar Akun'}
                   variant="danger"
                   onPress={() => setShowLogoutModal(true)}
                   id="profile-logout-btn"
@@ -726,20 +726,20 @@ export default function ProfileScreen() {
               <Ionicons name="log-out-outline" size={28} color={theme.danger} />
             </View>
             <ThemedText type="subtitle" style={styles.modalTitle}>
-              Konfirmasi Keluar
+              {t('profile.logoutModalTitle') || 'Konfirmasi Keluar'}
             </ThemedText>
             <ThemedText style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-              Apakah Anda yakin ingin keluar dari akun Ledger ini? Anda harus login kembali untuk mengakses dompet.
+              {t('profile.logoutModalDesc') || 'Apakah Anda yakin ingin keluar dari akun Ledger pada perangkat ini?'}
             </ThemedText>
             <View style={styles.modalBtnRow}>
               <Button
-                title="Batal"
+                title={t('common.cancel') || 'Batal'}
                 variant="ghost"
                 onPress={() => setShowLogoutModal(false)}
                 style={{ flex: 1 }}
               />
               <Button
-                title="Ya, Keluar"
+                title={t('profile.confirmLogout') || 'Ya, Keluar'}
                 variant="danger"
                 onPress={handleLogout}
                 style={{ flex: 1 }}
@@ -780,7 +780,7 @@ export default function ProfileScreen() {
             {/* Header */}
             <View style={styles.modalHeader}>
               <ThemedText type="smallBold" style={styles.modalTitleHeader}>
-                Atur PIN Transaksi
+                {t('pinModal.setupTitle') || 'Atur PIN Keamanan Baru'}
               </ThemedText>
               <TouchableOpacity
                 onPress={() => {
@@ -822,7 +822,7 @@ export default function ProfileScreen() {
             </View>
 
             <ThemedText style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-              Masukkan 6 digit angka untuk PIN keamanan transaksi Anda.
+              {t('pinModal.setupSubtitle') || 'Buat 6 digit PIN untuk otorisasi transaksi'}
             </ThemedText>
 
             <TextInput
@@ -874,7 +874,7 @@ export default function ProfileScreen() {
 
             <View style={[styles.modalBtnRow, { marginTop: Spacing.four }]}>
               <Button
-                title="Batal"
+                title={t('common.cancel') || 'Batal'}
                 variant="ghost"
                 onPress={() => {
                   setShowPinModal(false);
@@ -885,7 +885,7 @@ export default function ProfileScreen() {
                 style={{ flex: 1 }}
               />
               <Button
-                title="Simpan PIN"
+                title={t('common.save') || 'Simpan PIN'}
                 variant="primary"
                 loading={pinLoading}
                 onPress={handleSetupPin}

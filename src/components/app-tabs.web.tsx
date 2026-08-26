@@ -63,7 +63,7 @@ export default function AppTabs() {
                 <TabButton icon="key-outline">{t('common.crypto')}</TabButton>
               </TabTrigger>
               <TabTrigger name="profile" href="/profile" asChild>
-                <TabButton icon="person-outline">Profil</TabButton>
+                <TabButton icon="person-outline">{t('common.profile') || 'Profile'}</TabButton>
               </TabTrigger>
             </CustomTabList>
           </TabList>
@@ -92,7 +92,7 @@ export default function AppTabs() {
             <MobileTabButton icon="key-outline">{t('common.crypto')}</MobileTabButton>
           </TabTrigger>
           <TabTrigger name="profile" href="/profile" asChild>
-            <MobileTabButton icon="person-outline">Profil</MobileTabButton>
+            <MobileTabButton icon="person-outline">{t('common.profile') || 'Profile'}</MobileTabButton>
           </TabTrigger>
         </MobileTabList>
       </TabList>
@@ -250,7 +250,7 @@ export function CustomTabList(props: TabListProps) {
               <View style={styles.profileTextWrapper}>
                 <ThemedText type="smallBold" numberOfLines={1}>{userName}</ThemedText>
                 <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
-                  Profil & Keamanan
+                  {t('profile.sidebarSubtitle') || 'Profil & Keamanan'}
                 </ThemedText>
               </View>
               <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />

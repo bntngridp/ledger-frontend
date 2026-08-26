@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/hooks/use-translation';
 import { Spacing } from '@/constants/theme';
 import {
   isBiometricSupported,
@@ -40,6 +41,7 @@ export function BiometricManagementModal({
   onSuccess,
 }: BiometricModalProps) {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   const [supported, setSupported] = useState<boolean>(true);
   const [registered, setRegistered] = useState<boolean>(false);
@@ -165,7 +167,7 @@ export function BiometricManagementModal({
           {/* Header */}
           <View style={styles.header}>
             <ThemedText type="smallBold" style={styles.title}>
-              Sidik Jari & Biometrik
+              {t('biometricModal.title') || 'Sidik Jari & Biometrik'}
             </ThemedText>
             <TouchableOpacity onPress={onClose} id="biometric-modal-close-btn" accessibilityLabel="biometric-modal-close-btn">
               <Ionicons name="close" size={20} color={theme.text} />
@@ -228,10 +230,10 @@ export function BiometricManagementModal({
               }}
             >
               {registered
-                ? 'Sensor Terdaftar & Aktif'
+                ? (t('biometricModal.registeredBadge') || 'Sensor Terdaftar & Aktif')
                 : supported
-                ? 'Touch ID / Windows Hello Didukung'
-                : 'Sensor Perangkat Siap'}
+                ? (t('biometricModal.notRegisteredBadge') || 'Belum Didaftarkan')
+                : (t('biometricModal.notSupportedBadge') || 'Perangkat Tidak Mendukung')}
             </ThemedText>
           </View>
 
@@ -240,9 +242,7 @@ export function BiometricManagementModal({
             type="small"
             style={[styles.description, { color: theme.textSecondary }]}
           >
-            {registered
-              ? 'Autentikasi biometrik aktif pada akun ini. Anda dapat mengotorisasi transfer, penarikan, dan swap instan dengan sidik jari.'
-              : 'Daftarkan Touch ID, Face ID, atau Windows Hello perangkat Anda untuk keamanan transaksi kelas institusi.'}
+            {t('biometricModal.subtitle') || 'Gunakan sensor Touch ID, Face ID, atau kunci keamanan perangkat Anda untuk login & verifikasi transaksi instan.'}
           </ThemedText>
 
           {/* Feedback Messages */}
@@ -298,7 +298,7 @@ export function BiometricManagementModal({
           <View style={styles.actionGroup}>
             {!registered ? (
               <Button
-                title="Daftarkan Sensor Biometrik"
+                title={t('biometricModal.registerBtn') || 'Daftarkan Sensor Biometrik'}
                 variant="primary"
                 loading={loading}
                 onPress={handleRegister}
@@ -308,7 +308,7 @@ export function BiometricManagementModal({
             ) : (
               <>
                 <Button
-                  title="Uji Autentikasi Sensor"
+                  title={t('biometricModal.testBtn') || 'Uji Verifikasi Biometrik'}
                   variant="primary"
                   loading={loading}
                   onPress={handleTestVerify}
@@ -316,7 +316,7 @@ export function BiometricManagementModal({
                   id="btn-test-biometric"
                 />
                 <Button
-                  title="Hapus / Reset Data Biometrik"
+                  title={t('biometricModal.disableBtn') || 'Nonaktifkan Biometrik di Perangkat Ini'}
                   variant="ghost"
                   disabled={loading}
                   onPress={handleDisable}
@@ -327,7 +327,7 @@ export function BiometricManagementModal({
             )}
 
             <Button
-              title="Tutup"
+              title={t('common.done') || 'Tutup'}
               variant="secondary"
               onPress={onClose}
               style={[styles.fullBtn, { marginTop: 6 }]}

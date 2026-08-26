@@ -257,14 +257,14 @@ export default function HistoryScreen() {
         {/* Transaction list */}
         {loading ? (
           <View style={styles.loadingContainer}>
-            <OctopusLoader size="large" message="Memuat riwayat transaksi..." />
+            <OctopusLoader size="large" message={t('common.loading') || 'Memuat riwayat transaksi...'} />
           </View>
         ) : error ? (
           <View style={styles.errorContainer}>
             <Ionicons name="alert-circle-outline" size={48} color={theme.danger} />
             <ThemedText style={{ color: theme.danger, marginTop: 12, fontWeight: '600' }}>{error}</ThemedText>
             <TouchableOpacity onPress={() => loadTransactions()} style={styles.retryBtn}>
-              <ThemedText style={{ color: '#ffffff', fontWeight: '600' }}>Retry</ThemedText>
+              <ThemedText style={{ color: '#ffffff', fontWeight: '600' }}>{t('common.retry') || 'Retry'}</ThemedText>
             </TouchableOpacity>
           </View>
         ) : (
@@ -278,8 +278,8 @@ export default function HistoryScreen() {
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <Ionicons name="receipt-outline" size={48} color={theme.textSecondary + '80'} />
-                <ThemedText style={{ color: theme.textSecondary, marginTop: 12 }}>
-                  Tidak ada transaksi yang cocok.
+                <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: 12 }}>
+                  {t('history.noHistory') || 'Belum ada transaksi ditemukan.'}
                 </ThemedText>
               </View>
             }
