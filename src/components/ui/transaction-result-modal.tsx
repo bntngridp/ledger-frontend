@@ -16,6 +16,7 @@ import { Card } from './card';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/hooks/use-translation';
 import { Spacing } from '@/constants/theme';
+import { toLocalizedDigits } from '@/utils/format';
 
 export interface TransactionResultDetails {
   title: string;
@@ -46,7 +47,7 @@ export function TransactionResultModal({
   onViewHistory,
 }: TransactionResultModalProps) {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [copiedHash, setCopiedHash] = useState(false);
 
   // Pulse animation on graphic
@@ -225,7 +226,7 @@ export function TransactionResultModal({
               ]}
             >
               {isSuccess ? '+' : isFailed ? '' : ''}
-              {result.amount} {result.asset || ''}
+              {toLocalizedDigits(result.amount, language)} {result.asset || ''}
             </ThemedText>
           )}
 

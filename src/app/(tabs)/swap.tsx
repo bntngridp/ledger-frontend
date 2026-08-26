@@ -27,17 +27,16 @@ import {
   TransactionResultModal,
   TransactionResultDetails,
 } from '@/components/ui/transaction-result-modal';
-
-// Clean number formatter that strips unnecessary trailing zeros (e.g. 90 instead of 90.0000)
-function cleanNumberString(val: number, maxDecimals: number = 6): string {
-  if (isNaN(val) || val === 0) return '0';
-  const fixed = val.toFixed(maxDecimals);
-  return parseFloat(fixed).toString();
-}
+import {
+  formatNumber,
+  formatCurrency,
+  toLocalizedDigits,
+  cleanNumber,
+} from '@/utils/format';
 
 export default function SwapScreen() {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const router = useRouter();
 
   // Swap states
@@ -140,9 +139,9 @@ export default function SwapScreen() {
     const calculated = val * rate;
     const netAmount = calculated * (1 - swapFeePercentage);
     if (toAsset === 'IDR') {
-      setToAmount(cleanNumberString(netAmount, 2));
+      setToAmount(cleanNumber(netAmount, 'en', 2));
     } else {
-      setToAmount(cleanNumberString(netAmount, 6));
+      setToAmount(cleanNumber(netAmount, 'en', 6));
     }
   }, [fromAmount, rate, loadingRate, toAsset]);
 
@@ -159,10 +158,10 @@ export default function SwapScreen() {
     if (currentBal <= 0) return;
     if (pct === 1) {
       // For MAX (100%), take the clean balance without unnecessary trailing zeroes
-      setFromAmount(cleanNumberString(currentBal, fromAsset === 'IDR' ? 0 : 6));
+      setFromAmount(cleanNumber(currentBal, 'en', fromAsset === 'IDR' ? 0 : 6));
     } else {
       const computed = currentBal * pct;
-      setFromAmount(cleanNumberString(computed, fromAsset === 'IDR' ? 0 : 4));
+      setFromAmount(cleanNumber(computed, 'en', fromAsset === 'IDR' ? 0 : 4));
     }
   };
 
@@ -237,16 +236,16 @@ export default function SwapScreen() {
     !loadingRate &&
     !isSwapping;
 
-  const feeAmount = fromAmount
-    ? cleanNumberString(parseFloat(fromAmount) * swapFeePercentage, fromAsset === 'IDR' ? 2 : 4)
-    : '0';
+  const localizedFeeAmount = fromAmount
+    ? cleanNumber(parseFloat(fromAmount) * swapFeePercentage, language, fromAsset === 'IDR' ? 2 : 4)
+    : formatNumber(0, language);
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <ThemedText type="subtitle" style={styles.title}>
-            {t('swap.swapTitle') || 'Tukar Aset (Swap)'}
+            {t('swap.swapTitle') || 'Tukar Aset'}
           </ThemedText>
         </View>
 
@@ -274,8 +273,8 @@ export default function SwapScreen() {
                   {loadingRate
                     ? (t('swap.loadingRate') || 'Memuat kurs...')
                     : rate < 0.01
-                    ? `1 ${fromAsset} = ${rate.toFixed(6)} ${toAsset} (1 ${toAsset} ≈ Rp ${(1 / rate).toLocaleString('id-ID', { maximumFractionDigits: 0 })})`
-                    : `1 ${fromAsset} = ${rate.toLocaleString('id-ID', { maximumFractionDigits: 4 })} ${toAsset}`}
+                    ? `${toLocalizedDigits('1', language)} ${fromAsset} = ${toLocalizedDigits(rate.toFixed(6), language)} ${toAsset} (${toLocalizedDigits('1', language)} ${toAsset} ≈ Rp ${formatNumber(1 / rate, language, { maximumFractionDigits: 0 })})`
+                    : `${toLocalizedDigits('1', language)} ${fromAsset} = ${formatNumber(rate, language, { maximumFractionDigits: 4 })} ${toAsset}`}
                 </ThemedText>
               </View>
             </View>
@@ -290,7 +289,7 @@ export default function SwapScreen() {
                   {t('swap.payFrom') || 'Bayar Dari'}
                 </ThemedText>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  {t('swap.balance') || 'Saldo'}: {balances[fromAsset]?.toLocaleString('id-ID')} {fromAsset}
+                  {t('swap.balance') || 'Saldo'}: {formatNumber(balances[fromAsset] || 0, language)} {fromAsset}
                 </ThemedText>
               </View>
               <View style={styles.inputRow}>
@@ -316,11 +315,11 @@ export default function SwapScreen() {
 
               {/* Quick Percentages */}
               <View style={styles.percentRow}>
-                {[0.25, 0.5, 0.75, 1].map((pct, idx) => {
-                  const label = pct === 1 ? 'MAX' : `${pct * 100}%`;
+                {[0.25, 0.5, 0.75, 1].map((pct) => {
+                  const label = pct === 1 ? 'MAX' : `${toLocalizedDigits(pct * 100, language)}%`;
                   return (
                     <TouchableOpacity
-                      key={label}
+                      key={pct}
                       onPress={() => handleApplyPercentage(pct)}
                       style={[
                         styles.percentChip,
@@ -356,7 +355,7 @@ export default function SwapScreen() {
                   {t('swap.receiveTo') || 'Terima Ke'}
                 </ThemedText>
                 <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  {t('swap.balance') || 'Saldo'}: {balances[toAsset]?.toLocaleString('id-ID')} {toAsset}
+                  {t('swap.balance') || 'Saldo'}: {formatNumber(balances[toAsset] || 0, language)} {toAsset}
                 </ThemedText>
               </View>
               <View style={styles.inputRow}>
@@ -388,7 +387,7 @@ export default function SwapScreen() {
                     {t('swap.swapFee') || 'Biaya Penukaran (0.5%)'}
                   </ThemedText>
                   <ThemedText type="code">
-                    {feeAmount} {fromAsset}
+                    {localizedFeeAmount} {fromAsset}
                   </ThemedText>
                 </View>
               </View>
@@ -468,7 +467,7 @@ export default function SwapScreen() {
                         {t('swap.youSell') || 'Anda Jual'}
                       </ThemedText>
                       <ThemedText type="smallBold" style={{ fontSize: 16 }}>
-                        {fromAmount} {fromAsset}
+                        {toLocalizedDigits(fromAmount, language)} {fromAsset}
                       </ThemedText>
                     </View>
                   </View>
@@ -485,7 +484,7 @@ export default function SwapScreen() {
                   <View style={[styles.ratePill, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
                     <Ionicons name="arrow-down" size={14} color={theme.primary} />
                     <ThemedText type="small" style={{ fontSize: 11, fontWeight: '700', color: theme.textSecondary }}>
-                      1 {fromAsset} ≈ {rate < 0.01 ? rate.toFixed(6) : rate.toLocaleString('id-ID', { maximumFractionDigits: 4 })} {toAsset}
+                      {toLocalizedDigits('1', language)} {fromAsset} ≈ {rate < 0.01 ? toLocalizedDigits(rate.toFixed(6), language) : formatNumber(rate, language, { maximumFractionDigits: 4 })} {toAsset}
                     </ThemedText>
                   </View>
                   <View style={[styles.flowLine, { backgroundColor: theme.border }]} />
@@ -500,7 +499,7 @@ export default function SwapScreen() {
                         {t('swap.youGet') || 'Anda Terima'}
                       </ThemedText>
                       <ThemedText type="smallBold" style={{ fontSize: 16, color: theme.success }}>
-                        +{toAmount} {toAsset}
+                        +{toLocalizedDigits(toAmount, language)} {toAsset}
                       </ThemedText>
                     </View>
                   </View>
@@ -519,7 +518,7 @@ export default function SwapScreen() {
                     {t('swap.exchangeRate') || 'Kurs Nilai Tukar'}
                   </ThemedText>
                   <ThemedText type="code" style={{ fontSize: 12 }}>
-                    1 {fromAsset} = {rate.toLocaleString('id-ID', { maximumFractionDigits: 6 })} {toAsset}
+                    {toLocalizedDigits('1', language)} {fromAsset} = {formatNumber(rate, language, { maximumFractionDigits: 6 })} {toAsset}
                   </ThemedText>
                 </View>
                 <View style={[styles.summaryDivider, { backgroundColor: theme.border }]} />
@@ -528,7 +527,7 @@ export default function SwapScreen() {
                     {t('swap.swapFee') || 'Biaya Penukaran (0.5%)'}
                   </ThemedText>
                   <ThemedText type="smallBold" style={{ fontSize: 12 }}>
-                    {feeAmount} {fromAsset}
+                    {localizedFeeAmount} {fromAsset}
                   </ThemedText>
                 </View>
               </Card>
@@ -592,13 +591,11 @@ export default function SwapScreen() {
                       <View>
                         <ThemedText type="smallBold">{asset}</ThemedText>
                         <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                          {asset === 'IDR' ? 'Rupiah Indonesia (Fiat)' : asset === 'USDT' ? 'Tether USD (ERC-20)' : 'USD Coin (ERC-20)'}
+                          {formatNumber(balances[asset] || 0, language)} {asset}
                         </ThemedText>
                       </View>
                     </View>
-                    <ThemedText type="smallBold" style={{ color: theme.textSecondary }}>
-                      {balances[asset]?.toLocaleString('id-ID') || 0} {asset}
-                    </ThemedText>
+                    {isSelected && <Ionicons name="checkmark-circle" size={20} color={theme.primary} />}
                   </TouchableOpacity>
                 );
               })}

@@ -169,7 +169,7 @@ export const en = {
 
   // Swap Screen
   swap: {
-    swapTitle: 'Exchange',
+    swapTitle: 'Swap Assets',
     swapSubtitle: 'Exchange IDR, USDT, & USDC instantly at live rates',
     payFrom: 'PAY FROM',
     receiveTo: 'RECEIVE TO',

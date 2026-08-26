@@ -31,6 +31,12 @@ import {
 } from '@/hooks/use-biometric';
 import { BiometricManagementModal } from '@/components/ui/biometric-modal';
 import { RecoveryCodesModal } from '@/components/ui/recovery-codes-modal';
+import {
+  formatNumber,
+  formatCurrency,
+  formatLocalizedDate,
+  toLocalizedDigits,
+} from '@/utils/format';
 
 interface UserProfileData {
   user_id: string;
@@ -41,6 +47,7 @@ interface UserProfileData {
   two_factor_enabled: boolean;
   pin_enabled: boolean;
   biometric_enabled: boolean;
+  pin_set: boolean;
   created_at: string;
   wallet_id?: string | null;
 }
@@ -52,10 +59,9 @@ interface DashboardStats {
 }
 
 export default function ProfileScreen() {
-  const router = useRouter();
   const theme = useTheme();
-  const { t } = useTranslation();
-
+  const { t, language } = useTranslation();
+  const router = useRouter();
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [profile, setProfile] = useState<UserProfileData | null>(null);
@@ -128,6 +134,7 @@ export default function ProfileScreen() {
                 is_active: true,
                 two_factor_enabled: false,
                 pin_enabled: true,
+                pin_set: true,
                 biometric_enabled: false,
                 created_at: new Date().toISOString(),
               });
@@ -340,7 +347,7 @@ export default function ProfileScreen() {
                     <View style={styles.joinDateRow}>
                       <Ionicons name="calendar-outline" size={13} color={theme.textSecondary} />
                       <ThemedText type="code" style={[styles.joinDateText, { color: theme.textSecondary }]}>
-                        {t('profile.joined') || 'Bergabung'} {profile?.created_at ? formatDate(profile.created_at) : '2026'}
+                        {t('profile.joined') || 'Bergabung'} {profile?.created_at ? formatLocalizedDate(profile.created_at, language) : '2026'}
                       </ThemedText>
                     </View>
                   </View>
@@ -357,7 +364,7 @@ export default function ProfileScreen() {
                     </ThemedText>
                   </View>
                   <ThemedText type="subtitle" style={[styles.metricValue, { color: theme.text }]}>
-                    Rp {stats.total_idr.toLocaleString('id-ID')}
+                    {formatCurrency(stats.total_idr, 'IDR', language)}
                   </ThemedText>
                 </Card>
 
@@ -369,7 +376,7 @@ export default function ProfileScreen() {
                     </ThemedText>
                   </View>
                   <ThemedText type="subtitle" style={[styles.metricValue, { color: theme.text }]}>
-                    {t('profile.assetsCount', { count: stats.assets_count }) || `${stats.assets_count} Aset`}
+                    {`${toLocalizedDigits(stats.assets_count, language)} ${t('profile.activeAssets') || 'Aset'}`}
                   </ThemedText>
                 </Card>
 
@@ -381,7 +388,7 @@ export default function ProfileScreen() {
                     </ThemedText>
                   </View>
                   <ThemedText type="subtitle" style={[styles.metricValue, { color: theme.text }]}>
-                    {stats.transactions_count}
+                    {toLocalizedDigits(stats.transactions_count, language)}
                   </ThemedText>
                 </Card>
               </View>

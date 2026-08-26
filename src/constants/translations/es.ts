@@ -171,8 +171,8 @@ export const es: TranslationKeys = {
 
   // Swap Screen
   swap: {
-    swapTitle: 'Canje',
-    swapSubtitle: 'Intercambia IDR, USDT y USDC al instante con tasas en tiempo real',
+    swapTitle: 'Canje de Activos',
+    swapSubtitle: 'Canjea IDR, USDT y USDC al instante con tasas en vivo',
     payFrom: 'PAGAR CON',
     receiveTo: 'RECIBIR EN',
     balance: 'Saldo',

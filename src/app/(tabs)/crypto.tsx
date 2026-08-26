@@ -31,10 +31,15 @@ import {
   TransactionResultModal,
   TransactionResultDetails,
 } from '@/components/ui/transaction-result-modal';
+import {
+  formatNumber,
+  formatCurrency,
+  toLocalizedDigits,
+} from '@/utils/format';
 
 export default function CryptoScreen() {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   // Tab state
   const [activeSubTab, setActiveSubTab] = useState<'receive' | 'send'>('receive');
@@ -502,7 +507,7 @@ export default function CryptoScreen() {
                           {asset}
                         </ThemedText>
                         <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
-                          {t('swap.balance') || 'Saldo'}: {balances[asset as 'USDT' | 'USDC']?.toFixed(2)} {asset}
+                          {t('swap.balance') || 'Saldo'}: {formatNumber(balances[asset as 'USDT' | 'USDC'] || 0, language, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} {asset}
                         </ThemedText>
                       </View>
                     </TouchableOpacity>
@@ -595,12 +600,12 @@ export default function CryptoScreen() {
                         <ThemedText
                           type="code"
                           style={{
-                            color: isSelected ? theme.primary : theme.text,
-                            fontWeight: isSelected ? '700' : '500',
                             fontSize: 12,
+                            fontWeight: '700',
+                            color: isSelected ? theme.primary : theme.text,
                           }}
                         >
-                          +{chip} {selectedAsset}
+                          +{toLocalizedDigits(chip, language)} {selectedAsset}
                         </ThemedText>
                       </TouchableOpacity>
                     );
@@ -608,11 +613,7 @@ export default function CryptoScreen() {
                 </View>
 
                 <Button
-                  title={
-                    simulatingDeposit
-                      ? 'Memproses Simulasi...'
-                      : `Simulasikan Setoran +${simAmount} ${selectedAsset}`
-                  }
+                  title={`Simulasikan Setoran +${toLocalizedDigits(simAmount, language)} ${selectedAsset}`}
                   variant="primary"
                   loading={simulatingDeposit}
                   onPress={() => handleSimulateDeposit()}
@@ -668,7 +669,7 @@ export default function CryptoScreen() {
                             {asset}
                           </ThemedText>
                           <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
-                            {t('crypto.availableBalance') || 'Tersedia'}: {balances[asset as 'USDT' | 'USDC']?.toFixed(2)} {asset}
+                            {t('crypto.availableBalance') || 'Tersedia'}: {formatNumber(balances[asset as 'USDT' | 'USDC'] || 0, language, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} {asset}
                           </ThemedText>
                         </View>
                       </TouchableOpacity>
@@ -745,7 +746,7 @@ export default function CryptoScreen() {
                   </TouchableOpacity>
                 </View>
                 <ThemedText type="small" style={[styles.balanceHint, { color: theme.textSecondary }]}>
-                  {t('crypto.availableBalance')}: {balances[sendAsset]?.toLocaleString('id-ID')} {sendAsset}
+                  {t('crypto.availableBalance')}: {formatNumber(balances[sendAsset] || 0, language, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} {sendAsset}
                 </ThemedText>
 
                 {error ? (

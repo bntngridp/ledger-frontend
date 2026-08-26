@@ -22,11 +22,12 @@ import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
 import { PinVerificationModal } from '@/components/ui/pin-modal';
+import { formatCurrency, formatNumber, toLocalizedDigits } from '@/utils/format';
 
 export default function TransferScreen() {
   const router = useRouter();
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   // Safe back navigation
   const handleBack = () => {
@@ -200,8 +201,8 @@ export default function TransferScreen() {
             </View>
             <ThemedText type="small" style={[styles.balanceHint, { color: theme.textSecondary }]}>
               {selectedAsset === 'IDR'
-                ? `${t('transfer.availableBalance')}: Rp ${balances.IDR.toLocaleString('id-ID')}`
-                : `${t('transfer.availableBalance')}: ${balances[selectedAsset]} ${selectedAsset}`}
+                ? `${t('transfer.availableBalance')}: ${formatCurrency(balances.IDR || 0, 'IDR', language)}`
+                : `${t('transfer.availableBalance')}: ${formatNumber(balances[selectedAsset] || 0, language)} ${selectedAsset}`}
             </ThemedText>
           </View>
 
@@ -257,7 +258,7 @@ export default function TransferScreen() {
                     <View style={styles.summaryItem}>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('transfer.amount')}</ThemedText>
                       <ThemedText type="smallBold" style={{ color: theme.danger }}>
-                        {selectedAsset === 'IDR' ? `- Rp ${parseInt(amount || '0').toLocaleString('id-ID')}` : `- ${amount} ${selectedAsset}`}
+                        {selectedAsset === 'IDR' ? `- ${formatCurrency(parseInt(amount || '0'), 'IDR', language)}` : `- ${toLocalizedDigits(amount, language)} ${selectedAsset}`}
                       </ThemedText>
                     </View>
                     {notes ? (

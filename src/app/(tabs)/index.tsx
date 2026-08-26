@@ -27,6 +27,12 @@ import { OctopusLoader } from '@/components/ui/octopus-loader';
 import { api } from '@/services/api';
 import { storage } from '@/services/storage';
 import { AssetIcon } from '@/components/ui/asset-icon';
+import {
+  formatNumber,
+  formatCurrency,
+  formatLocalizedDate,
+  toLocalizedDigits,
+} from '@/utils/format';
 
 interface BalanceItem {
   asset_symbol: string;
@@ -55,7 +61,7 @@ export default function DashboardScreen() {
   const { activeTheme, setThemePreference } = useAppTheme();
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   // Responsive state
   const isLargeScreen = Platform.OS === 'web' && width > 1024;
@@ -284,37 +290,32 @@ export default function DashboardScreen() {
       let name = 'Indonesian Rupiah';
       let icon = 'cash-outline';
       let iconColor: string = theme.success;
-      let equivalent = `Rp ${parseFloat(String(item.balance)).toLocaleString('id-ID')}`;
+      let equivalent = formatCurrency(parseFloat(String(item.balance)), 'IDR', language);
 
       if (item.asset_symbol === 'USDT') {
         name = 'Tether USDT';
         icon = 'logo-usd';
         iconColor = theme.primary;
-        equivalent = `${parseFloat(String(item.balance)).toLocaleString('id-ID')} USDT`;
+        equivalent = formatCurrency(parseFloat(String(item.balance)), 'USDT', language);
       } else if (item.asset_symbol === 'USDC') {
         name = 'USD Coin';
         icon = 'shield-outline';
         iconColor = '#2775CA';
-        equivalent = `${parseFloat(String(item.balance)).toLocaleString('id-ID')} USDC`;
+        equivalent = formatCurrency(parseFloat(String(item.balance)), 'USDC', language);
       } else if (item.asset_symbol === 'BTC') {
         name = 'Bitcoin';
         icon = 'logo-bitcoin';
         iconColor = '#F7931A';
-        equivalent = `${parseFloat(String(item.balance)).toLocaleString('id-ID')} BTC`;
+        equivalent = formatCurrency(parseFloat(String(item.balance)), 'BTC', language);
       } else if (item.asset_symbol === 'ETH') {
         name = 'Ethereum';
         icon = 'logo-octocat';
         iconColor = '#627EEA';
-        equivalent = `${parseFloat(String(item.balance)).toLocaleString('id-ID')} ETH`;
+        equivalent = formatCurrency(parseFloat(String(item.balance)), 'ETH', language);
       }
 
       // Format clean balances
-      let formattedBalance = String(item.balance);
-      if (item.asset_symbol === 'IDR') {
-        formattedBalance = `Rp ${parseFloat(String(item.balance)).toLocaleString('id-ID')}`;
-      } else {
-        formattedBalance = `${parseFloat(String(item.balance)).toLocaleString('id-ID')} ${item.asset_symbol}`;
-      }
+      const formattedBalance = formatCurrency(parseFloat(String(item.balance)), item.asset_symbol, language);
 
       return {
         id: item.asset_symbol,
@@ -349,36 +350,28 @@ export default function DashboardScreen() {
     return transactions.map((tx) => {
       let color: string = theme.success;
       let sign = '+';
-      if (tx.type.toLowerCase() === 'withdraw' || tx.type.toLowerCase() === 'transfer_out') {
+      const tLower = (tx.type || '').toLowerCase();
+      if (tLower === 'withdraw' || tLower === 'transfer_out' || tLower === 'crypto_withdrawal' || tLower === 'crypto_withdraw') {
         color = theme.danger;
         sign = '-';
       } else if (tx.status.toLowerCase() === 'pending') {
         color = theme.warning;
       }
 
-      // Clean format amount
-      let formattedAmount = '';
+      // Locale-aware formatted amount
       const numAmount = parseFloat(String(tx.amount));
-      if (tx.asset_symbol === 'IDR') {
-        formattedAmount = `${sign}Rp ${numAmount.toLocaleString('id-ID')}`;
-      } else {
-        formattedAmount = `${sign}${numAmount.toLocaleString('id-ID')} ${tx.asset_symbol}`;
-      }
+      const formattedAmount = `${sign ? sign : ''}${formatCurrency(Math.abs(numAmount), tx.asset_symbol, language)}`;
 
       // Nice display name for transaction type
       let typeDisplay = tx.type;
-      if (tx.type === 'transfer_out') typeDisplay = t('dashboard.txTransferSent');
-      if (tx.type === 'transfer_in') typeDisplay = t('dashboard.txTransferReceived');
-      if (tx.type === 'topup') typeDisplay = t('dashboard.txTopUp');
-      if (tx.type === 'withdraw') typeDisplay = t('dashboard.txWithdrawal');
-      if (tx.type === 'swap') typeDisplay = t('dashboard.txSwap');
+      if (tLower === 'transfer_out') typeDisplay = t('dashboard.txTransferSent') || 'Transfer Sent';
+      else if (tLower === 'transfer_in') typeDisplay = t('dashboard.txTransferReceived') || 'Transfer Received';
+      else if (tLower === 'topup' || tLower === 'crypto_deposit' || tLower === 'crypto_topup') typeDisplay = t('dashboard.txTopUp') || 'Top Up';
+      else if (tLower === 'withdraw' || tLower === 'crypto_withdrawal' || tLower === 'crypto_withdraw') typeDisplay = t('dashboard.txWithdrawal') || 'Withdrawal';
+      else if (tLower === 'swap') typeDisplay = t('dashboard.txSwap') || 'Swap';
 
       // Nice format time
-      const date = new Date(tx.created_at);
-      const timeDisplay = isNaN(date.getTime())
-        ? tx.created_at
-        : date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ', ' + 
-          date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      const timeDisplay = formatLocalizedDate(tx.created_at, language);
 
       return {
         id: tx.transaction_id,
@@ -397,11 +390,11 @@ export default function DashboardScreen() {
   const uiTransactions = getUiTransactions();
 
   const getEstimatedTotal = () => {
-    if (!dashboard) return 'Rp 0';
+    if (!dashboard) return formatCurrency(0, 'IDR', language);
     if (activeAssetFilter === 'Fiat') {
       const idrBalObj = dashboard.balances.find((b) => b.asset_symbol.toUpperCase() === 'IDR');
       const idrBal = idrBalObj ? parseFloat(String(idrBalObj.balance)) || 0 : 0;
-      return `Rp ${idrBal.toLocaleString('id-ID')}`;
+      return formatCurrency(idrBal, 'IDR', language);
     }
     if (activeAssetFilter === 'Crypto') {
       const usdtBalObj = dashboard.balances.find((b) => b.asset_symbol.toUpperCase() === 'USDT');
@@ -411,9 +404,9 @@ export default function DashboardScreen() {
       const usdcBal = usdcBalObj ? parseFloat(String(usdcBalObj.balance)) || 0 : 0;
 
       const cryptoTotalIdr = (usdtBal + usdcBal) * 16000;
-      return `Rp ${cryptoTotalIdr.toLocaleString('id-ID')}`;
+      return formatCurrency(cryptoTotalIdr, 'IDR', language);
     }
-    return `Rp ${parseFloat(String(dashboard.estimated_total_idr)).toLocaleString('id-ID')}`;
+    return formatCurrency(parseFloat(String(dashboard.estimated_total_idr)) || 0, 'IDR', language);
   };
 
   const getPortfolioTitle = () => {

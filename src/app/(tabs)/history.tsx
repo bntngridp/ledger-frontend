@@ -18,6 +18,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
 import { OctopusLoader } from '@/components/ui/octopus-loader';
+import { formatCurrency, formatLocalizedDate } from '@/utils/format';
 
 interface TransactionItem {
   transaction_id: string;
@@ -31,7 +32,7 @@ interface TransactionItem {
 
 export default function HistoryScreen() {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   // Filters state
   const [selectedType, setSelectedType] = useState('All');
@@ -100,20 +101,21 @@ export default function HistoryScreen() {
       let color: string = theme.success;
       let sign = '+';
       let icon = 'arrow-down-outline';
+      const tLower = (tx.type || '').toLowerCase();
 
-      if (tx.type === 'withdraw' || tx.type === 'transfer_out') {
+      if (tLower === 'withdraw' || tLower === 'transfer_out' || tLower === 'crypto_withdrawal' || tLower === 'crypto_withdraw') {
         color = theme.danger;
         sign = '-';
-        icon = tx.type === 'withdraw' ? 'cash-outline' : 'arrow-forward-outline';
-      } else if (tx.type === 'transfer_in') {
+        icon = tLower.includes('transfer') ? 'arrow-forward-outline' : 'cash-outline';
+      } else if (tLower === 'transfer_in') {
         color = theme.success;
         sign = '+';
         icon = 'arrow-back-outline';
-      } else if (tx.type === 'swap') {
+      } else if (tLower === 'swap') {
         color = theme.primary;
         sign = '';
         icon = 'swap-horizontal-outline';
-      } else if (tx.type === 'topup') {
+      } else if (tLower === 'topup' || tLower === 'crypto_deposit' || tLower === 'crypto_topup') {
         color = theme.success;
         sign = '+';
         icon = 'add-outline';
@@ -125,33 +127,22 @@ export default function HistoryScreen() {
 
       // Nice type display name
       let typeDisplay = tx.type;
-      if (tx.type === 'transfer_out') typeDisplay = t('dashboard.txTransferSent');
-      if (tx.type === 'transfer_in') typeDisplay = t('dashboard.txTransferReceived');
-      if (tx.type === 'topup') typeDisplay = t('dashboard.txTopUp');
-      if (tx.type === 'withdraw') typeDisplay = t('dashboard.txWithdrawal');
-      if (tx.type === 'swap') typeDisplay = t('dashboard.txSwap');
+      if (tLower === 'transfer_out') typeDisplay = t('dashboard.txTransferSent') || 'Transfer Sent';
+      else if (tLower === 'transfer_in') typeDisplay = t('dashboard.txTransferReceived') || 'Transfer Received';
+      else if (tLower === 'topup' || tLower === 'crypto_deposit' || tLower === 'crypto_topup') typeDisplay = t('dashboard.txTopUp') || 'Top Up';
+      else if (tLower === 'withdraw' || tLower === 'crypto_withdrawal' || tLower === 'crypto_withdraw') typeDisplay = t('dashboard.txWithdrawal') || 'Withdrawal';
+      else if (tLower === 'swap') typeDisplay = t('dashboard.txSwap') || 'Swap';
 
-      // Clean format amount
-      let formattedAmount = '';
+      // Locale-aware formatted amount
       const numAmount = parseFloat(String(tx.amount));
-      if (tx.asset_symbol === 'IDR') {
-        formattedAmount = `${sign}Rp ${numAmount.toLocaleString('id-ID')}`;
-      } else {
-        formattedAmount = `${sign}${numAmount.toLocaleString('id-ID')} ${tx.asset_symbol}`;
-      }
+      const formattedAmount = `${sign ? sign : ''}${formatCurrency(Math.abs(numAmount), tx.asset_symbol, language)}`;
 
-      // Format time
-      const date = new Date(tx.created_at);
-      const timeDisplay = isNaN(date.getTime())
-        ? tx.created_at
-        : date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ', ' + 
-          date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      // Locale-aware formatted time
+      const timeDisplay = formatLocalizedDate(tx.created_at, language);
 
       // Identify Crypto network deposits/withdrawals
       let uiType = typeDisplay;
-      if (tx.type === 'withdraw' && tx.asset_symbol !== 'IDR') {
-        uiType = 'Crypto';
-      } else if (tx.type === 'topup' && tx.asset_symbol !== 'IDR') {
+      if (tLower.includes('crypto') || (tLower === 'withdraw' && tx.asset_symbol !== 'IDR') || (tLower === 'topup' && tx.asset_symbol !== 'IDR')) {
         uiType = 'Crypto';
       }
 
@@ -179,9 +170,10 @@ export default function HistoryScreen() {
       selectedType === 'All' ||
       tx.uiType === selectedType ||
       tx.type === selectedType ||
-      (selectedType === 'Transfer' && (tx.type.includes('Transfer') || tx.type.includes('Sent') || tx.type.includes('Received'))) ||
-      (selectedType === 'Withdrawal' && tx.type === 'Withdrawal') ||
-      (selectedType === 'Crypto' && tx.uiType === 'Crypto');
+      (selectedType === 'Transfer' && (tx.type.includes('Transfer') || tx.type.includes('Sent') || tx.type.includes('Received') || tx.type.includes('تحويل'))) ||
+      (selectedType === 'Withdrawal' && (tx.type.includes('Withdraw') || tx.type.includes('Penarikan') || tx.type.includes('سحب'))) ||
+      (selectedType === 'Swap' && (tx.type.includes('Swap') || tx.type.includes('Tukar') || tx.type.includes('Canje') || tx.type.includes('تبادل'))) ||
+      (selectedType === 'Crypto' && (tx.uiType === 'Crypto' || tx.asset !== 'IDR'));
 
     const matchesAsset = selectedAsset === 'All' || tx.asset === selectedAsset;
     return matchesType && matchesAsset;
@@ -289,11 +281,13 @@ export default function HistoryScreen() {
                   <Ionicons name={item.icon as any} size={22} color={item.color} />
                 </View>
                 <View style={styles.txDetails}>
-                  <ThemedText type="smallBold">{item.type}</ThemedText>
-                  <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 13 }}>
+                  <ThemedText type="smallBold" style={{ textAlign: 'left' }}>
+                    {item.type}
+                  </ThemedText>
+                  <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 13, textAlign: 'left' }}>
                     {item.description}
                   </ThemedText>
-                  <ThemedText type="code" style={styles.txTime}>
+                  <ThemedText type="code" style={[styles.txTime, { textAlign: 'left' }]}>
                     {item.time}
                   </ThemedText>
                 </View>
@@ -388,10 +382,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.three,
+    flexShrink: 0,
   },
   txDetails: {
     flex: 1,
     gap: 2,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    paddingRight: Spacing.two,
   },
   txTime: {
     fontSize: 11,
@@ -400,7 +398,9 @@ const styles = StyleSheet.create({
   },
   txMeta: {
     alignItems: 'flex-end',
+    justifyContent: 'center',
     gap: 6,
+    minWidth: 90,
   },
   statusBadge: {
     paddingVertical: 2,

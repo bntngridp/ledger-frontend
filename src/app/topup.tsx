@@ -22,11 +22,12 @@ import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
+import { formatCurrency, formatNumber, toLocalizedDigits } from '@/utils/format';
 
 export default function TopUpScreen() {
   const router = useRouter();
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   // Safe back navigation
   const handleBack = () => {
@@ -229,7 +230,7 @@ export default function TopUpScreen() {
                       fontWeight: '600',
                     }}
                   >
-                    {`Rp ${parseInt(amt).toLocaleString('id-ID')}`}
+                    {formatCurrency(parseInt(amt), 'IDR', language)}
                   </ThemedText>
                 </TouchableOpacity>
               ))}
@@ -274,7 +275,7 @@ export default function TopUpScreen() {
                     {t('topup.paymentSuccess') || 'Pembayaran Berhasil'}
                   </ThemedText>
                   <ThemedText style={{ color: theme.textSecondary, textAlign: 'center', marginTop: 8 }}>
-                    Top Up <ThemedText type="smallBold" style={{ color: theme.success }}>Rp {amount ? parseInt(amount).toLocaleString('id-ID') : '0'}</ThemedText> {t('topup.creditedToWallet') || 'telah berhasil ditambahkan ke saldo dompet Anda.'}
+                    Top Up <ThemedText type="smallBold" style={{ color: theme.success }}>{formatCurrency(parseInt(amount || '0'), 'IDR', language)}</ThemedText> {t('topup.creditedToWallet') || 'telah berhasil ditambahkan ke saldo dompet Anda.'}
                   </ThemedText>
 
                   <Button
@@ -303,12 +304,12 @@ export default function TopUpScreen() {
                   <Card style={[styles.summaryCard, { backgroundColor: theme.background }]} bordered>
                     <View style={styles.summaryItem}>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('topup.orderId')}</ThemedText>
-                      <ThemedText type="code">{transactionId}</ThemedText>
+                      <ThemedText type="code">{toLocalizedDigits(transactionId, language)}</ThemedText>
                     </View>
                     <View style={styles.summaryItem}>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('topup.totalAmount')}</ThemedText>
                       <ThemedText type="smallBold">
-                        {`Rp ${amount ? parseInt(amount).toLocaleString('id-ID') : '0'}`}
+                        {formatCurrency(parseInt(amount || '0'), 'IDR', language)}
                       </ThemedText>
                     </View>
                   </Card>

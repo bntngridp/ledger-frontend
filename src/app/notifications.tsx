@@ -24,6 +24,7 @@ import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
 import { storage } from '@/services/storage';
 import { OctopusLoader } from '@/components/ui/octopus-loader';
+import { toLocalizedDigits } from '@/utils/format';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface NotificationItem {
@@ -111,10 +112,10 @@ function formatRelativeTime(dateStr: string, lang: string): string {
       return date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
     } else if (lang === 'ar') {
       if (diffMins < 1) return 'الآن';
-      if (diffMins < 60) return `منذ ${diffMins} دقيقة`;
-      if (diffHours < 24) return `منذ ${diffHours} ساعة`;
-      if (diffDays < 7) return `منذ ${diffDays} يوم`;
-      return date.toLocaleDateString('ar-EG', { day: '2-digit', month: 'short' });
+      if (diffMins < 60) return `منذ ${toLocalizedDigits(diffMins, 'ar')} دقيقة`;
+      if (diffHours < 24) return `منذ ${toLocalizedDigits(diffHours, 'ar')} ساعة`;
+      if (diffDays < 7) return `منذ ${toLocalizedDigits(diffDays, 'ar')} يوم`;
+      return toLocalizedDigits(date.toLocaleDateString('ar-EG', { day: '2-digit', month: 'short' }), 'ar');
     } else {
       if (diffMins < 1) return 'Just now';
       if (diffMins < 60) return `${diffMins}m ago`;
@@ -418,7 +419,7 @@ export default function NotificationsScreen() {
               {unreadCount > 0 && (
                 <View style={[styles.badge, { backgroundColor: theme.danger }]}>
                   <ThemedText style={styles.badgeText}>
-                    {unreadCount > 99 ? '99+' : unreadCount}
+                    {unreadCount > 99 ? toLocalizedDigits('99+', language) : toLocalizedDigits(unreadCount, language)}
                   </ThemedText>
                 </View>
               )}
@@ -516,7 +517,7 @@ export default function NotificationsScreen() {
                     { color: filter === 'unread' ? '#fff' : theme.textSecondary },
                   ]}
                 >
-                  {t('notifications.filterUnread')} ({unreadCount})
+                  {t('notifications.filterUnread')} ({toLocalizedDigits(unreadCount, language)})
                 </ThemedText>
               </TouchableOpacity>
             </View>
@@ -672,9 +673,7 @@ export default function NotificationsScreen() {
                   style={[
                     styles.notifCard,
                     {
-                      backgroundColor: notif.is_read
-                        ? theme.backgroundElement
-                        : theme.card || theme.backgroundElement,
+                      backgroundColor: theme.backgroundElement,
                       borderColor: isSelected
                         ? theme.primary
                         : notif.is_read

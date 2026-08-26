@@ -21,11 +21,12 @@ import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
 import { PinVerificationModal } from '@/components/ui/pin-modal';
+import { formatCurrency, formatNumber, toLocalizedDigits } from '@/utils/format';
 
 export default function WithdrawScreen() {
   const router = useRouter();
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   // Safe back navigation
   const handleBack = () => {
@@ -270,7 +271,7 @@ export default function WithdrawScreen() {
             </TouchableOpacity>
           </View>
           <ThemedText type="small" style={[styles.balanceHint, { color: theme.textSecondary }]}>
-            {`${t('withdraw.availableBalance')}: Rp ${availableBalance.toLocaleString('id-ID')}`}
+            {`${t('withdraw.availableBalance')}: ${formatCurrency(availableBalance, 'IDR', language)}`}
           </ThemedText>
 
           {/* Admin Fee Notice */}
@@ -278,7 +279,7 @@ export default function WithdrawScreen() {
             <Ionicons name="information-circle-outline" size={20} color={theme.primary} />
             <ThemedText type="small" style={{ color: theme.textSecondary, marginLeft: 8, flex: 1 }}>
               {t('withdraw.adminFeeText')}{' '}
-              <Text style={{ color: theme.text, fontWeight: '700' }}>{`Rp ${adminFee.toLocaleString('id-ID')}`}</Text>.
+              <Text style={{ color: theme.text, fontWeight: '700' }}>{formatCurrency(adminFee, 'IDR', language)}</Text>.
             </ThemedText>
           </View>
 
@@ -320,7 +321,7 @@ export default function WithdrawScreen() {
                     </View>
                     <View style={styles.summaryItem}>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('withdraw.accountNo')}</ThemedText>
-                      <ThemedText type="code">{accountNumber}</ThemedText>
+                      <ThemedText type="code">{toLocalizedDigits(accountNumber, language)}</ThemedText>
                     </View>
                     <View style={styles.summaryItem}>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('withdraw.accountName')}</ThemedText>
@@ -329,16 +330,16 @@ export default function WithdrawScreen() {
                     <View style={[styles.summaryDivider, { backgroundColor: theme.border }]} />
                     <View style={styles.summaryItem}>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('withdraw.amountLabel')}</ThemedText>
-                      <ThemedText type="small">Rp {parseInt(amount || '0').toLocaleString('id-ID')}</ThemedText>
+                      <ThemedText type="small">{formatCurrency(parseInt(amount || '0'), 'IDR', language)}</ThemedText>
                     </View>
                     <View style={styles.summaryItem}>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('withdraw.adminFee')}</ThemedText>
-                      <ThemedText type="small">Rp {adminFee.toLocaleString('id-ID')}</ThemedText>
+                      <ThemedText type="small">{formatCurrency(adminFee, 'IDR', language)}</ThemedText>
                     </View>
                     <View style={styles.summaryItem}>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('withdraw.totalDeducted')}</ThemedText>
                       <ThemedText type="smallBold" style={{ color: theme.danger }}>
-                        Rp {(parseInt(amount || '0') + adminFee).toLocaleString('id-ID')}
+                        {formatCurrency(parseInt(amount || '0') + adminFee, 'IDR', language)}
                       </ThemedText>
                     </View>
                   </Card>
@@ -357,9 +358,8 @@ export default function WithdrawScreen() {
                       style={{ flex: 1 }}
                     />
                     <Button
-                      title={t('withdraw.confirmWithdraw')}
+                      title={t('common.confirm')}
                       variant="primary"
-                      loading={loading}
                       onPress={handleConfirmWithdraw}
                       style={{ flex: 1.5 }}
                     />
@@ -371,10 +371,14 @@ export default function WithdrawScreen() {
                     <Ionicons name="checkmark-circle" size={56} color={theme.success} />
                   </View>
                   <ThemedText type="subtitle" style={{ marginTop: Spacing.three }}>
-                    {t('withdraw.withdrawSuccess')}
+                    {t('withdraw.withdrawProcessing')}
                   </ThemedText>
-                  <ThemedText style={{ color: theme.textSecondary, marginTop: Spacing.one }}>
-                    {t('withdraw.withdrawSuccessDesc')}
+                  <ThemedText style={{ color: theme.textSecondary, marginTop: Spacing.one, textAlign: 'center' }}>
+                    {t('withdraw.withdrawInitiated')}{' '}
+                    <ThemedText type="smallBold" style={{ color: theme.success }}>
+                      {formatCurrency(parseInt(amount || '0'), 'IDR', language)}
+                    </ThemedText>{' '}
+                    {t('withdraw.toAccount')} {bankCode.toUpperCase()} - {toLocalizedDigits(accountNumber, language)} ({accountName}).
                   </ThemedText>
                 </View>
               )}
@@ -392,14 +396,14 @@ export default function WithdrawScreen() {
             <View style={[styles.modalContent, { backgroundColor: theme.backgroundElement, maxHeight: '80%' }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <ThemedText type="smallBold" style={{ fontSize: 16 }}>
-                  {t('withdraw.selectDestination') || 'Pilih Bank / E-Wallet Tujuan'}
+                  {t('withdraw.selectBankModalTitle')}
                 </ThemedText>
                 <TouchableOpacity onPress={() => setShowBankModal(false)}>
                   <Ionicons name="close" size={22} color={theme.text} />
                 </TouchableOpacity>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 380 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, gap: 6 }}>
                   <Ionicons name="business-outline" size={14} color={theme.textSecondary} />
                   <ThemedText type="smallBold" style={{ color: theme.textSecondary }}>
@@ -476,7 +480,7 @@ export default function WithdrawScreen() {
           onClose={() => setIsPinModalVisible(false)}
           onSuccess={executeConfirmWithdraw}
           title={t('pinModal.title') || 'PIN Transaksi'}
-          subtitle={`${t('withdraw.confirmWithdraw')} Rp ${parseFloat(amount || '0').toLocaleString('id-ID')} (${accountNumber})`}
+          subtitle={`${t('withdraw.confirmWithdraw')} ${formatCurrency(parseFloat(amount || '0'), 'IDR', language)} (${toLocalizedDigits(accountNumber, language)})`}
         />
       </SafeAreaView>
     </ThemedView>

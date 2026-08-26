@@ -20,6 +20,7 @@ import {
   isBiometricRegistered,
   verifyBiometric,
 } from '@/hooks/use-biometric';
+import { toLocalizedDigits } from '@/utils/format';
 
 interface PinVerificationModalProps {
   visible: boolean;
@@ -37,7 +38,7 @@ export function PinVerificationModal({
   onSuccess,
 }: PinVerificationModalProps) {
   const theme = useTheme();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const modalTitle = title || t('pinModal.verifyTitle') || 'Verifikasi PIN Transaksi';
   const modalSubtitle = subtitle || t('pinModal.verifySubtitle') || 'Masukkan 6 digit PIN keamanan Anda';
   const [pin, setPin] = useState<string>('');
@@ -316,7 +317,7 @@ export function PinVerificationModal({
                       id={`pin-key-${key}`}
                     >
                       <ThemedText type="subtitle" style={{ fontSize: 20, fontWeight: '700' }}>
-                        {key}
+                        {toLocalizedDigits(key, language)}
                       </ThemedText>
                     </TouchableOpacity>
                   );
