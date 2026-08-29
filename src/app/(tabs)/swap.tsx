@@ -63,6 +63,7 @@ export default function SwapScreen() {
   const [isPinModalVisible, setIsPinModalVisible] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
   const [resultModalData, setResultModalData] = useState<TransactionResultDetails | null>(null);
+  const [activePct, setActivePct] = useState<number | null>(null);
 
   const availableAssets = ['IDR', 'USDT', 'USDC'];
 
@@ -151,11 +152,13 @@ export default function SwapScreen() {
     setToAsset(temp);
     setFromAmount('');
     setToAmount('');
+    setActivePct(null);
   };
 
   const handleApplyPercentage = (pct: number) => {
     const currentBal = balances[fromAsset] || 0;
     if (currentBal <= 0) return;
+    setActivePct(pct);
     if (pct === 1) {
       // For MAX (100%), take the clean balance without unnecessary trailing zeroes
       setFromAmount(cleanNumber(currentBal, 'en', fromAsset === 'IDR' ? 0 : 6));
@@ -259,10 +262,6 @@ export default function SwapScreen() {
                   {t('swap.liveRates') || 'Kurs Real-Time'}
                 </ThemedText>
               </View>
-              <View style={[styles.liveBadge, { backgroundColor: theme.success + '1A' }]}>
-                <View style={[styles.liveDot, { backgroundColor: theme.success }]} />
-                <ThemedText style={[styles.liveText, { color: theme.success }]}>LIVE</ThemedText>
-              </View>
             </View>
             <View style={styles.rateGrid}>
               <View>
@@ -296,7 +295,10 @@ export default function SwapScreen() {
                 <Input
                   placeholder="0.00"
                   value={fromAmount}
-                  onChangeText={(text) => setFromAmount(text.replace(/[^0-9.]/g, ''))}
+                  onChangeText={(text) => {
+                    setFromAmount(text.replace(/[^0-9.]/g, ''));
+                    setActivePct(null);
+                  }}
                   keyboardType="numeric"
                   containerStyle={{ flex: 1, marginBottom: 0 }}
                   style={styles.amountInput}
@@ -316,6 +318,7 @@ export default function SwapScreen() {
               {/* Quick Percentages */}
               <View style={styles.percentRow}>
                 {[0.25, 0.5, 0.75, 1].map((pct) => {
+                  const isSelected = activePct === pct;
                   const label = pct === 1 ? 'MAX' : `${toLocalizedDigits(pct * 100, language)}%`;
                   return (
                     <TouchableOpacity
@@ -323,11 +326,21 @@ export default function SwapScreen() {
                       onPress={() => handleApplyPercentage(pct)}
                       style={[
                         styles.percentChip,
-                        { backgroundColor: theme.backgroundSelected, borderColor: theme.border },
+                        isSelected
+                          ? { backgroundColor: theme.primary, borderColor: theme.primary }
+                          : { backgroundColor: theme.backgroundElement, borderColor: theme.border },
                       ]}
                       id={`swap-chip-${pct === 1 ? '100' : pct * 100}`}
                     >
-                      <ThemedText type="small" style={{ fontSize: 11, fontWeight: '700', color: theme.primary }}>
+                      <ThemedText
+                        type="small"
+                        style={{
+                          fontSize: 12,
+                          fontWeight: isSelected ? '700' : '600',
+                          letterSpacing: 0.3,
+                          color: isSelected ? '#ffffff' : theme.textSecondary,
+                        }}
+                      >
                         {label}
                       </ThemedText>
                     </TouchableOpacity>
@@ -658,26 +671,7 @@ const styles = StyleSheet.create({
   rateHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  liveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-    gap: 5,
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  liveText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+    marginBottom: 8,
   },
   rateGrid: {
     flexDirection: 'row',
@@ -714,8 +708,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingVertical: 7,
+    borderRadius: 20,
     borderWidth: 1,
   },
   assetSelector: {

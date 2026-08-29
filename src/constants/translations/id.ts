@@ -151,8 +151,8 @@ export const id: TranslationKeys = {
   crypto: {
     cryptoTitle: 'Stablecoin Kripto',
     cryptoSubtitle: 'Setor & Tarik USDT/USDC di jaringan on-chain',
-    depositTab: 'Setor (Deposit)',
-    withdrawTab: 'Tarik (Withdraw)',
+    depositTab: 'Setor',
+    withdrawTab: 'Tarik',
     selectAsset: 'Pilih Aset',
     networkNotice: 'JARINGAN POLYGON AMOY TESTNET',
     depositAddress: 'Alamat Setoran Anda',

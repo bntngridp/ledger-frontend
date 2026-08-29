@@ -621,20 +621,6 @@ export default function CryptoScreen() {
                   id="crypto-simulate-deposit-btn"
                 />
               </Card>
-
-              {/* Warning card */}
-              <Card
-                style={[
-                  styles.warningCard,
-                  { backgroundColor: theme.warning + '10', borderColor: theme.warning },
-                ]}
-                bordered
-              >
-                <Ionicons name="warning-outline" size={20} color={theme.warning} />
-                <ThemedText type="small" style={{ color: theme.warning, marginLeft: 8, flex: 1 }}>
-                  {t('crypto.depositWarning')}
-                </ThemedText>
-              </Card>
             </View>
           ) : (
             <View style={styles.tabContent}>
@@ -828,15 +814,18 @@ const styles = StyleSheet.create({
   },
   subTabContainer: {
     flexDirection: 'row',
-    borderRadius: 12,
-    padding: 3,
-    width: 160,
+    borderRadius: 14,
+    padding: 4,
+    minWidth: 160,
+    gap: 4,
   },
   subTab: {
     flex: 1,
     paddingVertical: 8,
+    paddingHorizontal: 16,
     alignItems: 'center',
-    borderRadius: 9,
+    justifyContent: 'center',
+    borderRadius: 10,
   },
   scrollContent: {
     paddingHorizontal: Spacing.four,
