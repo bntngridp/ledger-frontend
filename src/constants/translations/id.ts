@@ -434,4 +434,22 @@ export const id: TranslationKeys = {
     done: 'Tutup & Selesai',
     retry: 'Coba Lagi',
   },
+
+  // Payment Security Modal (Dual 2FA & Email OTP)
+  paymentSecurityModal: {
+    title: 'Otorisasi Keamanan Transaksi',
+    subtitle2FA: 'Akun Anda dilindungi 2FA. Masukkan kode Authenticator dan kode OTP Email untuk menyelesaikan transaksi.',
+    subtitlePIN: 'Masukkan 6 digit PIN keamanan Anda untuk menyelesaikan transaksi.',
+    twoFactorLabel: 'KODE 2FA AUTHENTICATOR',
+    twoFactorPlaceholder: '6-digit kode Authenticator atau Kode Pemulihan',
+    emailOtpLabel: 'KODE OTP EMAIL',
+    emailOtpPlaceholder: '6-digit kode verifikasi email',
+    sendOtpBtn: 'Kirim Kode OTP',
+    resendOtpBtn: 'Kirim Ulang',
+    otpSentSuccess: 'Kode OTP transaksi telah dikirimkan ke email Anda',
+    confirmBtn: 'Konfirmasi & Otorisasi',
+    cancelBtn: 'Batal',
+    missing2FACode: 'Kode 2FA Authenticator wajib diisi',
+    missingEmailOTP: 'Kode OTP Email wajib diisi',
+  },
 };

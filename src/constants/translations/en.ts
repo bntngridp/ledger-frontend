@@ -432,6 +432,24 @@ export const en = {
     done: 'Close & Done',
     retry: 'Try Again',
   },
+
+  // Payment Security Modal (Dual 2FA & Email OTP)
+  paymentSecurityModal: {
+    title: 'Transaction Security Authorization',
+    subtitle2FA: 'Your account is protected with 2FA. Enter your Authenticator code and Email OTP code to complete this transaction.',
+    subtitlePIN: 'Enter your 6-digit security PIN to complete this transaction.',
+    twoFactorLabel: '2FA AUTHENTICATOR CODE',
+    twoFactorPlaceholder: '6-digit Authenticator code or Recovery code',
+    emailOtpLabel: 'EMAIL OTP CODE',
+    emailOtpPlaceholder: '6-digit email verification code',
+    sendOtpBtn: 'Send OTP Code',
+    resendOtpBtn: 'Resend',
+    otpSentSuccess: 'Transaction OTP code has been sent to your email',
+    confirmBtn: 'Confirm & Authorize',
+    cancelBtn: 'Cancel',
+    missing2FACode: '2FA Authenticator code is required',
+    missingEmailOTP: 'Email OTP code is required',
+  },
 };
 
 export type TranslationKeys = typeof en;

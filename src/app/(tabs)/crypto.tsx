@@ -26,7 +26,7 @@ import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
 import { OctopusLoader } from '@/components/ui/octopus-loader';
 import { QrScannerModal } from '@/components/qr-scanner-modal';
-import { PinVerificationModal } from '@/components/ui/pin-modal';
+import { PaymentSecurityModal, SecurityAuthResult } from '@/components/ui/payment-security-modal';
 import {
   TransactionResultModal,
   TransactionResultDetails,
@@ -273,17 +273,17 @@ export default function CryptoScreen() {
     }
   };
 
-  // PIN Verification State
-  const [isPinModalVisible, setIsPinModalVisible] = useState(false);
+  // Security Verification State
+  const [isSecurityModalVisible, setIsSecurityModalVisible] = useState(false);
 
   const handleSendCrypto = () => {
     const val = parseFloat(amount);
     if (!recipientAddress || isNaN(val) || val <= 0) return;
-    setIsPinModalVisible(true);
+    setIsSecurityModalVisible(true);
   };
 
-  const executeWithdrawCrypto = async () => {
-    setIsPinModalVisible(false);
+  const executeWithdrawCrypto = async (authData?: SecurityAuthResult) => {
+    setIsSecurityModalVisible(false);
     const val = parseFloat(amount);
     if (!recipientAddress || isNaN(val) || val <= 0) return;
 
@@ -300,6 +300,8 @@ export default function CryptoScreen() {
         to_address: recipientAddress,
         amount: val,
         notes: `Penarikan ${val} ${sendAsset}`,
+        two_factor_code: authData?.twoFactorCode,
+        email_otp: authData?.emailOTP,
       });
       setLoading(false);
 
@@ -769,12 +771,12 @@ export default function CryptoScreen() {
           onScanSuccess={handleSelectScannedAddress}
         />
 
-        {/* 6-Digit Transaction PIN Verification Modal */}
-        <PinVerificationModal
-          visible={isPinModalVisible}
-          onClose={() => setIsPinModalVisible(false)}
+        {/* Dual 2FA & Email OTP / PIN Transaction Security Modal */}
+        <PaymentSecurityModal
+          visible={isSecurityModalVisible}
+          onClose={() => setIsSecurityModalVisible(false)}
           onSuccess={executeWithdrawCrypto}
-          title={t('pinModal.title') || 'PIN Transaksi'}
+          title={t('paymentSecurityModal.title') || 'Otorisasi Penarikan Crypto'}
           subtitle={`${t('crypto.withdrawTab')} ${amount} ${sendAsset}`}
         />
 

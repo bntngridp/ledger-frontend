@@ -20,7 +20,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
-import { PinVerificationModal } from '@/components/ui/pin-modal';
+import { PaymentSecurityModal, SecurityAuthResult } from '@/components/ui/payment-security-modal';
 import { formatCurrency, formatNumber, toLocalizedDigits } from '@/utils/format';
 
 export default function WithdrawScreen() {
@@ -132,16 +132,16 @@ export default function WithdrawScreen() {
     setShowReviewModal(true);
   };
 
-  // PIN Verification State
-  const [isPinModalVisible, setIsPinModalVisible] = useState(false);
+  // Security Verification Modal State
+  const [isSecurityModalVisible, setIsSecurityModalVisible] = useState(false);
 
   const handleConfirmWithdraw = () => {
     setShowReviewModal(false);
-    setIsPinModalVisible(true);
+    setIsSecurityModalVisible(true);
   };
 
-  const executeConfirmWithdraw = async () => {
-    setIsPinModalVisible(false);
+  const executeConfirmWithdraw = async (authData?: SecurityAuthResult) => {
+    setIsSecurityModalVisible(false);
     const val = parseFloat(amount);
 
     // Revalidate before submission
@@ -162,8 +162,11 @@ export default function WithdrawScreen() {
       const response = await api.wallet.initiateWithdraw({
         bank_code: bankCode,
         account_number: accountNumber,
+        account_name: accountName,
         amount: val,
         notes: notes || undefined,
+        two_factor_code: authData?.twoFactorCode,
+        email_otp: authData?.emailOTP,
       });
 
       if (response.status === 'success') {
@@ -238,6 +241,7 @@ export default function WithdrawScreen() {
             onChangeText={(text) => setAccountNumber(text.replace(/[^0-9]/g, ''))}
             keyboardType="numeric"
             iconLeft="card-outline"
+            id="withdraw-account-number-input"
           />
 
           {/* Account Name */}
@@ -247,6 +251,7 @@ export default function WithdrawScreen() {
             value={accountName}
             onChangeText={setAccountName}
             iconLeft="person-outline"
+            id="withdraw-account-name-input"
           />
 
           {/* Amount */}
@@ -259,6 +264,7 @@ export default function WithdrawScreen() {
               error={isAmountInvalid ? t('withdraw.insufficientBalance') : undefined}
               keyboardType="numeric"
               iconLeft="logo-usd"
+              id="withdraw-amount-input"
             />
             <TouchableOpacity
               style={[styles.maxBtn, { backgroundColor: theme.backgroundSelected }]}
@@ -298,6 +304,7 @@ export default function WithdrawScreen() {
             disabled={!canWithdraw}
             onPress={handleReviewWithdraw}
             style={styles.submitBtn}
+            id="withdraw-submit-btn"
           />
         </ScrollView>
 
@@ -362,6 +369,7 @@ export default function WithdrawScreen() {
                       variant="primary"
                       onPress={handleConfirmWithdraw}
                       style={{ flex: 1.5 }}
+                      id="withdraw-confirm-btn"
                     />
                   </View>
                 </>
@@ -474,12 +482,12 @@ export default function WithdrawScreen() {
           </TouchableOpacity>
         </Modal>
 
-        {/* 6-Digit Transaction PIN Verification Modal */}
-        <PinVerificationModal
-          visible={isPinModalVisible}
-          onClose={() => setIsPinModalVisible(false)}
+        {/* Dual 2FA & Email OTP / PIN Transaction Security Modal */}
+        <PaymentSecurityModal
+          visible={isSecurityModalVisible}
+          onClose={() => setIsSecurityModalVisible(false)}
           onSuccess={executeConfirmWithdraw}
-          title={t('pinModal.title') || 'PIN Transaksi'}
+          title={t('paymentSecurityModal.title') || 'Otorisasi Penarikan Dana'}
           subtitle={`${t('withdraw.confirmWithdraw')} ${formatCurrency(parseFloat(amount || '0'), 'IDR', language)} (${toLocalizedDigits(accountNumber, language)})`}
         />
       </SafeAreaView>

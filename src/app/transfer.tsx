@@ -21,7 +21,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/hooks/use-translation';
 import { Spacing, MaxContentWidth } from '@/constants/theme';
 import { api } from '@/services/api';
-import { PinVerificationModal } from '@/components/ui/pin-modal';
+import { PaymentSecurityModal, SecurityAuthResult } from '@/components/ui/payment-security-modal';
 import { formatCurrency, formatNumber, toLocalizedDigits } from '@/utils/format';
 
 export default function TransferScreen() {
@@ -102,16 +102,16 @@ export default function TransferScreen() {
     setShowReviewModal(true);
   };
 
-  // PIN Verification State
-  const [isPinModalVisible, setIsPinModalVisible] = useState(false);
+  // Security Verification Modal State
+  const [isSecurityModalVisible, setIsSecurityModalVisible] = useState(false);
 
   const handleConfirmTransfer = () => {
     setShowReviewModal(false);
-    setIsPinModalVisible(true);
+    setIsSecurityModalVisible(true);
   };
 
-  const executeConfirmTransfer = async () => {
-    setIsPinModalVisible(false);
+  const executeConfirmTransfer = async (authData?: SecurityAuthResult) => {
+    setIsSecurityModalVisible(false);
     const val = parseFloat(amount);
     setLoading(true);
     setError('');
@@ -122,6 +122,8 @@ export default function TransferScreen() {
         asset_symbol: selectedAsset,
         amount: val,
         notes: notes || undefined,
+        two_factor_code: authData?.twoFactorCode,
+        email_otp: authData?.emailOTP,
       });
 
       if (response.status === 'success') {
@@ -170,6 +172,7 @@ export default function TransferScreen() {
             iconRight="clipboard-outline"
             onPressIconRight={handlePasteId}
             autoCapitalize="none"
+            id="transfer-recipient-input"
           />
 
           {/* Asset Selector */}
@@ -215,6 +218,7 @@ export default function TransferScreen() {
             error={isAmountInvalid ? t('transfer.insufficientBalance') : undefined}
             keyboardType="numeric"
             iconLeft="logo-usd"
+            id="transfer-amount-input"
           />
 
           {/* Notes */}
@@ -232,6 +236,7 @@ export default function TransferScreen() {
             disabled={!canSend}
             onPress={handleReviewTransfer}
             style={styles.submitBtn}
+            id="transfer-review-btn"
           />
         </ScrollView>
 
@@ -257,8 +262,10 @@ export default function TransferScreen() {
                     </View>
                     <View style={styles.summaryItem}>
                       <ThemedText type="small" style={{ color: theme.textSecondary }}>{t('transfer.amount')}</ThemedText>
-                      <ThemedText type="smallBold" style={{ color: theme.danger }}>
-                        {selectedAsset === 'IDR' ? `- ${formatCurrency(parseInt(amount || '0'), 'IDR', language)}` : `- ${toLocalizedDigits(amount, language)} ${selectedAsset}`}
+                      <ThemedText type="smallBold">
+                        {selectedAsset === 'IDR'
+                          ? formatCurrency(parseFloat(amount || '0'), 'IDR', language)
+                          : `${formatNumber(parseFloat(amount || '0'), language)} ${selectedAsset}`}
                       </ThemedText>
                     </View>
                     {notes ? (
@@ -270,7 +277,14 @@ export default function TransferScreen() {
                   </Card>
 
                   {error ? (
-                    <ThemedText style={{ color: theme.danger, marginBottom: Spacing.two, fontWeight: '500' }}>
+                    <ThemedText
+                      style={{
+                        color: theme.danger,
+                        marginVertical: Spacing.two,
+                        fontWeight: '500',
+                        textAlign: 'center',
+                      }}
+                    >
                       {error}
                     </ThemedText>
                   ) : null}
@@ -288,6 +302,7 @@ export default function TransferScreen() {
                       loading={loading}
                       onPress={handleConfirmTransfer}
                       style={{ flex: 1.5 }}
+                      id="transfer-confirm-send-btn"
                     />
                   </View>
                 </>
@@ -308,12 +323,12 @@ export default function TransferScreen() {
           </View>
         </Modal>
 
-        {/* 6-Digit Transaction PIN Verification Modal */}
-        <PinVerificationModal
-          visible={isPinModalVisible}
-          onClose={() => setIsPinModalVisible(false)}
+        {/* Dual 2FA & Email OTP / PIN Transaction Security Modal */}
+        <PaymentSecurityModal
+          visible={isSecurityModalVisible}
+          onClose={() => setIsSecurityModalVisible(false)}
           onSuccess={executeConfirmTransfer}
-          title={t('pinModal.title') || 'PIN Transaksi'}
+          title={t('paymentSecurityModal.title') || 'Otorisasi Transfer Dana'}
           subtitle={`${t('transfer.confirmTransfer')} ${amount} ${selectedAsset}`}
         />
       </SafeAreaView>

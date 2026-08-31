@@ -434,4 +434,22 @@ export const ar: TranslationKeys = {
     done: 'إغلاق وإنهاء',
     retry: 'إعادة المحاولة',
   },
+
+  // Payment Security Modal (Dual 2FA & Email OTP)
+  paymentSecurityModal: {
+    title: 'تفويض أمان المعاملة',
+    subtitle2FA: 'حسابك محمي بواسطة 2FA. أدخل رمز Authenticator ورمز OTP للبريد الإلكتروني لإتمام هذه المعاملة.',
+    subtitlePIN: 'أدخل رمز PIN للأمان المكون من 6 أرقام لإتمام هذه المعاملة.',
+    twoFactorLabel: 'رمز 2FA AUTHENTICATOR',
+    twoFactorPlaceholder: 'رمز المكون من 6 أرقام أو رمز الاسترداد',
+    emailOtpLabel: 'رمز OTP للبريد الإلكتروني',
+    emailOtpPlaceholder: 'رمز التحقق المكون من 6 أرقام',
+    sendOtpBtn: 'إرسال رمز OTP',
+    resendOtpBtn: 'إعادة الإرسال',
+    otpSentSuccess: 'تم إرسال رمز OTP للمعاملة إلى بريدك الإلكتروني',
+    confirmBtn: 'تأكيد وتفويض',
+    cancelBtn: 'إلغاء',
+    missing2FACode: 'رمز 2FA Authenticator مطلوب',
+    missingEmailOTP: 'رمز OTP للبريد الإلكتروني مطلوب',
+  },
 };

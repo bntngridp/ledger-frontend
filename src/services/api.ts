@@ -125,6 +125,11 @@ export const api = {
         method: 'POST',
       });
     },
+    async sendPaymentEmailOtp() {
+      return request('/auth/payment/email-otp/send', {
+        method: 'POST',
+      });
+    },
     async get2FARecoveryCodes() {
       return request('/auth/2fa/recovery-codes', {
         method: 'GET',
@@ -245,21 +250,47 @@ export const api = {
         body: JSON.stringify(payload),
       });
     },
-    async initiateTransfer(payload: { destination_user_id: string; asset_symbol: string; amount: number; notes?: string }) {
+    async initiateTransfer(payload: {
+      destination_user_id: string;
+      asset_symbol: string;
+      amount: number;
+      notes?: string;
+      two_factor_code?: string;
+      email_otp?: string;
+    }) {
+      const headers: Record<string, string> = {};
+      if (payload.two_factor_code) headers['X-2FA-Code'] = payload.two_factor_code;
+      if (payload.email_otp) headers['X-Email-OTP'] = payload.email_otp;
       return request('/transfer', {
         method: 'POST',
+        headers,
         body: JSON.stringify(payload),
       });
     },
     async initiateWithdraw(payload: {
       bank_code: string;
       account_number: string;
+      account_name?: string;
       amount: number;
       notes?: string;
+      two_factor_code?: string;
+      email_otp?: string;
     }) {
+      const headers: Record<string, string> = {};
+      if (payload.two_factor_code) headers['X-2FA-Code'] = payload.two_factor_code;
+      if (payload.email_otp) headers['X-Email-OTP'] = payload.email_otp;
       return request('/fiat/withdraw', {
         method: 'POST',
-        body: JSON.stringify(payload),
+        headers,
+        body: JSON.stringify({
+          bank_code: payload.bank_code,
+          account_number: payload.account_number,
+          account_name: payload.account_name || 'Account Holder',
+          amount: payload.amount,
+          notes: payload.notes || 'Withdrawal',
+          two_factor_code: payload.two_factor_code,
+          email_otp: payload.email_otp,
+        }),
       });
     },
     async getExchangeRate(fromAsset: string, toAsset: string) {
@@ -284,15 +315,23 @@ export const api = {
       to_address: string;
       amount: number;
       notes?: string;
+      two_factor_code?: string;
+      email_otp?: string;
     }) {
+      const headers: Record<string, string> = {};
+      if (payload.two_factor_code) headers['X-2FA-Code'] = payload.two_factor_code;
+      if (payload.email_otp) headers['X-Email-OTP'] = payload.email_otp;
       return request('/crypto/withdraw', {
         method: 'POST',
+        headers,
         body: JSON.stringify({
           asset_symbol: payload.asset_symbol,
           network: payload.network || 'polygon_amoy',
           to_address: payload.to_address,
           amount: payload.amount,
           notes: payload.notes || 'Crypto Withdrawal',
+          two_factor_code: payload.two_factor_code,
+          email_otp: payload.email_otp,
         }),
       });
     },

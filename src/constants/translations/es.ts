@@ -434,4 +434,22 @@ export const es: TranslationKeys = {
     done: 'Cerrar y listo',
     retry: 'Intentar de nuevo',
   },
+
+  // Payment Security Modal (Dual 2FA & Email OTP)
+  paymentSecurityModal: {
+    title: 'Autorización de Seguridad de Transacción',
+    subtitle2FA: 'Su cuenta está protegida con 2FA. Ingrese su código Authenticator y el código OTP de correo para completar esta transacción.',
+    subtitlePIN: 'Ingrese su PIN de seguridad de 6 dígitos para completar esta transacción.',
+    twoFactorLabel: 'CÓDIGO 2FA AUTHENTICATOR',
+    twoFactorPlaceholder: 'Código de 6 dígitos o Código de recuperación',
+    emailOtpLabel: 'CÓDIGO OTP DE CORREO',
+    emailOtpPlaceholder: 'Código de verificación de 6 dígitos',
+    sendOtpBtn: 'Enviar Código OTP',
+    resendOtpBtn: 'Reenviar',
+    otpSentSuccess: 'El código OTP de la transacción ha sido enviado a su correo electrónico',
+    confirmBtn: 'Confirmar y Autorizar',
+    cancelBtn: 'Cancelar',
+    missing2FACode: 'El código 2FA Authenticator es obligatorio',
+    missingEmailOTP: 'El código OTP de correo es obligatorio',
+  },
 };
