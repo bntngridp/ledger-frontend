@@ -452,4 +452,19 @@ export const es: TranslationKeys = {
     missing2FACode: 'El código 2FA Authenticator es obligatorio',
     missingEmailOTP: 'El código OTP de correo es obligatorio',
   },
+
+  // QR Scanner Modal
+  qrScannerModal: {
+    title: 'Escanear QR',
+    tabCamera: 'Cámara',
+    tabUpload: 'Subir Imagen',
+    cameraLoading: 'Preparando cámara...',
+    cameraPermissionError: 'Acceso a la cámara denegado o cámara no encontrada.',
+    cameraHint: 'Alinea el código QR dentro del marco',
+    retryCamera: 'Intentar de nuevo',
+    uploadTitle: 'Seleccionar Imagen QR',
+    uploadFormats: 'PNG, JPG o WebP',
+    uploadErrorInvalidEvm: 'Código QR detectado, pero no es una dirección EVM válida (0x...).',
+    uploadErrorUndetected: 'No se pudo detectar un código QR en la imagen subida. Asegúrate de que sea clara.',
+  },
 };

@@ -148,7 +148,7 @@ test.describe.serial('Crypto Page Full Simulation & Result Animations', () => {
     await page.waitForTimeout(500);
 
     // Verify QR Scanner Modal is open
-    const qrModalTitle = page.getByText('Scan Barcode / QR Wallet');
+    const qrModalTitle = page.getByText(/Scan QR|Pindai QR|Escanear QR/i).first();
     await expect(qrModalTitle).toBeVisible();
     await page.screenshot({ path: 'tests/screenshots/crypto_05_qr_scanner_modal.png' });
 

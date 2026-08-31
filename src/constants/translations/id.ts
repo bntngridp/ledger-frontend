@@ -452,4 +452,19 @@ export const id: TranslationKeys = {
     missing2FACode: 'Kode 2FA Authenticator wajib diisi',
     missingEmailOTP: 'Kode OTP Email wajib diisi',
   },
+
+  // QR Scanner Modal
+  qrScannerModal: {
+    title: 'Pindai QR',
+    tabCamera: 'Kamera',
+    tabUpload: 'Unggah Gambar',
+    cameraLoading: 'Menyiapkan kamera...',
+    cameraPermissionError: 'Akses kamera tidak diizinkan atau kamera tidak ditemukan.',
+    cameraHint: 'Posisikan kode QR di dalam bingkai',
+    retryCamera: 'Coba Lagi',
+    uploadTitle: 'Pilih Gambar QR',
+    uploadFormats: 'PNG, JPG, atau WebP',
+    uploadErrorInvalidEvm: 'QR Code terdeteksi, tetapi bukan alamat EVM yang valid (0x...).',
+    uploadErrorUndetected: 'Tidak dapat mendeteksi QR Code dari gambar yang diunggah. Pastikan gambar jelas.',
+  },
 };

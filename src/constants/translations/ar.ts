@@ -452,4 +452,19 @@ export const ar: TranslationKeys = {
     missing2FACode: 'رمز 2FA Authenticator مطلوب',
     missingEmailOTP: 'رمز OTP للبريد الإلكتروني مطلوب',
   },
+
+  // QR Scanner Modal
+  qrScannerModal: {
+    title: 'مسح رمز الاستجابة السريعة',
+    tabCamera: 'الكاميرا',
+    tabUpload: 'رفع صورة',
+    cameraLoading: 'جاري إعداد الكاميرا...',
+    cameraPermissionError: 'تم رفض الوصول إلى الكاميرا أو تعذر العثور عليها.',
+    cameraHint: 'وجّه رمز الاستجابة السريعة داخل الإطار',
+    retryCamera: 'إعادة المحاولة',
+    uploadTitle: 'اختر صورة رمز الاستجابة السريعة',
+    uploadFormats: 'PNG أو JPG أو WebP',
+    uploadErrorInvalidEvm: 'تم اكتشاف رمز الاستجابة السريعة، لكنه ليس عنوان EVM صالحاً (0x...).',
+    uploadErrorUndetected: 'تعذر اكتشاف رمز الاستجابة السريعة من الصورة المرفوعة. يرجى التأكد من وضوح الصورة.',
+  },
 };

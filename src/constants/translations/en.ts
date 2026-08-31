@@ -450,6 +450,21 @@ export const en = {
     missing2FACode: '2FA Authenticator code is required',
     missingEmailOTP: 'Email OTP code is required',
   },
+
+  // QR Scanner Modal
+  qrScannerModal: {
+    title: 'Scan QR',
+    tabCamera: 'Camera',
+    tabUpload: 'Upload Image',
+    cameraLoading: 'Setting up camera...',
+    cameraPermissionError: 'Camera access denied or camera not found.',
+    cameraHint: 'Align the QR code within the frame',
+    retryCamera: 'Try Again',
+    uploadTitle: 'Choose QR Image',
+    uploadFormats: 'PNG, JPG, or WebP',
+    uploadErrorInvalidEvm: 'QR Code detected, but it is not a valid EVM address (0x...).',
+    uploadErrorUndetected: 'Unable to detect a QR Code from the uploaded image. Please ensure the image is clear.',
+  },
 };
 
 export type TranslationKeys = typeof en;

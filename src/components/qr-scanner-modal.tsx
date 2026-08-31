@@ -14,6 +14,7 @@ import { ThemedText } from './themed-text';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/hooks/use-translation';
 
 interface QrScannerModalProps {
   visible: boolean;
@@ -23,6 +24,7 @@ interface QrScannerModalProps {
 
 export function QrScannerModal({ visible, onClose, onScanSuccess }: QrScannerModalProps) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'camera' | 'upload'>('camera');
 
   // Camera state
@@ -90,7 +92,7 @@ export function QrScannerModal({ visible, onClose, onScanSuccess }: QrScannerMod
     } catch (err: any) {
       console.warn('Camera access error:', err);
       setCameraLoading(false);
-      setCameraError('Akses kamera tidak diizinkan atau kamera tidak ditemukan.');
+      setCameraError(t('qrScannerModal.cameraPermissionError'));
     }
   };
 
@@ -159,10 +161,10 @@ export function QrScannerModal({ visible, onClose, onScanSuccess }: QrScannerMod
             if (evmAddr) {
               onScanSuccess(evmAddr);
             } else {
-              setUploadError(`QR Code terdeteksi ("${code.data.slice(0, 20)}..."), tetapi bukan alamat EVM (0x...) yang valid.`);
+              setUploadError(t('qrScannerModal.uploadErrorInvalidEvm'));
             }
           } else {
-            setUploadError('Tidak dapat mendeteksi QR Code dari gambar yang diunggah. Pastikan gambar jelas.');
+            setUploadError(t('qrScannerModal.uploadErrorUndetected'));
           }
         }
       };
@@ -199,14 +201,11 @@ export function QrScannerModal({ visible, onClose, onScanSuccess }: QrScannerMod
           <View style={styles.qrModalHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <View style={[styles.qrHeaderIcon, { backgroundColor: theme.primary + '20' }]}>
-                <Ionicons name="qr-code" size={22} color={theme.primary} />
+                <Ionicons name="qr-code" size={20} color={theme.primary} />
               </View>
-              <View>
-                <ThemedText type="smallBold" style={{ fontSize: 16 }}>Scan Barcode / QR Wallet</ThemedText>
-                <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary }}>
-                  Kamera Real-time & Upload Gambar QR
-                </ThemedText>
-              </View>
+              <ThemedText type="subtitle" style={{ fontSize: 17, fontWeight: '700' }}>
+                {t('qrScannerModal.title')}
+              </ThemedText>
             </View>
             <TouchableOpacity
               onPress={() => {
@@ -235,7 +234,7 @@ export function QrScannerModal({ visible, onClose, onScanSuccess }: QrScannerMod
                 type="smallBold"
                 style={{ fontSize: 12, marginLeft: 6, color: activeTab === 'camera' ? theme.primary : theme.textSecondary }}
               >
-                Scan Kamera
+                {t('qrScannerModal.tabCamera')}
               </ThemedText>
             </TouchableOpacity>
 
@@ -252,7 +251,7 @@ export function QrScannerModal({ visible, onClose, onScanSuccess }: QrScannerMod
                 type="smallBold"
                 style={{ fontSize: 12, marginLeft: 6, color: activeTab === 'upload' ? theme.primary : theme.textSecondary }}
               >
-                Upload File Gambar
+                {t('qrScannerModal.tabUpload')}
               </ThemedText>
             </TouchableOpacity>
           </View>
@@ -278,7 +277,7 @@ export function QrScannerModal({ visible, onClose, onScanSuccess }: QrScannerMod
                   <View style={styles.loadingOverlay}>
                     <ActivityIndicator size="large" color={theme.primary} />
                     <ThemedText type="code" style={{ fontSize: 11, color: '#FFFFFF', marginTop: 8 }}>
-                      Membuka kamera...
+                      {t('qrScannerModal.cameraLoading')}
                     </ThemedText>
                   </View>
                 )}
@@ -294,7 +293,7 @@ export function QrScannerModal({ visible, onClose, onScanSuccess }: QrScannerMod
                       style={[styles.retryCameraBtn, { backgroundColor: theme.primary }]}
                     >
                       <ThemedText type="smallBold" style={{ color: '#FFFFFF', fontSize: 11 }}>
-                        Coba Lagi
+                        {t('qrScannerModal.retryCamera')}
                       </ThemedText>
                     </TouchableOpacity>
                   </View>
@@ -325,7 +324,7 @@ export function QrScannerModal({ visible, onClose, onScanSuccess }: QrScannerMod
               </View>
 
               <ThemedText type="code" style={{ fontSize: 11, color: theme.textSecondary, textAlign: 'center' }}>
-                Arahkan kamera ke QR Code penerima EVM Wallet
+                {t('qrScannerModal.cameraHint')}
               </ThemedText>
             </View>
           )}
@@ -357,10 +356,10 @@ export function QrScannerModal({ visible, onClose, onScanSuccess }: QrScannerMod
                       <Ionicons name="image-outline" size={32} color={theme.primary} />
                     </View>
                     <ThemedText type="smallBold" style={{ marginTop: 12 }}>
-                      Pilih / Drop Gambar QR Code
+                      {t('qrScannerModal.uploadTitle')}
                     </ThemedText>
                     <ThemedText type="code" style={{ fontSize: 11, color: theme.textSecondary, marginTop: 4 }}>
-                      Format PNG, JPG, JPEG
+                      {t('qrScannerModal.uploadFormats')}
                     </ThemedText>
                   </>
                 )}
@@ -373,40 +372,6 @@ export function QrScannerModal({ visible, onClose, onScanSuccess }: QrScannerMod
               ) : null}
             </View>
           )}
-
-          {/* FAST DEMO EVM ADDRESS SELECTION */}
-          <View style={styles.demoSection}>
-            <ThemedText type="code" style={{ fontSize: 10, color: theme.textSecondary, marginBottom: 8 }}>
-              Atau pilih simulasi QR alamat wallet berikut:
-            </ThemedText>
-
-            <View style={{ gap: 6 }}>
-              {[
-                { label: 'Vitalik.eth Wallet', address: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' },
-                { label: 'Binance EVM Hot Wallet', address: '0x28C6c06298d514Db089934071355E5743bf21d60' },
-                { label: 'Trust Wallet Recipient', address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F' },
-              ].map((item) => (
-                <TouchableOpacity
-                  key={item.address}
-                  onPress={() => {
-                    stopCamera();
-                    onScanSuccess(item.address);
-                  }}
-                  style={[styles.demoRow, { backgroundColor: theme.background, borderColor: theme.border }]}
-                  id={`qr-demo-${item.label.split(' ')[0].toLowerCase()}`}
-                >
-                  <Ionicons name="qr-code-outline" size={14} color={theme.primary} />
-                  <View style={{ flex: 1, marginLeft: 8 }}>
-                    <ThemedText type="smallBold" style={{ fontSize: 11 }}>{item.label}</ThemedText>
-                    <ThemedText type="code" style={{ fontSize: 9, color: theme.textSecondary }}>
-                      {item.address.substring(0, 14)}...{item.address.slice(-6)}
-                    </ThemedText>
-                  </View>
-                  <Ionicons name="checkmark-circle-outline" size={16} color={theme.primary} />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
         </Card>
       </View>
     </Modal>
@@ -515,16 +480,5 @@ const styles = StyleSheet.create({
     borderRadius: 27,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  demoSection: {
-    marginTop: 4,
-  },
-  demoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
   },
 });
