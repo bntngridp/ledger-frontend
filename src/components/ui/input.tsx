@@ -90,12 +90,14 @@ export function Input({
           style={[
             styles.input,
             { color: theme.text },
-            // Web: remove browser default outline/box-shadow
+            // Web: remove browser default outline/box-shadow and ensure full contrast text-fill-color
             Platform.OS === 'web' && {
               outline: 'none',
               boxShadow: 'none',
               outlineWidth: 0,
               caretColor: theme.text,
+              WebkitTextFillColor: theme.text,
+              color: theme.text,
             } as any,
             style,
           ]}
