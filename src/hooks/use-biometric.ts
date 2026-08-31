@@ -73,17 +73,37 @@ export async function isBiometricSupported(): Promise<boolean> {
 /**
  * Check if user has already registered a biometric credential
  */
-export function isBiometricRegistered(): boolean {
+export function isBiometricRegistered(userEmail?: string): boolean {
   if (typeof localStorage === 'undefined') return false;
+  if (userEmail) {
+    return localStorage.getItem(`${BIOMETRIC_REGISTERED_KEY}_${userEmail}`) === 'true';
+  }
   return localStorage.getItem(BIOMETRIC_REGISTERED_KEY) === 'true';
 }
 
 /**
  * Get the stored credential ID from localStorage
  */
-export function getStoredCredentialId(): string | null {
+export function getStoredCredentialId(userEmail?: string): string | null {
   if (typeof localStorage === 'undefined') return null;
+  if (userEmail) {
+    const userCred = localStorage.getItem(`${BIOMETRIC_CREDENTIAL_KEY}_${userEmail}`);
+    if (userCred) return userCred;
+  }
   return localStorage.getItem(BIOMETRIC_CREDENTIAL_KEY);
+}
+
+/**
+ * Clear local biometric registration for a specific user or globally
+ */
+export function clearBiometricStorage(userEmail?: string): void {
+  if (typeof localStorage === 'undefined') return;
+  if (userEmail) {
+    localStorage.removeItem(`${BIOMETRIC_CREDENTIAL_KEY}_${userEmail}`);
+    localStorage.removeItem(`${BIOMETRIC_REGISTERED_KEY}_${userEmail}`);
+  }
+  localStorage.removeItem(BIOMETRIC_CREDENTIAL_KEY);
+  localStorage.removeItem(BIOMETRIC_REGISTERED_KEY);
 }
 
 /**
@@ -185,7 +205,11 @@ export async function registerBiometric(
       return { success: false, error: registerRes.message || 'Gagal mendaftarkan biometrik ke server' };
     }
 
-    // Persist credential ID locally
+    // Persist credential ID locally (scoped and fallback)
+    if (userEmail) {
+      localStorage.setItem(`${BIOMETRIC_CREDENTIAL_KEY}_${userEmail}`, credentialId);
+      localStorage.setItem(`${BIOMETRIC_REGISTERED_KEY}_${userEmail}`, 'true');
+    }
     localStorage.setItem(BIOMETRIC_CREDENTIAL_KEY, credentialId);
     localStorage.setItem(BIOMETRIC_REGISTERED_KEY, 'true');
 
@@ -208,13 +232,13 @@ export async function registerBiometric(
  * Verify the user's biometric by completing a WebAuthn authentication assertion
  * Calls the backend to generate a challenge, then asks user to authenticate with fingerprint/Face ID
  */
-export async function verifyBiometric(): Promise<{ success: boolean; error?: string }> {
+export async function verifyBiometric(userEmail?: string): Promise<{ success: boolean; error?: string }> {
   try {
     if (typeof window === 'undefined' || !navigator.credentials) {
       return { success: false, error: 'WebAuthn tidak didukung pada browser ini.' };
     }
 
-    const credentialId = getStoredCredentialId();
+    const credentialId = getStoredCredentialId(userEmail);
     if (!credentialId) {
       return { success: false, error: 'Fingerprint belum terdaftar di perangkat ini' };
     }

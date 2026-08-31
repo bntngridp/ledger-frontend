@@ -485,7 +485,7 @@ export default function DashboardScreen() {
           {showBalance ? getEstimatedTotal() : '••••••••'}
         </ThemedText>
 
-        {/* Profit/Loss percentage trend row */}
+        {/* Dynamic Profit or Loss percentage trend row */}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 12 }}>
           <ThemedText
             type="smallBold"
@@ -494,14 +494,15 @@ export default function DashboardScreen() {
               fontSize: 12,
             }}
           >
-            {chartStats.isPositive ? '▲' : '▼'} Profit/Loss{' '}
+            {chartStats.isPositive ? '▲ ' : '▼ '}
+            {chartStats.isPositive ? (t('dashboard.profit') || 'Profit') : (t('dashboard.loss') || 'Loss')}{' '}
           </ThemedText>
           <ThemedText
             type="small"
             style={{ color: chartStats.isPositive ? theme.success : theme.danger, fontWeight: '600', fontSize: 12 }}
           >
             {chartStats.diff >= 0 ? '+' : ''}
-            {chartStats.percent.toFixed(2)}% (All time)
+            {toLocalizedDigits(chartStats.percent.toFixed(2), language)}% ({t('dashboard.allTime') || 'All time'})
           </ThemedText>
         </View>
 
@@ -777,23 +778,25 @@ export default function DashboardScreen() {
                   </ThemedText>
                 </View>
                 
-                {/* Profit/Loss percentage trend row */}
+                {/* Dynamic Profit or Loss percentage trend row */}
                 <View style={styles.trendRow}>
                   <ThemedText
                     type="smallBold"
                     style={{
                       color: chartStats.isPositive ? theme.success : theme.danger,
                       fontSize: 12,
+                      marginRight: 4,
                     }}
                   >
-                    {chartStats.isPositive ? '▲' : '▼'} Profit/Loss
+                    {chartStats.isPositive ? '▲ ' : '▼ '}
+                    {chartStats.isPositive ? (t('dashboard.profit') || 'Profit') : (t('dashboard.loss') || 'Loss')}
                   </ThemedText>
                   <ThemedText
                     type="small"
                     style={{ color: chartStats.isPositive ? theme.success : theme.danger, fontWeight: '600', fontSize: 12 }}
                   >
                     {chartStats.diff >= 0 ? '+' : ''}
-                    {chartStats.percent.toFixed(2)}% (All time)
+                    {toLocalizedDigits(chartStats.percent.toFixed(2), language)}% ({t('dashboard.allTime') || 'All time'})
                   </ThemedText>
                 </View>
               </View>

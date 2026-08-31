@@ -20,6 +20,7 @@ import {
   isBiometricRegistered,
   registerBiometric,
   verifyBiometric,
+  clearBiometricStorage,
 } from '@/hooks/use-biometric';
 import { api } from '@/services/api';
 
@@ -30,6 +31,7 @@ interface BiometricModalProps {
     userId: string;
     username: string;
     email: string;
+    biometricEnabled?: boolean;
   };
   onSuccess?: () => void;
 }
@@ -56,7 +58,7 @@ export function BiometricManagementModal({
       setMessage('');
       isBiometricSupported().then((isSupp) => {
         setSupported(isSupp);
-        setRegistered(isBiometricRegistered());
+        setRegistered(Boolean(user?.biometricEnabled) || isBiometricRegistered(user?.email));
       });
 
       // Pulse animation
@@ -109,7 +111,7 @@ export function BiometricManagementModal({
     setMessage('');
 
     try {
-      const result = await verifyBiometric();
+      const result = await verifyBiometric(user?.email);
       if (result.success) {
         setMessage('Autentikasi biometrik berhasil diverifikasi!');
       } else {
@@ -130,8 +132,7 @@ export function BiometricManagementModal({
     try {
       const res = await api.auth.disableBiometric();
       if (res.status === 'success') {
-        localStorage.removeItem('ledger_biometric_registered');
-        localStorage.removeItem('ledger_biometric_credential_id');
+        clearBiometricStorage(user?.email);
         setRegistered(false);
         setMessage('Data sensor biometrik telah dihapus dari akun.');
         onSuccess?.();

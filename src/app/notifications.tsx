@@ -460,14 +460,14 @@ export default function NotificationsScreen() {
                 disabled={isProcessingDelete}
                 style={[
                   styles.headerActionBtn,
-                  { backgroundColor: theme.danger + '12', borderColor: theme.danger + '25' },
+                  { backgroundColor: theme.backgroundElement, borderColor: theme.border },
                 ]}
                 id="notif-delete-all-btn"
                 accessibilityLabel={t('notifications.deleteAll')}
               >
-                <Ionicons name="trash-outline" size={16} color={theme.danger} />
+                <Ionicons name="trash-outline" size={15} color={theme.textSecondary} />
                 {isDesktop && (
-                  <ThemedText style={[styles.headerActionText, { color: theme.danger }]}>
+                  <ThemedText style={[styles.headerActionText, { color: theme.textSecondary, fontSize: 12 }]}>
                     {t('notifications.deleteAll')}
                   </ThemedText>
                 )}
@@ -679,8 +679,6 @@ export default function NotificationsScreen() {
                         : notif.is_read
                         ? theme.border
                         : theme.primary + '50',
-                      borderLeftColor: isSelected ? theme.primary : iconColor,
-                      borderLeftWidth: 4,
                     },
                   ]}
                 >
@@ -692,14 +690,14 @@ export default function NotificationsScreen() {
                   >
                     <Ionicons
                       name={isSelected ? 'checkbox' : 'square-outline'}
-                      size={22}
+                      size={20}
                       color={isSelected ? theme.primary : theme.textSecondary}
                     />
                   </TouchableOpacity>
 
                   {/* Left Category Icon */}
-                  <View style={[styles.notifIconWrap, { backgroundColor: iconColor + '18' }]}>
-                    <Ionicons name={iconName} size={20} color={iconColor} />
+                  <View style={[styles.notifIconWrap, { backgroundColor: theme.backgroundSelected }]}>
+                    <Ionicons name={iconName} size={18} color={theme.primary} />
                   </View>
 
                   {/* Notification Content */}
@@ -754,14 +752,14 @@ export default function NotificationsScreen() {
                         style={[
                           styles.actionBtn,
                           {
-                            backgroundColor: theme.primary + '15',
-                            borderColor: theme.primary + '30',
+                            backgroundColor: theme.backgroundSelected,
+                            borderColor: theme.border,
                           },
                         ]}
                         id={`notif-read-${notif.notification_id}`}
                         accessibilityLabel={t('notifications.markRead')}
                       >
-                        <Ionicons name="checkmark" size={15} color={theme.primary} />
+                        <Ionicons name="checkmark" size={14} color={theme.primary} />
                       </TouchableOpacity>
                     )}
                     <TouchableOpacity
@@ -769,14 +767,14 @@ export default function NotificationsScreen() {
                       style={[
                         styles.actionBtn,
                         {
-                          backgroundColor: theme.danger + '15',
-                          borderColor: theme.danger + '30',
+                          backgroundColor: theme.backgroundSelected,
+                          borderColor: theme.border,
                         },
                       ]}
                       id={`notif-delete-${notif.notification_id}`}
                       accessibilityLabel={t('notifications.delete')}
                     >
-                      <Ionicons name="trash-outline" size={15} color={theme.danger} />
+                      <Ionicons name="trash-outline" size={14} color={theme.textSecondary} />
                     </TouchableOpacity>
                   </View>
                 </Card>

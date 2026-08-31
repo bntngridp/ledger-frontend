@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
-  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,6 +29,89 @@ interface TransactionItem {
   created_at: string;
 }
 
+// Helper to format clean, modern descriptions without clunky raw technical strings
+function formatCleanDescription(notes: string, type: string, asset: string, lang: string): string {
+  if (!notes) return `${type} ${asset}`;
+
+  // 1. Swap pattern: "swap USDC -> USDT" or "swap IDR -> USDT"
+  const swapMatch = notes.match(/swap\s+([A-Za-z0-9]+)\s*->\s*([A-Za-z0-9]+)/i);
+  if (swapMatch) {
+    const [, from, to] = swapMatch;
+    return `${from} → ${to}`;
+  }
+
+  // 2. Crypto withdrawal pattern: "Crypto withdrawal to 0x... on network" (may have "(Failed: ...)")
+  const withdrawMatch = notes.match(/to\s+(0x[a-fA-F0-9]{6,42}|[a-zA-Z0-9]{20,50})\s+on\s+([a-zA-Z0-9_]+)/i);
+  if (withdrawMatch) {
+    const [, addr, networkRaw] = withdrawMatch;
+    const shortAddr = addr.length > 12 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
+
+    let networkName = networkRaw.replace(/_/g, ' ');
+    if (networkRaw.toLowerCase().includes('polygon')) networkName = 'Polygon Amoy';
+    else if (networkRaw.toLowerCase().includes('sepolia')) networkName = 'Sepolia';
+    else if (networkRaw.toLowerCase().includes('solana')) networkName = 'Solana Devnet';
+    else {
+      networkName = networkName
+        .split(' ')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+    }
+
+    if (lang === 'id') return `Kirim ke ${shortAddr} • ${networkName}`;
+    if (lang === 'es') return `A ${shortAddr} • ${networkName}`;
+    if (lang === 'ar') return `إلى ${shortAddr} • ${networkName}`;
+    return `To ${shortAddr} • ${networkName}`;
+  }
+
+  // 3. Crypto deposit pattern
+  const depositMatch = notes.match(/from\s+(0x[a-fA-F0-9]{6,42}|[a-zA-Z0-9]{20,50})\s+on\s+([a-zA-Z0-9_]+)/i);
+  if (depositMatch) {
+    const [, addr, networkRaw] = depositMatch;
+    const shortAddr = addr.length > 12 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
+
+    let networkName = networkRaw.replace(/_/g, ' ');
+    if (networkRaw.toLowerCase().includes('polygon')) networkName = 'Polygon Amoy';
+    else if (networkRaw.toLowerCase().includes('sepolia')) networkName = 'Sepolia';
+    else if (networkRaw.toLowerCase().includes('solana')) networkName = 'Solana Devnet';
+
+    if (lang === 'id') return `Dari ${shortAddr} • ${networkName}`;
+    if (lang === 'es') return `De ${shortAddr} • ${networkName}`;
+    if (lang === 'ar') return `من ${shortAddr} • ${networkName}`;
+    return `From ${shortAddr} • ${networkName}`;
+  }
+
+  // 4. Midtrans Topup
+  if (notes.toLowerCase().includes('midtrans')) {
+    if (lang === 'id') return 'Deposit via Midtrans';
+    if (lang === 'es') return 'Depósito vía Midtrans';
+    if (lang === 'ar') return 'إيداع عبر Midtrans';
+    return 'Deposit via Midtrans';
+  }
+
+  // 5. Transfer P2P to/from email
+  const transferToMatch = notes.match(/to\s+([^\s]+@[^\s]+)/i);
+  if (transferToMatch) {
+    const toEmail = transferToMatch[1];
+    if (lang === 'id') return `Ke ${toEmail}`;
+    if (lang === 'es') return `A ${toEmail}`;
+    if (lang === 'ar') return `إلى ${toEmail}`;
+    return `To ${toEmail}`;
+  }
+
+  const transferFromMatch = notes.match(/from\s+([^\s]+@[^\s]+)/i);
+  if (transferFromMatch) {
+    const fromEmail = transferFromMatch[1];
+    if (lang === 'id') return `Dari ${fromEmail}`;
+    if (lang === 'es') return `De ${fromEmail}`;
+    if (lang === 'ar') return `من ${fromEmail}`;
+    return `From ${fromEmail}`;
+  }
+
+  // Strip long error messages if present: "Notes (Failed: ...)" -> "Notes"
+  const cleanNotes = notes.replace(/\s*\(Failed:.*?\)/i, '').trim();
+  return cleanNotes || `${type} ${asset}`;
+}
+
 export default function HistoryScreen() {
   const theme = useTheme();
   const { t, language } = useTranslation();
@@ -42,14 +124,14 @@ export default function HistoryScreen() {
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
   const [error, setError] = useState('');
 
-  // Filter options - now using translated labels
+  // Filter options
   const transactionTypes = [
-    { label: t('history.allTypes'), value: 'All' },
-    { label: t('history.topUps'), value: 'Top Up' },
-    { label: t('history.transfers'), value: 'Transfer' },
-    { label: t('history.swaps'), value: 'Swap' },
-    { label: t('history.crypto'), value: 'Crypto' },
-    { label: t('history.withdrawals'), value: 'Withdrawal' },
+    { label: t('history.allTypes') || 'Semua', value: 'All' },
+    { label: t('history.topUps') || 'Top Up', value: 'Top Up' },
+    { label: t('history.transfers') || 'Transfer', value: 'Transfer' },
+    { label: t('history.swaps') || 'Swap', value: 'Swap' },
+    { label: t('history.crypto') || 'Crypto', value: 'Crypto' },
+    { label: t('history.withdrawals') || 'Penarikan', value: 'Withdrawal' },
   ];
   const assetTypes = ['All', 'IDR', 'USDT', 'USDC'];
 
@@ -61,7 +143,7 @@ export default function HistoryScreen() {
     try {
       const response = await api.wallet.getTransactions({ page: 1, per_page: 100 });
       if (response.status === 'success' && response.data) {
-        const txArray = Array.isArray(response.data) ? response.data : (response.data.transactions || []);
+        const txArray = Array.isArray(response.data) ? response.data : response.data.transactions || [];
         setTransactions(txArray);
       } else {
         setError(response.message || 'Failed to fetch transactions');
@@ -94,44 +176,58 @@ export default function HistoryScreen() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    const s = (status || '').toLowerCase();
+    if (s === 'completed' || s === 'success') {
+      if (language === 'id') return 'Sukses';
+      if (language === 'es') return 'Completado';
+      if (language === 'ar') return 'ناجح';
+      return 'Success';
+    }
+    if (s === 'processing' || s === 'pending') {
+      if (language === 'id') return 'Diproses';
+      if (language === 'es') return 'Pendiente';
+      if (language === 'ar') return 'قيد التنفيذ';
+      return 'Pending';
+    }
+    if (language === 'id') return 'Gagal';
+    if (language === 'es') return 'Fallido';
+    if (language === 'ar') return 'فاشل';
+    return 'Failed';
+  };
+
   // Map API transaction item to UI structure
   const getMappedTransactions = () => {
     if (!Array.isArray(transactions)) return [];
     return transactions.map((tx) => {
-      let color: string = theme.success;
       let sign = '+';
       let icon = 'arrow-down-outline';
       const tLower = (tx.type || '').toLowerCase();
 
       if (tLower === 'withdraw' || tLower === 'transfer_out' || tLower === 'crypto_withdrawal' || tLower === 'crypto_withdraw') {
-        color = theme.danger;
         sign = '-';
-        icon = tLower.includes('transfer') ? 'arrow-forward-outline' : 'cash-outline';
+        icon = 'arrow-up-outline';
       } else if (tLower === 'transfer_in') {
-        color = theme.success;
         sign = '+';
-        icon = 'arrow-back-outline';
+        icon = 'arrow-down-outline';
       } else if (tLower === 'swap') {
-        color = theme.primary;
         sign = '';
         icon = 'swap-horizontal-outline';
       } else if (tLower === 'topup' || tLower === 'crypto_deposit' || tLower === 'crypto_topup') {
-        color = theme.success;
         sign = '+';
-        icon = 'add-outline';
-      }
-
-      if (tx.status.toLowerCase() === 'pending' || tx.status.toLowerCase() === 'processing') {
-        color = theme.warning;
+        icon = 'arrow-down-outline';
       }
 
       // Nice type display name
       let typeDisplay = tx.type;
-      if (tLower === 'transfer_out') typeDisplay = t('dashboard.txTransferSent') || 'Transfer Sent';
-      else if (tLower === 'transfer_in') typeDisplay = t('dashboard.txTransferReceived') || 'Transfer Received';
+      if (tLower === 'transfer_out') typeDisplay = t('dashboard.txTransferSent') || 'Transfer';
+      else if (tLower === 'transfer_in') typeDisplay = t('dashboard.txTransferReceived') || 'Transfer Masuk';
       else if (tLower === 'topup' || tLower === 'crypto_deposit' || tLower === 'crypto_topup') typeDisplay = t('dashboard.txTopUp') || 'Top Up';
-      else if (tLower === 'withdraw' || tLower === 'crypto_withdrawal' || tLower === 'crypto_withdraw') typeDisplay = t('dashboard.txWithdrawal') || 'Withdrawal';
+      else if (tLower === 'withdraw' || tLower === 'crypto_withdrawal' || tLower === 'crypto_withdraw') typeDisplay = t('dashboard.txWithdrawal') || 'Penarikan';
       else if (tLower === 'swap') typeDisplay = t('dashboard.txSwap') || 'Swap';
+
+      // Clean description
+      const cleanDesc = formatCleanDescription(tx.transaction_notes, typeDisplay, tx.asset_symbol, language);
 
       // Locale-aware formatted amount
       const numAmount = parseFloat(String(tx.amount));
@@ -149,14 +245,14 @@ export default function HistoryScreen() {
       return {
         id: tx.transaction_id,
         type: typeDisplay,
-        uiType, // used for filtering category
+        uiType,
         asset: tx.asset_symbol,
-        description: tx.transaction_notes || `${typeDisplay} ${tx.asset_symbol}`,
+        description: cleanDesc,
         amount: formattedAmount,
         time: timeDisplay,
-        status: tx.status.charAt(0).toUpperCase() + tx.status.slice(1),
+        status: getStatusLabel(tx.status),
+        statusRaw: tx.status,
         icon,
-        color,
       };
     });
   };
@@ -165,7 +261,6 @@ export default function HistoryScreen() {
 
   // Filtering logic
   const filteredTransactions = uiTransactions.filter((tx) => {
-    // Selected Type filter map
     const matchesType =
       selectedType === 'All' ||
       tx.uiType === selectedType ||
@@ -184,66 +279,74 @@ export default function HistoryScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <ThemedText type="subtitle" style={styles.title}>
-            {t('history.historyTitle')}
+            {t('history.historyTitle') || 'Riwayat Transaksi'}
           </ThemedText>
         </View>
 
         {/* Filter type scroll */}
         <View style={styles.filterSection}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-            {transactionTypes.map((typeItem) => (
+            {transactionTypes.map((typeItem) => {
+              const isActive = selectedType === typeItem.value;
+              return (
+                <TouchableOpacity
+                  key={typeItem.value}
+                  onPress={() => setSelectedType(typeItem.value)}
+                  style={[
+                    styles.filterChip,
+                    {
+                      backgroundColor: isActive ? theme.primary : theme.backgroundElement,
+                      borderColor: isActive ? theme.primary : theme.border,
+                    },
+                  ]}
+                >
+                  <ThemedText
+                    type="small"
+                    style={{
+                      color: isActive ? '#ffffff' : theme.textSecondary,
+                      fontWeight: isActive ? '700' : '500',
+                      fontSize: 12,
+                    }}
+                  >
+                    {typeItem.label}
+                  </ThemedText>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* Filter asset selector */}
+        <View style={styles.assetFilterSection}>
+          <ThemedText type="small" style={{ color: theme.textSecondary, marginRight: 8, fontSize: 12 }}>
+            {t('history.assetLabel') || 'Aset'}:
+          </ThemedText>
+          {assetTypes.map((asset) => {
+            const isActive = selectedAsset === asset;
+            return (
               <TouchableOpacity
-                key={typeItem.value}
-                onPress={() => setSelectedType(typeItem.value)}
+                key={asset}
+                onPress={() => setSelectedAsset(asset)}
                 style={[
-                  styles.filterChip,
+                  styles.assetChip,
                   {
-                    backgroundColor: selectedType === typeItem.value ? theme.primary : theme.backgroundElement,
-                    borderColor: theme.border,
+                    backgroundColor: isActive ? theme.backgroundSelected : 'transparent',
                   },
                 ]}
               >
                 <ThemedText
                   type="small"
                   style={{
-                    color: selectedType === typeItem.value ? '#ffffff' : theme.textSecondary,
-                    fontWeight: '600',
+                    color: isActive ? theme.text : theme.textSecondary,
+                    fontWeight: isActive ? '700' : '500',
+                    fontSize: 12,
                   }}
                 >
-                  {typeItem.label}
+                  {asset === 'All' ? (t('dashboard.filterAll') || 'Semua') : asset}
                 </ThemedText>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Filter asset selector */}
-        <View style={styles.assetFilterSection}>
-          <ThemedText type="small" style={{ color: theme.textSecondary, marginRight: 8 }}>
-            {t('history.assetLabel')}
-          </ThemedText>
-          {assetTypes.map((asset) => (
-            <TouchableOpacity
-              key={asset}
-              onPress={() => setSelectedAsset(asset)}
-              style={[
-                styles.assetChip,
-                {
-                  backgroundColor: selectedAsset === asset ? theme.backgroundSelected : 'transparent',
-                },
-              ]}
-            >
-              <ThemedText
-                type="small"
-                style={{
-                  color: selectedAsset === asset ? theme.text : theme.textSecondary,
-                  fontWeight: selectedAsset === asset ? '700' : '500',
-                }}
-              >
-                {asset}
-              </ThemedText>
-            </TouchableOpacity>
-          ))}
+            );
+          })}
         </View>
 
         {/* Transaction list */}
@@ -269,7 +372,7 @@ export default function HistoryScreen() {
             refreshing={refreshing}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <Ionicons name="receipt-outline" size={48} color={theme.textSecondary + '80'} />
+                <Ionicons name="receipt-outline" size={44} color={theme.textSecondary + '60'} />
                 <ThemedText type="small" style={{ color: theme.textSecondary, marginTop: 12 }}>
                   {t('history.noHistory') || 'Belum ada transaksi ditemukan.'}
                 </ThemedText>
@@ -277,20 +380,29 @@ export default function HistoryScreen() {
             }
             renderItem={({ item }) => (
               <Card style={styles.txCard} bordered>
-                <View style={[styles.txIconContainer, { backgroundColor: item.color + '15' }]}>
-                  <Ionicons name={item.icon as any} size={22} color={item.color} />
+                {/* Modern subtle rounded icon */}
+                <View style={[styles.txIconContainer, { backgroundColor: theme.backgroundSelected }]}>
+                  <Ionicons name={item.icon as any} size={18} color={theme.primary} />
                 </View>
+
+                {/* Details */}
                 <View style={styles.txDetails}>
                   <ThemedText type="smallBold" style={{ textAlign: 'left' }}>
                     {item.type}
                   </ThemedText>
-                  <ThemedText type="small" style={{ color: theme.textSecondary, fontSize: 13, textAlign: 'left' }}>
+                  <ThemedText
+                    type="small"
+                    style={{ color: theme.textSecondary, fontSize: 12, textAlign: 'left', marginTop: 1 }}
+                    numberOfLines={1}
+                  >
                     {item.description}
                   </ThemedText>
                   <ThemedText type="code" style={[styles.txTime, { textAlign: 'left' }]}>
                     {item.time}
                   </ThemedText>
                 </View>
+
+                {/* Amount & Status Badge */}
                 <View style={styles.txMeta}>
                   <ThemedText
                     type="smallBold"
@@ -301,12 +413,12 @@ export default function HistoryScreen() {
                   <View
                     style={[
                       styles.statusBadge,
-                      { backgroundColor: getStatusColor(item.status) + '15' },
+                      { backgroundColor: getStatusColor(item.statusRaw) + '15' },
                     ]}
                   >
                     <ThemedText
                       type="code"
-                      style={{ color: getStatusColor(item.status), fontSize: 10, fontWeight: '700' }}
+                      style={{ color: getStatusColor(item.statusRaw), fontSize: 10, fontWeight: '700' }}
                     >
                       {item.status}
                     </ThemedText>
@@ -348,9 +460,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterChip: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 20,
     borderWidth: 1,
   },
   assetFilterSection: {
@@ -360,25 +472,26 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.three,
   },
   assetChip: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 6,
     marginRight: 4,
   },
   listContent: {
     paddingHorizontal: Spacing.four,
     paddingBottom: 40,
-    gap: 12,
+    gap: 10,
   },
   txCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: Spacing.three,
+    borderRadius: 14,
   },
   txIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.three,
@@ -386,7 +499,7 @@ const styles = StyleSheet.create({
   },
   txDetails: {
     flex: 1,
-    gap: 2,
+    gap: 1,
     alignItems: 'flex-start',
     justifyContent: 'center',
     paddingRight: Spacing.two,
@@ -399,8 +512,8 @@ const styles = StyleSheet.create({
   txMeta: {
     alignItems: 'flex-end',
     justifyContent: 'center',
-    gap: 6,
-    minWidth: 90,
+    gap: 5,
+    minWidth: 85,
   },
   statusBadge: {
     paddingVertical: 2,
