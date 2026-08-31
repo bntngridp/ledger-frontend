@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Platform,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -12,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/hooks/use-theme';
 
 export interface InputProps extends TextInputProps {
@@ -58,9 +58,9 @@ export function Input({
   return (
     <View style={[styles.container, containerStyle]}>
       {label && (
-        <Text style={[styles.label, { color: theme.textSecondary }]}>
+        <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
           {label}
-        </Text>
+        </ThemedText>
       )}
 
       <View
@@ -98,6 +98,7 @@ export function Input({
               caretColor: theme.text,
               WebkitTextFillColor: theme.text,
               color: theme.text,
+              backgroundColor: 'transparent',
             } as any,
             style,
           ]}
@@ -133,9 +134,9 @@ export function Input({
       </View>
 
       {error && (
-        <Text style={[styles.error, { color: theme.danger }]}>
+        <ThemedText style={[styles.error, { color: theme.danger }]}>
           {error}
-        </Text>
+        </ThemedText>
       )}
     </View>
   );
@@ -163,6 +164,7 @@ const styles = StyleSheet.create({
     height: '100%',
     fontSize: 15,
     fontWeight: '500',
+    color: '#FFFFFF',
   },
   iconLeft: {
     marginRight: 10,

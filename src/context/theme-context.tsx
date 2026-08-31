@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useColorScheme as useRNColorScheme } from 'react-native';
+import { Platform, useColorScheme as useRNColorScheme } from 'react-native';
 
 import { storage } from '@/services/storage';
 
@@ -16,7 +16,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemColorScheme = useRNColorScheme();
-  const [themePreference, setThemePreferenceState] = useState<ThemePreference>('system');
+  const [themePreference, setThemePreferenceState] = useState<ThemePreference>('dark');
   const [hasHydrated, setHasHydrated] = useState(false);
 
   // Load user theme preference on mount
@@ -38,12 +38,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Determine active theme based on preference and system theme
   const activeTheme: ActiveTheme = (() => {
-    if (!hasHydrated) return 'light'; // Default fallback during hydration
+    if (!hasHydrated) return 'dark'; // Ledger dark mode default
     if (themePreference === 'system') {
-      return systemColorScheme === 'dark' ? 'dark' : 'light';
+      return systemColorScheme === 'light' ? 'light' : 'dark';
     }
     return themePreference;
   })();
+
+  // Sync HTML/DOM root data-theme and colorScheme for web platform
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', activeTheme);
+      document.documentElement.style.colorScheme = activeTheme;
+    }
+  }, [activeTheme]);
 
   const setThemePreference = async (pref: ThemePreference) => {
     try {
