@@ -253,31 +253,27 @@ export default function SwapScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {/* Rate Card */}
-          <Card style={[styles.rateCard, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
-            <View style={styles.rateHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Ionicons name="stats-chart" size={16} color={theme.primary} />
-                <ThemedText type="smallBold" style={{ marginLeft: 6 }}>
-                  {t('swap.liveRates') || 'Kurs Real-Time'}
-                </ThemedText>
-              </View>
+          {/* Modern Minimalist Rate Banner */}
+          <View style={[styles.rateBanner, { backgroundColor: theme.backgroundElement, borderColor: theme.border }]}>
+            <View style={styles.rateContent}>
+              <View style={[styles.liveDot, { backgroundColor: theme.success }]} />
+              <ThemedText type="smallBold" style={styles.rateText}>
+                {loadingRate
+                  ? (t('swap.loadingRate') || 'Memuat kurs...')
+                  : rate < 0.01
+                  ? `1 ${fromAsset} = ${toLocalizedDigits(rate.toFixed(6), language)} ${toAsset} (1 ${toAsset} ≈ ${formatCurrency(1 / rate, 'IDR', language)})`
+                  : toAsset === 'IDR'
+                  ? `1 ${fromAsset} = ${formatCurrency(rate, 'IDR', language)}`
+                  : `1 ${fromAsset} = ${formatNumber(rate, language, { maximumFractionDigits: 4 })} ${toAsset}`}
+              </ThemedText>
             </View>
-            <View style={styles.rateGrid}>
-              <View>
-                <ThemedText type="small" style={{ color: theme.textSecondary }}>
-                  {t('swap.currentRate') || 'Nilai Tukar Saat Ini'}
-                </ThemedText>
-                <ThemedText type="smallBold" style={{ marginTop: 2 }}>
-                  {loadingRate
-                    ? (t('swap.loadingRate') || 'Memuat kurs...')
-                    : rate < 0.01
-                    ? `${toLocalizedDigits('1', language)} ${fromAsset} = ${toLocalizedDigits(rate.toFixed(6), language)} ${toAsset} (${toLocalizedDigits('1', language)} ${toAsset} ≈ Rp ${formatNumber(1 / rate, language, { maximumFractionDigits: 0 })})`
-                    : `${toLocalizedDigits('1', language)} ${fromAsset} = ${formatNumber(rate, language, { maximumFractionDigits: 4 })} ${toAsset}`}
-                </ThemedText>
-              </View>
+            <View style={[styles.liveBadge, { backgroundColor: theme.backgroundSelected }]}>
+              <Ionicons name="stats-chart" size={12} color={theme.textSecondary} style={{ marginRight: 4 }} />
+              <ThemedText type="code" style={{ fontSize: 11, color: theme.textSecondary, fontWeight: '600' }}>
+                {t('swap.liveRates') || 'Live'}
+              </ThemedText>
             </View>
-          </Card>
+          </View>
 
           {/* Calculator */}
           <View style={styles.calculator}>
@@ -663,20 +659,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingBottom: Spacing.five,
   },
-  rateCard: {
-    padding: Spacing.three,
-    borderRadius: 16,
-    marginBottom: Spacing.three,
-  },
-  rateHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  rateGrid: {
+  rateBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: Spacing.three,
+  },
+  rateContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  rateText: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   calculator: {
     gap: 8,
